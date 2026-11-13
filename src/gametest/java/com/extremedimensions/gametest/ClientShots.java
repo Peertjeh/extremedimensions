@@ -896,6 +896,11 @@ public class ClientShots implements FabricClientGameTest {
 				System.out.println("[journal] the guides take " + book[0].guidePageCount() + " pages");
 			});
 			ctx.waitTicks(16);
+			// (3.55.0) the part opens on the guides' contents; a line of it turns to its guide
+			ctx.takeScreenshot("16_guides_contents");
+			ctx.runOnClient(mc -> check(pressOnce(book[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.guide.first_expedition")),
+					"the guides' contents has no line for the first guide"));
+			ctx.waitTicks(16);
 			ctx.takeScreenshot("16_guides");
 			ctx.runOnClient(mc -> {
 				check(pressOnce(book[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.anchors")), "the journal has no Anchors tab");

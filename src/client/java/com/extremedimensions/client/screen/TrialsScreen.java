@@ -164,6 +164,12 @@ public class TrialsScreen extends Screen {
 		Minecraft.getInstance().gui.setScreen(parent);
 	}
 
+	/** Its own key closes it (3.55.0), as Escape does. */
+	@Override
+	public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+		return com.extremedimensions.client.ModKeys.closes(this, com.extremedimensions.client.ModKeys.TRIALS, event) || super.keyPressed(event);
+	}
+
 	public boolean isPauseScreen() {
 		return false;
 	}

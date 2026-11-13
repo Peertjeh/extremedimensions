@@ -121,11 +121,11 @@ public final class ModPackets {
 	/**
 	 * Server -> client: open the Tether Journal with these unlocked pages (comma separated), the bestiary
 	 * ("id:seen:slain;..."), the ledger ("page:key=value;..."), the margin notes found, the path, the player's clan
-	 * (as {@code ClanService.journal} writes it) and the anchors that keep charge for them (as {@code AnchorList.encode}
-	 * writes them).
+	 * (as {@code ClanService.journal} writes it), the anchors that keep charge for them (as {@code AnchorList.encode}
+	 * writes them) and the first-meeting hints they were told (keys, comma separated; 3.55.0).
 	 */
-	public record OpenJournalPayload(String ids, String beasts, String ledger, String notes, String path, String clan, String anchors)
-			implements CustomPacketPayload {
+	public record OpenJournalPayload(String ids, String beasts, String ledger, String notes, String path, String clan, String anchors,
+			String hints) implements CustomPacketPayload {
 		public static final Type<OpenJournalPayload> TYPE = new Type<>(ExtremeDimensions.id("open_journal"));
 		public static final StreamCodec<FriendlyByteBuf, OpenJournalPayload> CODEC = StreamCodec.ofMember(OpenJournalPayload::write, OpenJournalPayload::read);
 
@@ -137,10 +137,12 @@ public final class ModPackets {
 			buf.writeUtf(path);
 			buf.writeUtf(clan);
 			buf.writeUtf(anchors);
+			buf.writeUtf(hints);
 		}
 
 		private static OpenJournalPayload read(FriendlyByteBuf buf) {
-			return new OpenJournalPayload(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf());
+			return new OpenJournalPayload(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(),
+					buf.readUtf());
 		}
 
 		@Override
@@ -159,6 +161,43 @@ public final class ModPackets {
 
 		private static RequestJournalPayload read(FriendlyByteBuf buf) {
 			return new RequestJournalPayload();
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: the player pressed the key of the anchor status screen (3.55.0), which the server opens as an anchor does. */
+	public record RequestStatusPayload() implements CustomPacketPayload {
+		public static final Type<RequestStatusPayload> TYPE = new Type<>(ExtremeDimensions.id("request_status"));
+		public static final StreamCodec<FriendlyByteBuf, RequestStatusPayload> CODEC = StreamCodec.ofMember(RequestStatusPayload::write, RequestStatusPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+		}
+
+		private static RequestStatusPayload read(FriendlyByteBuf buf) {
+			return new RequestStatusPayload();
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: a first-meeting hint (by its ordinal) was shown as a toast, so it counts as told (3.55.0). */
+	public record HintShownPayload(int hint) implements CustomPacketPayload {
+		public static final Type<HintShownPayload> TYPE = new Type<>(ExtremeDimensions.id("hint_shown"));
+		public static final StreamCodec<FriendlyByteBuf, HintShownPayload> CODEC = StreamCodec.ofMember(HintShownPayload::write, HintShownPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(hint);
+		}
+
+		private static HintShownPayload read(FriendlyByteBuf buf) {
+			return new HintShownPayload(buf.readVarInt());
 		}
 
 		@Override

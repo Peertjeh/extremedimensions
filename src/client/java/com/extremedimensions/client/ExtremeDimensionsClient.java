@@ -21,7 +21,6 @@ import com.extremedimensions.client.sky.SeamAmbience;
 import com.extremedimensions.client.sky.SeamSky;
 import com.extremedimensions.client.screen.CursesScreen;
 import com.extremedimensions.client.screen.PenaltyChoiceScreen;
-import com.extremedimensions.client.screen.SettingsScreen;
 import com.extremedimensions.client.screen.StatusScreen;
 import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.state.ClientState;
@@ -31,9 +30,6 @@ import com.extremedimensions.client.tooltip.Tooltips;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.registry.ModEntities;
 
-import com.mojang.blaze3d.platform.InputConstants;
-
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.ConnectScreen;
@@ -45,7 +41,6 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
@@ -55,41 +50,14 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 
 /** Client entrypoint: HUD, screens, title art, menu music, tooltips, key mappings and packet receivers. */
 public class ExtremeDimensionsClient implements ClientModInitializer {
-	private static final KeyMapping.Category KEYS = KeyMapping.Category.register(ExtremeDimensions.id("main"));
-	/** Unbound until the player picks keys (Controls): the inventory buttons and the settings gear are always there. */
-	private static final KeyMapping OPEN_CURSES = new KeyMapping("key.extremedimensions.curses", InputConstants.UNKNOWN.getValue(), KEYS);
-	private static final KeyMapping OPEN_JOURNAL = new KeyMapping("key.extremedimensions.journal", InputConstants.UNKNOWN.getValue(), KEYS);
-	private static final KeyMapping OPEN_SETTINGS = new KeyMapping("key.extremedimensions.settings", InputConstants.UNKNOWN.getValue(), KEYS);
-	private static final KeyMapping OPEN_TRIALS = new KeyMapping("key.extremedimensions.trials", InputConstants.UNKNOWN.getValue(), KEYS);
-
 	@Override
 	public void onInitializeClient() {
 		ClientOptions.load();
-		KeyMappingHelper.registerKeyMapping(OPEN_CURSES);
-		KeyMappingHelper.registerKeyMapping(OPEN_JOURNAL);
-		KeyMappingHelper.registerKeyMapping(OPEN_SETTINGS);
-		KeyMappingHelper.registerKeyMapping(OPEN_TRIALS);
-		// Key mappings only register presses while no screen is open, so these never open over another screen
-		ClientTickEvents.END_CLIENT_TICK.register(client -> {
-			while (OPEN_SETTINGS.consumeClick()) {
-				client.gui.setScreen(new SettingsScreen(null));
-			}
-			while (OPEN_CURSES.consumeClick()) {
-				if (client.getConnection() != null && ClientState.modOnServer()) {
-					ClientPlayNetworking.send(new ModPackets.RequestCursesPayload(true));
-				}
-			}
-			while (OPEN_TRIALS.consumeClick()) {
-				if (client.getConnection() != null && ClientState.modOnServer()) {
-					com.extremedimensions.client.screen.TrialsScreen.request(null);
-				}
-			}
-			while (OPEN_JOURNAL.consumeClick()) {
-				if (client.getConnection() != null && ClientState.modOnServer()) {
-					ClientPlayNetworking.send(new ModPackets.RequestJournalPayload());
-				}
-			}
-		});
+		// The mod's keys (see ModKeys): the screens they open, and a word on them after the first join
+		ModKeys.register();
+		ClientTickEvents.END_CLIENT_TICK.register(ModKeys::tick);
+		// The cards under the crosshair and the guide card, put away on a key or (the first two) by moving
+		ClientTickEvents.END_CLIENT_TICK.register(com.extremedimensions.client.hud.PutAway::tick);
 		ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
 			Menus.shown(screen);
 			ScreenEvents.remove(screen).register(Menus::gone);
@@ -124,10 +92,11 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
 						com.extremedimensions.client.hud.BindingPanel.draw(smithing, graphics, client.font));
 			}
-			// In danger, the pause menu says so above its title: its button to leave would cost curses
+			// In danger, the pause menu says so above its title: its button to leave would cost curses, and asks first
 			if (screen instanceof net.minecraft.client.gui.screens.PauseScreen) {
 				ScreenEvents.afterBackground(screen).register((s, graphics, mouseX, mouseY, tickProgress) ->
 						com.extremedimensions.client.hud.DangerChip.pause(graphics, client.font, s.width));
+				com.extremedimensions.client.hud.DangerChip.guardLeave(screen);
 			}
 		});
 
@@ -150,6 +119,8 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.fx.BossCinema::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.state.ClientDanger::reset));
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.hud.CollapseRecap::reset));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(JournalScreen::forget));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> client.execute(com.extremedimensions.client.hud.PutAway::reset));
 		HudElementRegistry.addLast(ExtremeDimensions.id("charge_hud"), new ChargeHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("stomach_hud"), new StomachHud());
 		HudElementRegistry.addLast(ExtremeDimensions.id("boss_cinema"), new com.extremedimensions.client.fx.BossCinema());
@@ -240,11 +211,15 @@ public class ExtremeDimensionsClient implements ClientModInitializer {
 						new PenaltyChoiceScreen(Arrays.asList(payload.ids().split(","))))));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.CursesPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> CursesScreen.receive(payload.data(), payload.open())));
+		// (it opens where it was left this session, 3.55.0)
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.OpenJournalPayload.TYPE, (payload, context) ->
-				context.client().execute(() -> Minecraft.getInstance().gui.setScreen(
-						new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))), payload.beasts(), payload.ledger(),
-								new HashSet<>(Arrays.asList(payload.notes().split(","))), payload.path(), payload.clan(), payload.anchors(),
-								JournalButton.takeReturn()))));
+				context.client().execute(() -> {
+					JournalScreen journal = new JournalScreen(new HashSet<>(Arrays.asList(payload.ids().split(","))), payload.beasts(), payload.ledger(),
+							new HashSet<>(Arrays.asList(payload.notes().split(","))), payload.path(), payload.clan(), payload.anchors(),
+							payload.hints(), JournalButton.takeReturn());
+					journal.resume();
+					Minecraft.getInstance().gui.setScreen(journal);
+				}));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.BossFxPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> com.extremedimensions.client.fx.BossCinema.handle(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ModPackets.AttackFxPayload.TYPE, (payload, context) ->

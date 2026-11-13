@@ -6,11 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.extremedimensions.client.ModKeys;
 import com.extremedimensions.client.inventory.CursesButton;
 import com.extremedimensions.client.ui.Ui;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.Penalty.Group;
+
+import com.mojang.blaze3d.platform.InputConstants;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
@@ -23,6 +26,7 @@ import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.InputWithModifiers;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
 import net.minecraft.network.chat.Component;
@@ -126,14 +130,87 @@ public class CursesScreen extends Screen {
 		}
 	}
 
-	/** A Curses payload arrived: open the screen, or refresh it if it is already open. */
+	/** When the Pact key asked for the curses (3.55.0): the answer that follows opens the pact instead of this screen. */
+	private static long pactAskedAt;
+
+	/** The Pact key: the pact needs the curses carried, so they are asked for first (see {@link #receive}). */
+	public static void requestPact() {
+		pactAskedAt = System.currentTimeMillis();
+		ClientPlayNetworking.send(new ModPackets.RequestCursesPayload(true));
+	}
+
+	/** A Curses payload arrived: open the screen (or the pact, for its key), or refresh it if it is already open. */
 	public static void receive(String data, boolean open) {
 		Minecraft mc = Minecraft.getInstance();
-		if (open) {
+		if (open && System.currentTimeMillis() - pactAskedAt < 3000) {
+			pactAskedAt = 0;
+			Screen pact = new CursesScreen(data, null).pact(null);
+			if (pact != null) {
+				mc.gui.setScreen(pact);
+			} else {
+				// (not open in this world yet: said as the brand in the Curses screen says it)
+				com.extremedimensions.client.hud.Toasts.tell(Component.translatable("gui.extremedimensions.pact.title"),
+						Component.translatable("gui.extremedimensions.pact.locked"));
+			}
+		} else if (open) {
 			mc.gui.setScreen(new CursesScreen(data, CursesButton.takeReturn()));
 		} else if (shown != null) {
 			shown.update(data);
 		}
+	}
+
+	/**
+	 * The pact screen for the curses this screen holds, going back to parent when it closes (null: back to the game);
+	 * null while pacts are not open in this world. Its own key closes it too (3.55.0).
+	 */
+	private Screen pact(Screen parent) {
+		if (!pactData.startsWith("1")) {
+			return null;
+		}
+		Map<Penalty, int[]> carried = new HashMap<>();
+		for (Penalty p : Penalty.values()) {
+			Entry e = entry(p);
+			carried.put(p, new int[] {e.stacks(), e.max(), e.readable() ? 1 : 0});
+		}
+		return new PactScreen(parent, pactData, carried) {
+			@Override
+			public boolean keyPressed(KeyEvent event) {
+				return ModKeys.closes(this, ModKeys.PACT, event) || super.keyPressed(event);
+			}
+		};
+	}
+
+	/**
+	 * Keys (3.55.0): the Curses key closes the screen, the Pact key opens the pact, and Tab (Shift+Tab back) moves on to
+	 * the next set's tab. Escape closes it as ever.
+	 */
+	@Override
+	public boolean keyPressed(KeyEvent event) {
+		if (ModKeys.closes(this, ModKeys.CURSES, event)) {
+			return true;
+		}
+		if (ModKeys.PACT.matches(event)) {
+			Screen pact = pact(this);
+			if (pact != null) {
+				Minecraft.getInstance().gui.setScreen(pact);
+				return true;
+			}
+		}
+		if (event.key() == InputConstants.KEY_TAB) {
+			Group[] all = Group.values();
+			openTab(all[(tab.ordinal() + (ModKeys.shift(event) ? all.length - 1 : 1)) % all.length]);
+			return true;
+		}
+		return super.keyPressed(event);
+	}
+
+	/** Opens a set's tab, on the curse picked in it before or else its heaviest. */
+	private void openTab(Group group) {
+		tab = group;
+		if (selected == null || selected.group != group) {
+			selected = heaviest(group);
+		}
+		showTab();
 	}
 
 	private void update(String data) {
@@ -838,15 +915,10 @@ public class CursesScreen extends Screen {
 
 		@Override
 		public void onPress(InputWithModifiers input) {
-			if (!unlocked()) {
-				return;
+			Screen pact = pact(CursesScreen.this);
+			if (pact != null) {
+				Minecraft.getInstance().gui.setScreen(pact);
 			}
-			Map<Penalty, int[]> carried = new HashMap<>();
-			for (Penalty p : Penalty.values()) {
-				Entry e = entry(p);
-				carried.put(p, new int[] {e.stacks(), e.max(), e.readable() ? 1 : 0});
-			}
-			Minecraft.getInstance().gui.setScreen(new PactScreen(CursesScreen.this, pactData, carried));
 		}
 
 		@Override
@@ -1185,11 +1257,7 @@ public class CursesScreen extends Screen {
 
 		@Override
 		public void onPress(InputWithModifiers input) {
-			tab = group;
-			if (selected == null || selected.group != group) {
-				selected = heaviest(group);
-			}
-			showTab();
+			openTab(group);
 		}
 
 		@Override

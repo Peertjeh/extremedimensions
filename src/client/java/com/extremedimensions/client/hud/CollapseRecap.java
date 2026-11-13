@@ -21,7 +21,8 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElement;
  * After a Collapse (or a throw out of the Seam), once the player is home and has chosen what it cost: what happened, on
  * a card in the Seam briefing's look (see {@link SeamBriefing#card}). A title and four lines: how long they were away,
  * how far out they went, why the charge ran out faster, and what it cost. It waits while the screen is still dark from
- * the Collapse, fades in, stays long enough to read and fades out; it never takes a click. The server sends it
+ * the Collapse, fades in, stays long enough to read and fades out; it never takes a click, but it can be put away
+ * (3.55.0): on a key, or by moving once it has shown three seconds (see PutAway). The server sends it
  * ({@code collapse_recap}, see ExpeditionRecord).
  */
 public class CollapseRecap implements HudElement {
@@ -59,10 +60,18 @@ public class CollapseRecap implements HudElement {
 		return System.currentTimeMillis() - start;
 	}
 
+	/** Whether the card was put away, and fades out (3.55.0); known by when it came. */
+	private static final PutAway.Card CARD = new PutAway.Card();
+
 	/** Whether the card is on the screen now (the guide card steps aside for it). */
 	public static boolean showing() {
 		long t = elapsed();
-		return t >= 0 && t <= SHOW_MS && !SeamBriefing.showing();
+		return t >= 0 && t <= SHOW_MS && !SeamBriefing.showing() && !CARD.gone(at, System.currentTimeMillis());
+	}
+
+	/** A tick while it shows: the key, or a step after three seconds, puts it away. */
+	static void watch(long now, boolean key, net.minecraft.client.player.LocalPlayer player) {
+		CARD.watch(at, now, key, player);
 	}
 
 	@Override
@@ -71,7 +80,8 @@ public class CollapseRecap implements HudElement {
 		if (t < 0) {
 			return;
 		}
-		if (t > SHOW_MS) {
+		long now = System.currentTimeMillis();
+		if (t > SHOW_MS || CARD.gone(at, now)) {
 			reset();
 			return;
 		}
@@ -79,7 +89,7 @@ public class CollapseRecap implements HudElement {
 		if (SeamBriefing.showing()) {
 			return;
 		}
-		double alpha = Math.min(Ui.ease(t / (double) FADE_IN_MS), Ui.clamp01((SHOW_MS - t) / (double) FADE_OUT_MS));
+		double alpha = Math.min(Ui.ease(t / (double) FADE_IN_MS), Ui.clamp01((SHOW_MS - t) / (double) FADE_OUT_MS)) * CARD.fade(at, now);
 		Minecraft mc = Minecraft.getInstance();
 		Font font = mc.font;
 		float scale = ClientOptions.hudScale() / 100f;

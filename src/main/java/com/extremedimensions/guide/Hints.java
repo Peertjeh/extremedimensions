@@ -26,6 +26,10 @@ import net.minecraft.world.item.Items;
  * tutorial tells a new player what to do. Each comes once per player. The world turns them off with {@code hints} = 0,
  * each player for themselves under Settings, Display. A player who walked part of the way before the hints existed is
  * not told what they already know.
+ *
+ * <p>Since 3.55.0 a hint counts as told only once the player's game says it showed it ({@link #shown}): one switched
+ * off in a player's own settings is offered once a visit and kept back for when they switch hints on again. The
+ * hints told are listed in the journal, under its guides, to be read again.
  */
 public final class Hints {
 	private Hints() {}
@@ -80,17 +84,54 @@ public final class Hints {
 		}
 	}
 
-	/** The player meets this part of the mod: the hint comes, if it is their first time and hints are on. */
+	/**
+	 * The player meets this part of the mod: the hint goes to their game, if it is their first time and hints are on.
+	 * It is told once the game showed it (see {@link #shown}); until then it is not sent again this visit.
+	 */
 	public static void meet(ServerPlayer p, Hint h) {
 		if (Config.HINTS <= 0 || p.isSpectator()) {
 			return;
 		}
 		PlayerData d = DataStore.get(p.getUUID());
-		if (!d.hints.add(h.key())) {
+		if (d.hints.contains(h.key()) || !sent(d).add(h.key())) {
 			return;
 		}
-		DataStore.markDirty();
 		WorldFx.fx(p, Fx.HINT, h.ordinal());
+	}
+
+	/** The player's game showed this hint (by its ordinal): told now, and kept for the journal. Only one it was sent. */
+	public static void shown(ServerPlayer p, int ordinal) {
+		Hint[] all = Hint.values();
+		if (ordinal < 0 || ordinal >= all.length) {
+			return;
+		}
+		PlayerData d = DataStore.get(p.getUUID());
+		String key = all[ordinal].key();
+		if (sent(d).remove(key) && d.hints.add(key)) {
+			DataStore.markDirty();
+		}
+	}
+
+	/** Whether this hint was told the player, or sent to their game this visit (and so is not sent again). */
+	public static boolean offered(ServerPlayer p, Hint h) {
+		return had(DataStore.get(p.getUUID()), h);
+	}
+
+	private static boolean had(PlayerData d, Hint h) {
+		return d.hints.contains(h.key()) || sent(d).contains(h.key());
+	}
+
+	/** The hints sent this visit and not shown yet (made where a player's data was read without it). */
+	private static java.util.Set<String> sent(PlayerData d) {
+		if (d.hintsOffered == null) {
+			d.hintsOffered = new java.util.HashSet<>();
+		}
+		return d.hintsOffered;
+	}
+
+	/** The hints told the player, in the order they came, as the journal is sent them ("collapse,curse,..."). */
+	public static String told(PlayerData d) {
+		return String.join(",", d.hints);
 	}
 
 	/** An advancement was earned: the hint its moment brings, if any. */
@@ -114,15 +155,14 @@ public final class Hints {
 		}
 		boolean fresh = Guide.progress(d) < Guide.ANCHOR;
 		if (Dims.OVERWORLD.equals(Dims.of(p)) && p.level() instanceof ServerLevel level) {
-			if (fresh && !d.hints.contains(Hint.PORTAL.key()) && AnchorPaths.findPortal(level, p.blockPosition(), Dims.NETHER) != null) {
+			if (fresh && !had(d, Hint.PORTAL) && AnchorPaths.findPortal(level, p.blockPosition(), Dims.NETHER) != null) {
 				meet(p, Hint.PORTAL);
 			}
-			if (!d.hints.contains(Hint.END_PORTAL.key()) && !endAnchor(p) && AnchorPaths.findPortal(level, p.blockPosition(), Dims.END) != null) {
+			if (!had(d, Hint.END_PORTAL) && !endAnchor(p) && AnchorPaths.findPortal(level, p.blockPosition(), Dims.END) != null) {
 				meet(p, Hint.END_PORTAL);
 			}
 		}
-		if (d.hints.contains(Hint.FRAGMENT.key()) && d.hints.contains(Hint.RELIC.key()) && d.hints.contains(Hint.NEEDLE.key())
-				&& d.hints.contains(Hint.SILK.key()) && (!fresh || d.hints.contains(Hint.LODESTONE.key()))) {
+		if (had(d, Hint.FRAGMENT) && had(d, Hint.RELIC) && had(d, Hint.NEEDLE) && had(d, Hint.SILK) && (!fresh || had(d, Hint.LODESTONE))) {
 			return;
 		}
 		var inv = p.getInventory();
@@ -157,10 +197,12 @@ public final class Hints {
 	}
 
 	/**
-	 * Once per player, on joining: what they already know from before the hints existed is marked as told (a new
-	 * player knows nothing yet, and so is told everything in its time).
+	 * On joining: what was sent and never shown may be sent again; and once per player, what they already know from
+	 * before the hints existed is marked as told (a new player knows nothing yet, and so is told everything in its time).
 	 */
 	public static void known(ServerPlayer p, PlayerData d) {
+		// (a new visit: what was sent before and never shown may be sent again)
+		sent(d).clear();
 		if (d.hintsChecked) {
 			return;
 		}

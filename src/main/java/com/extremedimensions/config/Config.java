@@ -1025,6 +1025,8 @@ public final class Config {
 	public static int SPINDLE_FRAGMENTS = 2;
 	public static int SPINDLE_SILK = 1;
 	public static int SPINDLE_TURNS = 8;
+	/** 1: a redstone pulse turns the Spindle once, as an empty hand does (3.55.0), so a machine can work it; 0: hands only. */
+	public static int SPINDLE_REDSTONE = 1;
 	/** 1: Tetherite that falls out of the bottom of a world comes back to its owner; 0: the void keeps it. */
 	public static int TETHERITE_TETHERED = 1;
 	/** How far below the bottom of a world a Tetherite item falls before it is drawn back. */
@@ -1994,7 +1996,8 @@ public final class Config {
 			"elder_arena_phases", "elder_cores", "elder_isle_fall", "elder_pierce", "matriarch_hex_milk", "starved_arena", "coop_revive",
 			"coop_fallen_locked", "coop_burden", "coop_shared_anchors", "tribe_enabled", "tribe_raid", "clan_enabled",
 			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders", "playtest_log", "pale_reach",
-			"pale_hauler_enabled", "pale_squall", "pale_home_calm", "relic_single_use");
+			"pale_hauler_enabled", "pale_squall", "pale_home_calm", "relic_single_use",
+			"spindle_redstone");
 
 	/** Whether this setting is a switch (1 on, 0 off) rather than a number. */
 	public static boolean isSwitch(String key) {

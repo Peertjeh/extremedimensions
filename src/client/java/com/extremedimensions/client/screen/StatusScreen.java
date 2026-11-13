@@ -10,7 +10,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/** Anchor status (sneak + empty hand on an anchor): your charge here, your record and your marks. */
+/** Anchor status (sneak + empty hand on an anchor, or its key): your charge here, your record and your marks. */
 public class StatusScreen extends Screen {
 	private static final int PANEL_W = 250;
 	private static final int PANEL_H = 222;
@@ -76,10 +76,10 @@ public class StatusScreen extends Screen {
 		int ty = y + 128;
 		g.text(this.font, Ui.tr("gui.extremedimensions.curses.title"), x + 14, ty, Ui.argb(pe, Ui.SOUL));
 		String drain = Ui.tr("hud.extremedimensions.drain", String.format("%.1f", ClientState.drainX100 / 100.0));
-		g.text(this.font, drain, x + PANEL_W - 14 - this.font.width(drain), ty, Ui.argb(pe, ClientState.drainX100 > 100 ? Ui.WARN : Ui.MUTED));
+		g.text(this.font, drain, x + PANEL_W - 14 - this.font.width(drain), ty, Ui.argb(pe, ClientState.drainX100 > 100 ? Ui.warn() : Ui.MUTED));
 		int ly = ty + 12;
 		if (ClientState.marks.isEmpty()) {
-			g.text(this.font, Ui.tr("gui.extremedimensions.status.clean"), x + 20, ly, Ui.argb(pe, Ui.OK));
+			g.text(this.font, Ui.tr("gui.extremedimensions.status.clean"), x + 20, ly, Ui.argb(pe, Ui.good()));
 			return;
 		}
 		int shown = 0;
@@ -89,7 +89,7 @@ public class StatusScreen extends Screen {
 				break;
 			}
 			String name = (m.penalty() != null ? Ui.tr(m.penalty().nameKey()) : m.id()) + " " + m.stacks() + "/" + m.max();
-			g.text(this.font, "◆ " + name, x + 20, ly, Ui.argb(pe, Ui.WARN));
+			g.text(this.font, "◆ " + name, x + 20, ly, Ui.argb(pe, Ui.warn()));
 			ly += 11;
 			shown++;
 		}
@@ -114,6 +114,12 @@ public class StatusScreen extends Screen {
 		String t = Ui.time(seconds);
 		g.text(this.font, t, x + bw - this.font.width(t), y, Ui.argb(alpha, color));
 		Ui.meter(g, x, y + 12, bw, 7, seconds / Math.max(Config.MAX_CHARGE, value), color, alpha, true);
+	}
+
+	/** Its own key closes it (3.55.0), as Escape does. */
+	@Override
+	public boolean keyPressed(net.minecraft.client.input.KeyEvent event) {
+		return com.extremedimensions.client.ModKeys.closes(this, com.extremedimensions.client.ModKeys.STATUS, event) || super.keyPressed(event);
 	}
 
 	public boolean isPauseScreen() {

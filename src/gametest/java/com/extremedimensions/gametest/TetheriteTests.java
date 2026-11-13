@@ -208,6 +208,51 @@ public class TetheriteTests {
 		helper.succeed();
 	}
 
+	/**
+	 * A redstone pulse turns a loaded Spindle once, as an empty hand does (3.55.0): a signal held turns it no more, a
+	 * fresh pulse turns it again, the last turn gives the cord, and with {@code spindle_redstone} off a pulse does nothing.
+	 */
+	@GameTest
+	public void theSpindleTurnsOnARedstonePulse(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos rel = new BlockPos(1, 1, 1), at = helper.absolutePos(rel), beside = rel.east();
+		helper.setBlock(rel, ModBlocks.SPINDLE.defaultBlockState().setValue(SpindleBlock.FRAGMENTS, SpindleBlock.fragmentsPerCord())
+				.setValue(SpindleBlock.SILK, SpindleBlock.silkPerCord()));
+		int turns = SpindleBlock.turnsPerCord();
+		AABB above = new AABB(at).inflate(1.5);
+		// the first pulse: one turn (or, where a cord takes a single turn, the cord)
+		helper.setBlock(beside, net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK.defaultBlockState());
+		BlockState first = level.getBlockState(at);
+		check(helper, first.getValue(SpindleBlock.POWERED), "the spindle did not feel the signal");
+		check(helper, first.getValue(SpindleBlock.SPUN) == (turns > 1 ? 1 : 0), "a pulse turned it to %s", first.getValue(SpindleBlock.SPUN));
+		// held on: another block set beside it turns it no more
+		helper.setBlock(rel.west(), net.minecraft.world.level.block.Blocks.STONE.defaultBlockState());
+		check(helper, level.getBlockState(at).getValue(SpindleBlock.SPUN) == first.getValue(SpindleBlock.SPUN), "a signal held turned it again");
+		// the rest of the turns, a pulse each: the last gives the cord, as the hand's last turn does
+		for (int i = 1; i < turns; i++) {
+			helper.setBlock(beside, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+			check(helper, !level.getBlockState(at).getValue(SpindleBlock.POWERED), "the signal gone, the spindle still feels it");
+			helper.setBlock(beside, net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK.defaultBlockState());
+		}
+		BlockState done = level.getBlockState(at);
+		check(helper, !level.getEntitiesOfClass(ItemEntity.class, above, e -> e.getItem().is(ModItems.TETHER_CORD)).isEmpty(),
+				"%s pulses gave no cord", turns);
+		check(helper, done.getValue(SpindleBlock.FRAGMENTS) == 0 && done.getValue(SpindleBlock.SPUN) == 0, "after the cord the spindle kept %s", done);
+		// switched off for the world, a pulse turns a loaded spindle no more
+		int was = com.extremedimensions.config.Config.SPINDLE_REDSTONE;
+		try {
+			com.extremedimensions.config.Config.SPINDLE_REDSTONE = 0;
+			helper.setBlock(beside, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState());
+			helper.setBlock(rel, ModBlocks.SPINDLE.defaultBlockState().setValue(SpindleBlock.FRAGMENTS, SpindleBlock.fragmentsPerCord())
+					.setValue(SpindleBlock.SILK, SpindleBlock.silkPerCord()));
+			helper.setBlock(beside, net.minecraft.world.level.block.Blocks.REDSTONE_BLOCK.defaultBlockState());
+			check(helper, level.getBlockState(at).getValue(SpindleBlock.SPUN) == 0, "switched off, a pulse still turned the spindle");
+		} finally {
+			com.extremedimensions.config.Config.SPINDLE_REDSTONE = was;
+		}
+		helper.succeed();
+	}
+
 	/** The full set eases the drain; three pieces do not. */
 	@GameTest
 	public void theFullSetEasesTheDrain(GameTestHelper helper) {

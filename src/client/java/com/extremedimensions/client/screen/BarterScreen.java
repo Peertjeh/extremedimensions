@@ -61,11 +61,19 @@ public class BarterScreen extends Screen {
 	/** The barter screen open now, if any. */
 	private static BarterScreen shown;
 
-	/** Opens the screen, or refreshes it in place after a barter (without playing its opening again). */
+	/**
+	 * Opens the screen, or refreshes it in place after a barter (without playing its opening again, and on the page of
+	 * wares it was on, 3.55.0).
+	 */
 	public static void show(int young, int rep, String data) {
 		BarterScreen before = shown;
-		long openAt = before != null && before.young == young ? before.openAt : System.currentTimeMillis();
+		boolean same = before != null && before.young == young;
+		long openAt = same ? before.openAt : System.currentTimeMillis();
 		BarterScreen next = new BarterScreen(young, rep, data, openAt);
+		if (same) {
+			// (init keeps it within the pages there are now)
+			next.page = before.page;
+		}
 		Minecraft.getInstance().gui.setScreen(next);
 		shown = next;
 	}
@@ -78,14 +86,20 @@ public class BarterScreen extends Screen {
 		}
 	}
 
+	/**
+	 * A standing's colour, from blood red to the soul's teal; with the colour-blind option (3.55.0) colours that stay apart
+	 * for every kind of colour blindness (Okabe-Ito: vermillion, orange, yellow, sky blue, reddish purple). The level is
+	 * always named beside it.
+	 */
 	private static int colour(Standing.Level level) {
+		boolean cb = com.extremedimensions.client.options.ClientOptions.colourBlind();
 		return switch (level) {
-			case HUNTED -> Ui.BLOOD;
-			case HATED -> Ui.DANGER;
+			case HUNTED -> cb ? 0xD55E00 : Ui.BLOOD;
+			case HATED -> cb ? 0xE69F00 : Ui.DANGER;
 			case WARY -> Ui.MUTED;
-			case TOLERATED -> Ui.WARN;
-			case TRUSTED -> Ui.OK;
-			case KIN -> Ui.SOUL;
+			case TOLERATED -> Ui.warn();
+			case TRUSTED -> Ui.good();
+			case KIN -> cb ? 0xCC79A7 : Ui.SOUL;
 		};
 	}
 
@@ -179,7 +193,10 @@ public class BarterScreen extends Screen {
 			// What it wants
 			g.fakeItem(new ItemStack(o.ware().want()), x + 14, ry);
 			int have = have(o.ware().want());
-			g.text(this.font, "×" + o.price(), x + 32, ry + 5, Ui.argb(pe, have >= o.price() ? Ui.PARCHMENT : Ui.DANGER));
+			// too few to pay: red, and (colour-blind, 3.55.0) a cross beside the price, so the colour does not say it alone
+			boolean lacking = have < o.price();
+			String price = "×" + o.price() + (lacking && com.extremedimensions.client.options.ClientOptions.colourBlind() ? "✗" : "");
+			g.text(this.font, price, x + 32, ry + 5, Ui.argb(pe, lacking ? Ui.danger() : Ui.PARCHMENT));
 			g.text(this.font, "→", x + 58, ry + 5, Ui.argb(pe, Ui.MUTED));
 			// What it gives
 			ItemStack give = new ItemStack(o.ware().give(), o.ware().count());
@@ -188,7 +205,7 @@ public class BarterScreen extends Screen {
 					: (o.ware().count() > 1 ? o.ware().count() + "× " : "") + give.getHoverName().getString();
 			g.text(this.font, Ui.ellipsize(this.font, giveName, PANEL_W - 190), x + 92, ry, Ui.argb(pe, kin ? Ui.SOUL : Ui.PARCHMENT));
 			g.text(this.font, Ui.tr("gui.extremedimensions.barter.left", o.left(), o.ware().uses()), x + 92, ry + 10,
-					Ui.argb(pe, o.left() > 0 ? Ui.MUTED : Ui.WARN));
+					Ui.argb(pe, o.left() > 0 ? Ui.MUTED : Ui.warn()));
 		}
 		int hy = y + panelH() - FOOT + 2;
 		int cost = Math.max(0, com.extremedimensions.config.Config.TRIBE_BARTER_STANDING_COST);

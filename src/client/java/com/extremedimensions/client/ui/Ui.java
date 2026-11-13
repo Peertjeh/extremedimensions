@@ -75,6 +75,25 @@ public final class Ui {
 		};
 	}
 
+	/**
+	 * The colours that tell how things stand (3.55.0): good, a warning, danger, as the HUD's meters and the barter's
+	 * standing show them. With the colour-blind option they take colours that stay apart for every kind of colour
+	 * blindness and differ in brightness too (Okabe-Ito: sky blue, yellow, vermillion), not the green, yellow and red a
+	 * red-green colour-blind player cannot tell apart; where the colour alone would carry the meaning, a mark or the
+	 * words go with it.
+	 */
+	public static int good() {
+		return com.extremedimensions.client.options.ClientOptions.colourBlind() ? 0x56B4E9 : OK;
+	}
+
+	public static int warn() {
+		return com.extremedimensions.client.options.ClientOptions.colourBlind() ? 0xF0E442 : WARN;
+	}
+
+	public static int danger() {
+		return com.extremedimensions.client.options.ClientOptions.colourBlind() ? 0xD55E00 : DANGER;
+	}
+
 	/** The Abyssal curses' violet, the crack through their cards (colour-blind: the palette's deep blue). */
 	public static int abyss() {
 		return com.extremedimensions.client.options.ClientOptions.colourBlind() ? 0x0072B2 : 0x9B5CFF;
