@@ -87,7 +87,7 @@ values from the same screen.
 - Play a normal **Survival** world, not Hardcore: Hardcore makes you a spectator on death, and the mod gives death its
   own consequences instead
 
-**Works with** Sodium, Iris, Mod Menu, Text Placeholder API, JEI, Jade (anchor charge, Lurker moods and more in its tooltip) and JourneyMap (your anchors as waypoints), all tested in CI on every build, with a shader pack (Solas) switched on in the Seam.
+**Works with** Sodium, Iris, Mod Menu, Text Placeholder API, JEI, Jade (anchor charge, Lurker moods and more in its tooltip) JourneyMap and Xaero's Minimap (your anchors as waypoints), all tested in CI on every build, with a shader pack (Solas) switched on in the Seam.
 
 **Languages:** English and Dutch.
 
