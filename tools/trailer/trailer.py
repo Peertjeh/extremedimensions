@@ -30,24 +30,24 @@ CUT = [
     ("card", ["Every wound remembers."], 2.4, None),
     ("shot", "00_title", 2.4, "hold"),
     ("card", ["Your time beyond", "is the charge you stored."], 2.4, None),
-    ("shot", "25_portal_near", 2.0, "in"),
+    ("shot", "25_portal_night", 2.0, "in"),
     ("shot", "03_curses_beyond", 2.4, "hold"),
     ("card", ["Run out,", "and you come home cursed."], 2.2, None),
     ("card", ["A fourth world waits", "behind a needle's tear."], 2.4, None),
-    ("shot", "35_seam_arrival", 2.2, "in"),
-    ("shot", "17_seam_risen", 2.2, "left"),
-    ("shot", "19_gate_far", 2.0, "in"),
-    ("shot", "19_island_under", 2.0, "right"),
-    ("shot", "18_colossus_cathedral_corner", 1.8, "in"),
-    ("shot", "18_colossus_cluster_close", 1.8, "left"),
-    ("shot", "20_island_halo", 1.8, "in"),
-    ("shot", "19_interior_cathedral", 1.8, "in"),
-    ("shot", "26_frayed_ray_dive", 2.0, "right"),
+    ("shot", "17_seam_risen", 2.2, "in"),
+    ("shot", "19_gate_front", 2.0, "left"),
+    ("shot", "19_gate_far", 2.0, "right"),
+    ("shot", "19_island_under", 1.8, "in"),
+    ("shot", "18_colossus_cathedral_close", 1.7, "in"),
+    ("shot", "18_colossus_citadel_corner", 1.6, "left"),
+    ("shot", "20_island_halo", 1.6, "in"),
+    ("shot", "20_island_village_close", 1.6, "right"),
+    ("shot", "15_fray_knot", 1.8, "in"),
+    ("shot", "26_frayed_ray_dive", 2.0, "left"),
     ("card", ["Something watches", "from the dark."], 2.2, None),
     ("shot", "06_tribe_0", 1.8, "in"),
-    ("shot", "06_face_lurker", 1.4, "in"),
-    ("shot", "06_face_keeper", 1.4, "in"),
-    ("shot", "06_seamkin", 1.6, "right"),
+    ("shot", "06_tribe_2", 1.4, "in"),
+    ("shot", "06_face_keeper", 1.2, "in"),
     ("card", ["Four Elders.", "One Starved One."], 2.0, None),
     ("shot", "12_fight_matriarch_arrives", 1.3, "in"),
     ("shot", "12_fight_matriarch_barrage", 1.2, "left"),
@@ -55,13 +55,12 @@ CUT = [
     ("shot", "12_fight_ferryman_bells", 1.2, "right"),
     ("shot", "12_fight_weaver_arrives", 1.2, "in"),
     ("shot", "12_fight_weaver_lance", 1.2, "left"),
-    ("shot", "12_fight_pale_mason_walls", 1.2, "in"),
+    ("shot", "12_fight_pale_mason_arrives", 1.2, "in"),
     ("shot", "12_fight_pale_mason_pillars", 1.2, "right"),
-    ("shot", "39_knot_mother_whole", 1.4, "in"),
+    ("shot", "35_heart_rise_claws", 1.4, "in"),
     ("shot", "35_heart_risen", 1.8, "in"),
-    ("shot", "35_heart_crown", 1.8, "left"),
     ("card", ["An ending that changes", "your world for good."], 2.4, None),
-    ("shot", "41_weavers_loom", 2.0, "in"),
+    ("shot", "35_heart_crown", 2.2, "left"),
     ("shot", "43_tapestry_finished", 2.2, "hold"),
     ("end", ["EXTREME DIMENSIONS"], 5.0, None),
 ]
@@ -69,20 +68,20 @@ CUT = [
 # The store gallery: (part of the name, title)
 GALLERY = [
     ("17_seam_risen", "The Seam: a fourth world under a sky of nebulae"),
-    ("19_gate_far", "A monumental gate holds your rift"),
-    ("18_colossus_cathedral_corner", "Colossal spires of the Thinned"),
-    ("20_island_village", "Villages of the Thinned, who only move while you are not looking"),
-    ("19_interior_cathedral", "Furnished halls, with storerooms"),
-    ("26_frayed_ray_dive", "Veil Rays, and the Fray beneath"),
+    ("19_gate_front", "A monumental gate holds your rift"),
+    ("19_gate_far", "Floating islands as far as the eye can see"),
+    ("18_colossus_cathedral_close", "Colossal spires of the Thinned"),
+    ("20_island_village_close", "Villages of the Thinned, who move only unseen"),
+    ("26_frayed_ray_dive", "Veil Rays over the Fray"),
     ("06_tribe_0", "The tribe watches from the dark"),
     ("12_fight_matriarch_arrives", "The Matriarch"),
     ("12_fight_ferryman_tide", "The Ferryman"),
     ("12_fight_weaver_lance", "The Last Weaver"),
-    ("12_fight_pale_mason_walls", "The Pale Mason"),
-    ("39_knot_mother_whole", "The Knot-Mother"),
-    ("35_heart_risen", "The Starved One, in the Heart of the Seam"),
+    ("12_fight_pale_mason_arrives", "The Pale Mason"),
+    ("35_heart_risen", "The Starved One wakes in the Heart of the Seam"),
+    ("35_heart_crown", "The Heart's crown"),
     ("03_curses_beyond", "92 curses, and 24 Abyssal ones beneath"),
-    ("43_tapestry_finished", "After the ending: a tapestry you weave"),
+    ("00_title", "Its own title screen and music"),
 ]
 
 
@@ -198,7 +197,10 @@ def main():
     for i, (im, title) in enumerate(picked):
         x, y = pad + (i % cols) * (tw + pad), 70 + pad + (i // cols) * (th + 56 + pad)
         sheet.paste(im.resize((tw, th), Image.LANCZOS), (x, y))
-        d.text((x, y + th + 10), f"{i + 1}. {title}", font=font(SANS, 24), fill=(214, 200, 190))
+        label, f24 = f"{i + 1}. {title}", font(SANS, 24)
+        while d.textlength(label, font=f24) > tw and len(label) > 4:
+            label = label[:-2].rstrip() + "…"
+        d.text((x, y + th + 10), label, font=f24, fill=(214, 200, 190))
     sheet.save(os.path.join(out, "gallery_sheet.jpg"), "JPEG", quality=88)
     print("gallery:", len(picked), "shots")
 
