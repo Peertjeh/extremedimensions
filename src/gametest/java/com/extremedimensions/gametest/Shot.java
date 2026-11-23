@@ -49,12 +49,14 @@ final class Shot {
 	private static java.lang.reflect.Field hideField;
 	private static Object hideOwnerKind;
 	private static boolean hideLooked;
+	/** The switch found says whether the HUD shows, not whether it is hidden. */
+	private static boolean inverted;
 
 	/** Whether the HUD is hidden (F1); where 26.3 keeps that switch is looked up once, by name. */
 	private static boolean hudHidden(net.minecraft.client.Minecraft mc) {
 		Object owner = hideOwner(mc);
 		try {
-			return owner != null && hideField.getBoolean(owner);
+			return owner != null && hideField.getBoolean(owner) != inverted;
 		} catch (ReflectiveOperationException e) {
 			return false;
 		}
@@ -66,14 +68,15 @@ final class Shot {
 			return;
 		}
 		try {
-			hideField.setBoolean(owner, hide);
+			hideField.setBoolean(owner, hide != inverted);
 		} catch (ReflectiveOperationException e) {
 			System.out.println("SHOT-SIZE cannot hide the HUD: " + e);
 		}
 	}
 
 	private static Object hideOwner(net.minecraft.client.Minecraft mc) {
-		Object[] owners = { mc.options, mc.gui, mc };
+		// (26.3: the HUD is its own object under the Gui; earlier games kept the switch on the options)
+		Object[] owners = { mc.gui.hud, mc.options, mc.gui, mc };
 		if (!hideLooked) {
 			hideLooked = true;
 			StringBuilder seen = new StringBuilder();
@@ -82,12 +85,17 @@ final class Shot {
 					for (java.lang.reflect.Field f : c.getDeclaredFields()) {
 						String n = f.getName().toLowerCase(java.util.Locale.ROOT);
 						if (f.getType() == boolean.class && !java.lang.reflect.Modifier.isStatic(f.getModifiers())
-								&& (n.contains("hide") || n.contains("hidden"))) {
+								&& (n.contains("hide") || n.contains("hidden") || n.contains("visible") || n.contains("shown"))) {
 							seen.append(c.getSimpleName()).append('.').append(f.getName()).append(' ');
-							if ((n.contains("hide") && (n.contains("gui") || n.contains("hud"))) || n.equals("hidden") || n.equals("hudhidden")) {
+							boolean onHud = i == 0;
+							boolean hides = (n.contains("hide") && (onHud || n.contains("gui") || n.contains("hud")))
+									|| (n.contains("hidden") && (onHud || n.contains("gui") || n.contains("hud") || n.equals("hidden")));
+							boolean shows = onHud && (n.equals("visible") || n.equals("shown") || n.equals("isvisible"));
+							if (hides || shows) {
 								f.setAccessible(true);
 								hideField = f;
 								hideOwnerKind = i;
+								inverted = shows;
 							}
 						}
 					}

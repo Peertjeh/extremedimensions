@@ -1,2 +1,1 @@
-net.minecraft.client.gui.Gui
-net.minecraft.client.Options
+net.minecraft.client.gui.Hud
