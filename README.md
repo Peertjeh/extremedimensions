@@ -9,6 +9,13 @@ the End become timed expeditions on a physical Tether; a fourth world, **the Sea
 ancient tribe watches from the dark; four Elders, a Starved One and an ending that changes the world for good; and
 after it, a tapestry you weave yourself.
 
+**[Wiki](https://peertjeh.github.io/extremedimensions/)** ·
+**[Download](https://github.com/Peertjeh/extremedimensions/releases/latest)** ·
+**[Report a problem or share an idea](https://github.com/Peertjeh/extremedimensions/issues/new/choose)** ·
+**[Discussions](https://github.com/Peertjeh/extremedimensions/discussions)**
+
+In the game, **Report a problem** at the top of the settings screen fills in your versions and mod list for you.
+
 ---
 
 ## Getting started

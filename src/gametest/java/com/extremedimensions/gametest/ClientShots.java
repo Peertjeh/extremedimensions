@@ -100,13 +100,13 @@ public class ClientShots implements FabricClientGameTest {
 		sp.getServer().runOnServer(summon::accept);
 		ctx.waitTicks(30);
 		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.holds() > formingFrom, "the view is not held on the forming " + name));
-		ctx.takeScreenshot("12_fight_" + name + "_forming_a");
+		Shot.take(ctx, "12_fight_" + name + "_forming_a");
 		ctx.waitTicks(60);
-		ctx.takeScreenshot("12_fight_" + name + "_forming_b");
+		Shot.take(ctx, "12_fight_" + name + "_forming_b");
 		measure(ctx, name + "_forming", Math.max(70, settle));
 		face(sp, name);
 		ctx.waitTicks(2);
-		ctx.takeScreenshot("12_fight_" + name + "_arrives");
+		Shot.take(ctx, "12_fight_" + name + "_arrives");
 		turns(ctx, sp, name);
 		for (int i = 0; i < blows.length; i++) {
 			int blow = blows[i];
@@ -118,7 +118,7 @@ public class ClientShots implements FabricClientGameTest {
 			standOff(sp, name, 14);
 			face(sp, name);
 			ctx.waitTicks(2);
-			ctx.takeScreenshot("12_fight_" + name + "_" + blowNames[i]);
+			Shot.take(ctx, "12_fight_" + name + "_" + blowNames[i]);
 			sp.getServer().runOnServer(s -> player(s).teleportTo(at[0], at[1], at[2]));
 			ctx.waitTicks(45);
 		}
@@ -156,7 +156,7 @@ public class ClientShots implements FabricClientGameTest {
 		int found = sp.getServer().computeOnServer(s -> elders(s, 400).size());
 		System.out.println("[domain] " + name + ": phase " + phase + " (" + found + " Elders near, " + com.extremedimensions.elder.ElderArena.count() + " arenas)");
 		check(phase == 2, "the " + name + "'s domain is in phase " + phase + " at 28% of its health, expected 2");
-		ctx.takeScreenshot("12_fight_" + name + "_domain");
+		Shot.take(ctx, "12_fight_" + name + "_domain");
 		// A core of its great piece, from a few blocks off, tied to its Elder by a thread of light
 		double[] core = sp.getServer().computeOnServer(s -> {
 			com.extremedimensions.elder.ElderBoss e = elders(s, 400).stream().findFirst().orElse(null);
@@ -180,7 +180,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runOnServer(s -> player(s).teleportTo(core[0], core[1], core[2]));
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s ~ ~ ~ facing %.1f %.1f %.1f", core[3], core[4], core[5]));
 			ctx.waitTicks(30);
-			ctx.takeScreenshot("12_fight_" + name + "_core");
+			Shot.take(ctx, "12_fight_" + name + "_core");
 		} else {
 			System.out.println("[domain] " + name + ": no core standing in the open");
 		}
@@ -194,9 +194,9 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s ~ ~ ~ facing %.1f %.1f %.1f", isle[0], (isle[1] + isle[3]) / 2,
 					isle[2]));
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("12_fight_" + name + "_isle_shadow");
+			Shot.take(ctx, "12_fight_" + name + "_isle_shadow");
 			ctx.waitTicks(30);
-			ctx.takeScreenshot("12_fight_" + name + "_isle_fall");
+			Shot.take(ctx, "12_fight_" + name + "_isle_fall");
 		}
 		// Its far reaches (beyond the world loaded round the player) wait for their part of the world
 		int held = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting());
@@ -206,7 +206,7 @@ public class ClientShots implements FabricClientGameTest {
 		sp.getServer().runOnServer(s -> player(s).teleportTo(mid[0], mid[1] + 170, mid[2]));
 		sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 90");
 		ctx.waitTicks(40);
-		ctx.takeScreenshot("12_fight_" + name + "_arena");
+		Shot.take(ctx, "12_fight_" + name + "_arena");
 		// Out past its wall towards the nearest of its reaches still waiting, looking at it: the world comes in round
 		// there, and what waited for it goes up. (Which way its far towers stand differs from arena to arena. The player
 		// goes no further than 170 blocks from the middle and 40 above it, and no further than 200 from the Elder, which
@@ -234,7 +234,7 @@ public class ClientShots implements FabricClientGameTest {
 		int left = sp.getServer().computeOnServer(s -> com.extremedimensions.elder.ElderArena.waiting());
 		System.out.println("[arena] " + name + ": " + left + " still waiting once the world came in round its side");
 		check(left < held, "nothing of the " + name + "'s arena went up as the world came in round its side (" + left + " of " + held + " still waiting)");
-		ctx.takeScreenshot("12_fight_" + name + "_arena_side");
+		Shot.take(ctx, "12_fight_" + name + "_arena_side");
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
 			p.getAbilities().flying = false;
@@ -249,16 +249,16 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.waitTicks(38);
 		face(sp, name);
 		ctx.waitTicks(2);
-		ctx.takeScreenshot("12_fight_" + name + "_ultimate_a");
+		Shot.take(ctx, "12_fight_" + name + "_ultimate_a");
 		ctx.waitTicks(108);
 		face(sp, name);
 		ctx.waitTicks(2);
-		ctx.takeScreenshot("12_fight_" + name + "_ultimate_b");
+		Shot.take(ctx, "12_fight_" + name + "_ultimate_b");
 		// Its ultimate breaks and the ground is torn up (3.41): close by, then from high over the arena
 		ctx.waitTicks(60);
 		face(sp, name);
 		ctx.waitTicks(2);
-		ctx.takeScreenshot("12_fight_" + name + "_upheaval");
+		Shot.take(ctx, "12_fight_" + name + "_upheaval");
 		// (high and wide enough to clear the Matriarch's root arches and take in the whole torn ground)
 		// (no further than 200 blocks from the Elder, which may be sailing or walking the far side of its arena: beyond
 		// its reach it takes it that its prey went home)
@@ -272,7 +272,7 @@ public class ClientShots implements FabricClientGameTest {
 		moveTo(ctx, sp, over);
 		sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s ~ ~ ~ facing %.1f %.1f %.1f", mid[0], mid[1], mid[2]));
 		ctx.waitTicks(30);
-		ctx.takeScreenshot("12_fight_" + name + "_upheaval_above");
+		Shot.take(ctx, "12_fight_" + name + "_upheaval_above");
 		moveTo(ctx, sp, stood);
 		sp.getServer().runOnServer(s -> {
 			ServerPlayer p = player(s);
@@ -316,9 +316,9 @@ public class ClientShots implements FabricClientGameTest {
 		ctx.runOnClient(mc -> check(com.extremedimensions.client.fx.CameraLock.holds() > dyingFrom, "the view is not held on the dying " + name + " (" + where + ")"));
 		// (the shot at about the same moment of its death as ever)
 		ctx.waitTicks(Math.max(1, 30 - waited));
-		ctx.takeScreenshot("12_fight_" + name + "_death");
+		Shot.take(ctx, "12_fight_" + name + "_death");
 		ctx.waitTicks(66);
-		ctx.takeScreenshot("12_fight_" + name + "_death_bloom");
+		Shot.take(ctx, "12_fight_" + name + "_death_bloom");
 		ctx.waitTicks(30);
 		// Its arena is taken down at once, so the next fight builds on untouched ground
 		sp.getServer().runOnServer(s -> com.extremedimensions.elder.ElderArena.clear());
@@ -756,11 +756,11 @@ public class ClientShots implements FabricClientGameTest {
 		}
 		// The title screen: the Tether's picture in place of the panorama, its own title in place of the logo
 		ctx.waitTicks(40);
-		ctx.takeScreenshot("00_title");
+		Shot.take(ctx, "00_title");
 		// A message screen before a world: the picture behind it, darker, with a quote at the foot
 		ctx.runOnClient(mc -> mc.gui.setScreen(new GenericMessageScreen(Component.translatable("connect.joining"))));
 		ctx.waitTicks(20);
-		ctx.takeScreenshot("00_loading");
+		Shot.take(ctx, "00_loading");
 		ctx.runOnClient(mc -> mc.gui.setScreen(new TitleScreen()));
 		ctx.waitTicks(10);
 		int[] before = new int[2];
@@ -810,28 +810,28 @@ public class ClientShots implements FabricClientGameTest {
 				check(dwindled == 32, "client stack limit with Dwindling 1 is " + dwindled + ", expected 32");
 			});
 
-			ctx.takeScreenshot("01_hud");
+			Shot.take(ctx, "01_hud");
 			measure(ctx, "overworld", 100);
 			ctx.runOnClient(mc -> mc.gui.setScreen(new InventoryScreen(mc.player)));
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("02_inventory");
+			Shot.take(ctx, "02_inventory");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			// Co-op: an ally's burden (one curse full already), and the status screen with anchors opened to allies
 			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.BurdenScreen(java.util.UUID.randomUUID(), "Wren",
 					"accelerated_drain:3:4:1;cracked_armor:2:4:4;dwindling:1:3:0;glass_jaw:2:3:1;debt:1:4:0;scar:2:3:2;frailty:3:4:1;heavy_legs:1:3:3")));
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("13_burden");
+			Shot.take(ctx, "13_burden");
 			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.StatusScreen(true)));
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("13_status_shared");
+			Shot.take(ctx, "13_status_shared");
 			// The tribe: barter as kin (every ware, a relic and a cloth among them, one sold out for today)
 			ctx.runOnClient(mc -> com.extremedimensions.client.screen.BarterScreen.show(-1, 82, "100:3:1;3:10:1;0:8:2;7:2:0;5:12:1;101:12:1;102:3:1"));
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("14_barter_kin");
+			Shot.take(ctx, "14_barter_kin");
 			ctx.runOnClient(mc -> com.extremedimensions.client.screen.BarterScreen.show(-1, -34, ""));
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("14_barter_hated");
+			Shot.take(ctx, "14_barter_hated");
 			// The journal's bestiary (a creature well known, and a great one met once) and its ledger
 			com.extremedimensions.client.screen.JournalScreen[] journal = new com.extremedimensions.client.screen.JournalScreen[1];
 			ctx.runOnClient(mc -> {
@@ -845,19 +845,19 @@ public class ClientShots implements FabricClientGameTest {
 				check(pressOnce(journal[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.beasts")), "the journal has no bestiary tab");
 			});
 			ctx.waitTicks(16);
-			ctx.takeScreenshot("16_bestiary_lurker");
+			Shot.take(ctx, "16_bestiary_lurker");
 			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.JournalScreen.likenessError() == null,
 					"the bestiary could not draw a likeness: " + com.extremedimensions.client.screen.JournalScreen.likenessError()));
 			// The Cave Lurker's page, the next one
 			ctx.runOnClient(mc -> pressOnce(journal[0], "▶"));
 			ctx.waitTicks(16);
-			ctx.takeScreenshot("16_bestiary_cave_lurker");
+			Shot.take(ctx, "16_bestiary_cave_lurker");
 			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.JournalScreen.likenessError() == null,
 					"the bestiary could not draw the Cave Lurker: " + com.extremedimensions.client.screen.JournalScreen.likenessError()));
 			// The Sculk Lurker's page, the next one again
 			ctx.runOnClient(mc -> pressOnce(journal[0], "▶"));
 			ctx.waitTicks(16);
-			ctx.takeScreenshot("16_bestiary_sculk_lurker");
+			Shot.take(ctx, "16_bestiary_sculk_lurker");
 			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.JournalScreen.likenessError() == null,
 					"the bestiary could not draw the Sculk Lurker: " + com.extremedimensions.client.screen.JournalScreen.likenessError()));
 			ctx.runOnClient(mc -> {
@@ -866,10 +866,10 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			});
 			ctx.waitTicks(16);
-			ctx.takeScreenshot("16_bestiary_matriarch");
+			Shot.take(ctx, "16_bestiary_matriarch");
 			ctx.runOnClient(mc -> pressOnce(journal[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.ledger")));
 			ctx.waitTicks(16);
-			ctx.takeScreenshot("16_ledger");
+			Shot.take(ctx, "16_ledger");
 			// The journal's clan: bound with two others (one near, one away), the tribe judging by the nearer one; and of none
 			String law = "1|3|4|6|100|50|48|60|25|1|10|";
 			for (String[] c : new String[][] {{"16_clan", law + "kin/82|trusted/47|37|Wanderer,kin,82,3;Leon_AH,trusted,47,2;Julian,tolerated,12,0", "3"},
@@ -882,7 +882,7 @@ public class ClientShots implements FabricClientGameTest {
 					check(String.valueOf(js.clanSize()).equals(c[2]), "the Clan tab lists " + js.clanSize() + " members, not " + c[2]);
 				});
 				ctx.waitTicks(16);
-				ctx.takeScreenshot(c[0]);
+				Shot.take(ctx, c[0]);
 			}
 			// The journal's guides (the first two), and its anchors: the player's own, cracked and opened to an ally, and one
 			// an ally opened to them
@@ -897,17 +897,17 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			ctx.waitTicks(16);
 			// (3.55.0) the part opens on the guides' contents; a line of it turns to its guide
-			ctx.takeScreenshot("16_guides_contents");
+			Shot.take(ctx, "16_guides_contents");
 			ctx.runOnClient(mc -> check(pressOnce(book[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.guide.first_expedition")),
 					"the guides' contents has no line for the first guide"));
 			ctx.waitTicks(16);
-			ctx.takeScreenshot("16_guides");
+			Shot.take(ctx, "16_guides");
 			ctx.runOnClient(mc -> {
 				check(pressOnce(book[0], net.minecraft.client.resources.language.I18n.get("gui.extremedimensions.journal.tab.anchors")), "the journal has no Anchors tab");
 				check(book[0].keptSize() == 2, "the Anchors tab lists " + book[0].keptSize() + " anchors, not 2");
 			});
 			ctx.waitTicks(16);
-			ctx.takeScreenshot("16_anchors");
+			Shot.take(ctx, "16_anchors");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			// Co-op: struck down, the player lies on the ground and crawls (seen from behind), and stands again after
@@ -922,7 +922,7 @@ public class ClientShots implements FabricClientGameTest {
 				mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
 			});
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("13_fallen_crawl");
+			Shot.take(ctx, "13_fallen_crawl");
 			sp.getServer().runOnServer(s -> com.extremedimensions.coop.FallenService.forget(player(s)));
 			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON));
 			ctx.waitTicks(10);
@@ -939,7 +939,7 @@ public class ClientShots implements FabricClientGameTest {
 				DataStore.get(p.getUUID()).relic = com.extremedimensions.relic.Relic.EMBER_HEART.id;
 			});
 			ctx.waitTicks(5);
-			ctx.takeScreenshot("02_relics_hotbar");
+			Shot.take(ctx, "02_relics_hotbar");
 
 			// The Seam's music disc: in hand (its name over the hotbar) and in a jukebox before the player ("Now Playing")
 			net.minecraft.core.BlockPos jukebox = sp.getServer().computeOnServer(s -> {
@@ -953,7 +953,7 @@ public class ClientShots implements FabricClientGameTest {
 				return at;
 			});
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("02_music_disc");
+			Shot.take(ctx, "02_music_disc");
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
 				if (p.level().getBlockEntity(jukebox) instanceof net.minecraft.world.level.block.entity.JukeboxBlockEntity box) {
@@ -1010,7 +1010,7 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			ctx.runOnClient(mc -> mc.gui.setScreen(new InventoryScreen(mc.player)));
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("02_tetherite_gear");
+			Shot.take(ctx, "02_tetherite_gear");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			net.minecraft.core.BlockPos spindleAt = sp.getServer().computeOnServer(s -> {
 				ServerPlayer p = player(s);
@@ -1054,14 +1054,14 @@ public class ClientShots implements FabricClientGameTest {
 			// four steps back, so the stands and the Spindle between them all stand in the view
 			sp.getServer().runCommand("execute as @a at @s rotated ~ 0 run tp @s ^ ^ ^-4 ~ 16");
 			ctx.waitTicks(20);
-			ctx.takeScreenshot("02_tetherite_spindle");
+			Shot.take(ctx, "02_tetherite_spindle");
 			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_FRONT));
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("02_tetherite_worn");
+			Shot.take(ctx, "02_tetherite_worn");
 			ctx.runOnClient(mc -> mc.options.setCameraType(net.minecraft.client.CameraType.FIRST_PERSON));
 			// ... and the spear in hand as its bearer sees it
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("02_tetherite_spear_held");
+			Shot.take(ctx, "02_tetherite_spear_held");
 			// The two spears side by side, close and from the side: vanilla's netherite spear on the
 			// stand to the right of the view, the Tetherite Spear on the one to the left; both point the way their stand faces
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 0");
@@ -1077,7 +1077,7 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			// (long enough for the chat and the toasts to have faded from over them)
 			ctx.waitTicks(240);
-			ctx.takeScreenshot("02_tetherite_spears_side");
+			Shot.take(ctx, "02_tetherite_spears_side");
 			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=spear_v]");
 			sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=spear_t]");
 			// The Kindled Seam Lantern (3.50.0) at night beside a lantern and a soul lantern, and one hanging from a post:
@@ -1102,7 +1102,7 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 20");
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("02_kindled_seam_lantern");
+			Shot.take(ctx, "02_kindled_seam_lantern");
 			// (from above, flying, so the view holds while the light settles)
 			boolean[] flewThen = sp.getServer().computeOnServer(s -> new boolean[] {player(s).getAbilities().mayfly, player(s).getAbilities().flying});
 			sp.getServer().runOnServer(s -> {
@@ -1114,7 +1114,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a run tp @s %.2f %.2f %.2f 0 50", lanternStood[0], lanternStood[1] + 12,
 					lanternStood[2] - 6));
 			ctx.waitTicks(30);
-			ctx.takeScreenshot("02_kindled_seam_lantern_reach");
+			Shot.take(ctx, "02_kindled_seam_lantern_reach");
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
 				p.getAbilities().mayfly = flewThen[0];
@@ -1199,7 +1199,7 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			// (long enough for the chat and the hints' toasts to fade, so the young before them show)
 			ctx.waitTicks(240);
-			ctx.takeScreenshot("15_lurker_moods");
+			Shot.take(ctx, "15_lurker_moods");
 			// (gone without a death, which would leave their drops in the later shots)
 			sp.getServer().runOnServer(s -> player(s).level().getEntitiesOfClass(net.minecraft.world.entity.Mob.class,
 					player(s).getBoundingBox().inflate(20), e -> e.entityTags().contains("mood_shot")).forEach(net.minecraft.world.entity.Entity::discard));
@@ -1254,7 +1254,7 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			// (long enough for the bestiary's toasts of the moods before to fade)
 			ctx.waitTicks(160);
-			ctx.takeScreenshot("15_cave_lurker_tunnel");
+			Shot.take(ctx, "15_cave_lurker_tunnel");
 			sp.getServer().runOnServer(s -> {
 				player(s).level().getEntitiesOfClass(net.minecraft.world.entity.Mob.class, player(s).getBoundingBox().inflate(20),
 						e -> e.entityTags().contains("cave_shot")).forEach(net.minecraft.world.entity.Entity::discard);
@@ -1288,7 +1288,7 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~ 12");
 			ctx.waitTicks(15);
-			ctx.takeScreenshot("02_trim_matrix");
+			Shot.take(ctx, "02_trim_matrix");
 			for (String[] m : matrix) {
 				sp.getServer().runCommand("kill @e[type=minecraft:armor_stand,tag=" + m[0] + "]");
 			}
@@ -1320,12 +1320,12 @@ public class ClientShots implements FabricClientGameTest {
 					}
 				});
 				ctx.waitTicks(4);
-				ctx.takeScreenshot("03_curses_" + tab.toLowerCase());
+				Shot.take(ctx, "03_curses_" + tab.toLowerCase());
 			}
 			// Colour-blind colours: the four sets stay apart (the Extreme tab is still open)
 			ctx.runOnClient(mc -> ClientOptions.setColourBlind(true));
 			ctx.waitTicks(4);
-			ctx.takeScreenshot("03_curses_colour_blind");
+			Shot.take(ctx, "03_curses_colour_blind");
 			ctx.runOnClient(mc -> ClientOptions.setColourBlind(false));
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
@@ -1344,7 +1344,7 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.AdminScreen(admin, null)));
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("03_players_admin");
+			Shot.take(ctx, "03_players_admin");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			// The Tetherite binding: a smithing table with an upgrade laid in, its chance and what makes it beside it
@@ -1370,7 +1370,7 @@ public class ClientShots implements FabricClientGameTest {
 				}, net.minecraft.network.chat.Component.translatable("container.upgrade")));
 			});
 			ctx.waitTicks(30);
-			ctx.takeScreenshot("03_tetherite_binding");
+			Shot.take(ctx, "03_tetherite_binding");
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
 				p.closeContainer();
@@ -1401,7 +1401,7 @@ public class ClientShots implements FabricClientGameTest {
 				check(opened, "the Curses screen has no way into the pact");
 			});
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("08_pact");
+			Shot.take(ctx, "08_pact");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			sp.getServer().runOnServer(s -> {
 				com.extremedimensions.pact.PactService.swear(player(s), java.util.Map.of());
@@ -1420,23 +1420,23 @@ public class ClientShots implements FabricClientGameTest {
 				mc.gui.setScreen(ss);
 			});
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("07_settings_display");
+			Shot.take(ctx, "07_settings_display");
 			ctx.runOnClient(mc -> press(settings.get(), "World rules"));
 			ctx.waitTicks(6);
-			ctx.takeScreenshot("07_settings_world");
+			Shot.take(ctx, "07_settings_world");
 			// 3.34: the rules open on an overview of their parts; one part opens alone, its switches as On/Off buttons
 			ctx.runOnClient(mc -> check(settings.get().shownSwitches() == 0, "the overview shows a list of settings"));
 			ctx.runOnClient(mc -> press(settings.get(), "The Lurker"));
 			ctx.waitTicks(4);
 			ctx.runOnClient(mc -> check(settings.get().shownSwitches() > 0, "the Lurker's part shows no On/Off switch"));
-			ctx.takeScreenshot("07_settings_part");
+			Shot.take(ctx, "07_settings_part");
 			// Escape steps back to the overview, not out of the screen
 			ctx.runOnClient(mc -> settings.get().onClose());
 			ctx.waitTicks(2);
 			ctx.runOnClient(mc -> check(settings.get().shownSwitches() == 0, "Escape left the part open"));
 			ctx.runOnClient(mc -> press(settings.get(), "Changed"));
 			ctx.waitTicks(4);
-			ctx.takeScreenshot("07_settings_changed");
+			Shot.take(ctx, "07_settings_changed");
 			ctx.runOnClient(mc -> settings.get().onClose());
 			ctx.waitTicks(2);
 			ctx.runOnClient(mc -> {
@@ -1447,7 +1447,7 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			});
 			ctx.waitTicks(4);
-			ctx.takeScreenshot("07_settings_search");
+			Shot.take(ctx, "07_settings_search");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			// 3.35: what the recipe viewers are given beside the recipes: every fuel, ware and gift, the Spindle, the
@@ -1476,7 +1476,7 @@ public class ClientShots implements FabricClientGameTest {
 				ClientOptions.setHudScale(125);
 			});
 			ctx.waitTicks(4);
-			ctx.takeScreenshot("01_hud_moved");
+			Shot.take(ctx, "01_hud_moved");
 			// The guide card has its close cross; closing switches the guide off until it is switched on again
 			ctx.runOnClient(mc -> {
 				check(ChargeHud.guideClose != null, "the guide card has no close cross");
@@ -1506,7 +1506,7 @@ public class ClientShots implements FabricClientGameTest {
 				Sync.offer(p, d);
 			});
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("04_cards");
+			Shot.take(ctx, "04_cards");
 			// A rare Extreme card among the others
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			sp.getServer().runOnServer(s -> {
@@ -1518,7 +1518,7 @@ public class ClientShots implements FabricClientGameTest {
 				Sync.offer(p, d);
 			});
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("04_cards_extreme");
+			Shot.take(ctx, "04_cards_extreme");
 			// On Hard: the curses never carried are runes, the one taken before reads (the Extreme card hints, once known)
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			sp.getServer().runOnServer(s -> {
@@ -1536,7 +1536,7 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			ctx.waitTicks(40);
 			ctx.runOnClient(ClientShots::seamScriptLoaded);
-			ctx.takeScreenshot("04_cards_runes");
+			Shot.take(ctx, "04_cards_runes");
 			// An Abyssal card among the others (black, cracked, its rune unread on Hard), then one dealt alone: no choice
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			sp.getServer().runOnServer(s -> {
@@ -1547,7 +1547,7 @@ public class ClientShots implements FabricClientGameTest {
 				Sync.offer(p, d);
 			});
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("04_cards_abyssal");
+			Shot.take(ctx, "04_cards_abyssal");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
@@ -1557,7 +1557,7 @@ public class ClientShots implements FabricClientGameTest {
 				Sync.offer(p, d);
 			});
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("04_cards_forced");
+			Shot.take(ctx, "04_cards_forced");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			// The Abyssal row under the Extreme tab, with Mirror Wound carried and its deed under way (one that does
 			// nothing to a player standing still: Sunscorn would set them alight in the noon sun)
@@ -1584,7 +1584,7 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			});
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("03_curses_abyssal");
+			Shot.take(ctx, "03_curses_abyssal");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			sp.getServer().runOnServer(s -> {
 				PlayerData d = DataStore.get(player(s).getUUID());
@@ -1615,7 +1615,7 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			});
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("05_villager");
+			Shot.take(ctx, "05_villager");
 			sp.getServer().runOnServer(s -> player(s).closeContainer());
 			sp.getServer().runCommand("kill @e[type=minecraft:villager]");
 			ctx.waitTicks(3);
@@ -1632,7 +1632,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:wick ^0.7 ^ ^2.0 {NoAI:1b,Rotation:[200f,0f]}");
 			for (int i = 0; i < 4; i++) {
 				ctx.waitTicks(5);
-				ctx.takeScreenshot("06_tribe_" + i);
+				Shot.take(ctx, "06_tribe_" + i);
 			}
 
 			// The Elders: each alone by day, then all three at night, their lanterns, eyes and threads burning
@@ -1658,7 +1658,7 @@ public class ClientShots implements FabricClientGameTest {
 						+ " {NoAI:1b,Rotation:[180f,0f]}");
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + kin[2] + " ~ 0 0");
 				ctx.waitTicks(12);
-				ctx.takeScreenshot("06_face_" + kin[0]);
+				Shot.take(ctx, "06_face_" + kin[0]);
 				sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + (-Double.parseDouble(kin[2])) + " ~ 0 0");
 				ctx.waitTicks(5);
@@ -1675,7 +1675,7 @@ public class ClientShots implements FabricClientGameTest {
 			}));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~0.6 ~ 0 -4");
 			ctx.waitTicks(12);
-			ctx.takeScreenshot("06_magpie_loot");
+			Shot.take(ctx, "06_magpie_loot");
 			sp.getServer().runCommand("kill @e[type=minecraft:item_display]");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-0.6 ~ 0 0");
@@ -1694,7 +1694,7 @@ public class ClientShots implements FabricClientGameTest {
 			}));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~1.4 ~ 0 8");
 			ctx.waitTicks(12);
-			ctx.takeScreenshot("06_seamkin");
+			Shot.take(ctx, "06_seamkin");
 			sp.getServer().runCommand("kill @e[type=minecraft:block_display,tag=extremedimensions.cragback_stone]");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-1.4 ~ 0 0");
@@ -1708,12 +1708,12 @@ public class ClientShots implements FabricClientGameTest {
 						+ " {NoAI:1b,Rotation:[" + elder[2] + "f,0f]}");
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~6 ~ 0 -3");
 				ctx.waitTicks(15);
-				ctx.takeScreenshot("10_elder_" + elder[0]);
+				Shot.take(ctx, "10_elder_" + elder[0]);
 				// Up close, eye to eye
 				double up = Double.parseDouble(elder[3]);
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + (up - 6) + " ~" + (dist - 10) + " 0 -4");
 				ctx.waitTicks(12);
-				ctx.takeScreenshot("10_elder_" + elder[0] + "_close");
+				Shot.take(ctx, "10_elder_" + elder[0] + "_close");
 				sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + (-up) + " ~" + (10 - dist) + " 0 0");
 				ctx.waitTicks(20);
@@ -1725,7 +1725,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^-24 ^ ^36 {NoAI:1b,Rotation:[220f,0f]}");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~5 ~ 0 -6");
 			ctx.waitTicks(30);
-			ctx.takeScreenshot("10_elders_night");
+			Shot.take(ctx, "10_elders_night");
 			sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("time set noon");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-5 ~ 0 0");
@@ -1737,10 +1737,10 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:starved_one ^ ^1 ^12 {NoAI:1b,Rotation:[180f,0f]}");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~4 ~ 0 0");
 			ctx.waitTicks(15);
-			ctx.takeScreenshot("10_starved_one");
+			Shot.take(ctx, "10_starved_one");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~1 ~6.5 0 14");
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("10_starved_one_close");
+			Shot.take(ctx, "10_starved_one_close");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-1 ~-6.5 0 0");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
 				if (m instanceof com.extremedimensions.mending.StarvedOne so) {
@@ -1748,7 +1748,7 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			}));
 			ctx.waitTicks(25);
-			ctx.takeScreenshot("10_starved_one_bound");
+			Shot.take(ctx, "10_starved_one_bound");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-4 ~ 0 0");
 			ctx.waitTicks(10);
@@ -1764,15 +1764,15 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~14 ~-6 0 0");
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:pale_hauler ^-3 ^-14 ^16 {NoAI:1b,Rotation:[180f,0f]}");
 			ctx.waitTicks(30);
-			ctx.takeScreenshot("10_pale_anchor");
+			Shot.take(ctx, "10_pale_anchor");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~-3 ~-13 ~10 0 5");
 			ctx.waitTicks(15);
-			ctx.takeScreenshot("10_pale_hauler");
+			Shot.take(ctx, "10_pale_hauler");
 			// Its own body (after its concept sheet): up close from the front, its face of shadow in the hood; then
 			// hauling, crouched over with its hands forward and its light blue, from a little to one side (and back)
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~0.25 ~3 0 10");
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("10_pale_hauler_close");
+			Shot.take(ctx, "10_pale_hauler_close");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
 				if (m instanceof com.extremedimensions.lurker.PaleHauler h) {
 					h.setLurkerPose(com.extremedimensions.lurker.Lurker.POSE_TAKE);
@@ -1781,7 +1781,7 @@ public class ClientShots implements FabricClientGameTest {
 			}));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~2.5 ~ ~0.5 45 15");
 			ctx.waitTicks(15);
-			ctx.takeScreenshot("10_pale_hauler_haul");
+			Shot.take(ctx, "10_pale_hauler_haul");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~-2.5 ~-0.25 ~-3.5 0 5");
 			sp.getServer().runOnServer(s -> {
 				mobs(s).forEach(net.minecraft.world.entity.Entity::discard);
@@ -1826,9 +1826,9 @@ public class ClientShots implements FabricClientGameTest {
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 -24");
 				// (the finished anchor flies together where it is watched, then its door opens: some thirteen seconds)
 				ctx.waitTicks(home ? 60 : 12);
-				ctx.takeScreenshot(home ? "10_pale_home_a" : "10_pale_lock_a");
+				Shot.take(ctx, home ? "10_pale_home_a" : "10_pale_lock_a");
 				ctx.waitTicks(home ? 240 : 40);
-				ctx.takeScreenshot(home ? "10_pale_home_b" : "10_pale_lock_b");
+				Shot.take(ctx, home ? "10_pale_home_b" : "10_pale_lock_b");
 			}
 			sp.getServer().runOnServer(s -> {
 				com.extremedimensions.reach.AnchorRites.clear();
@@ -1932,7 +1932,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^ ^ ^23 {NoAI:1b,Rotation:[180f,0f]}");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~6 ~ 0 -3");
 			ctx.waitTicks(30);
-			ctx.takeScreenshot("11_intro_weaver");
+			Shot.take(ctx, "11_intro_weaver");
 			sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-6 ~ 0 0");
 			ctx.waitTicks(20);
@@ -1956,7 +1956,7 @@ public class ClientShots implements FabricClientGameTest {
 				ctx.runOnClient(mc -> com.extremedimensions.client.fx.BossCinema.handle(new com.extremedimensions.network.ModPackets.BossFxPayload(
 						com.extremedimensions.network.ModPackets.BossFxPayload.ULTIMATE, index, 200, 1, "gui.extremedimensions.elder.ultimate." + elder[0])));
 				ctx.waitTicks(20);
-				ctx.takeScreenshot("11_ultimate_" + elder[0]);
+				Shot.take(ctx, "11_ultimate_" + elder[0]);
 				ctx.runOnClient(mc -> com.extremedimensions.client.fx.BossCinema.reset());
 				sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-6 ~ 0 0");
@@ -1966,7 +1966,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:weaver ^ ^ ^9 {NoAI:1b,Rotation:[180f,0f]}");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~13 ~ 0 4");
 			ctx.waitTicks(25);
-			ctx.takeScreenshot("11_weaver_face");
+			Shot.take(ctx, "11_weaver_face");
 			sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-13 ~ 0 0");
 			ctx.waitTicks(20);
@@ -1977,7 +1977,7 @@ public class ClientShots implements FabricClientGameTest {
 						+ " {NoAI:1b,Rotation:[180f,0f]}");
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~" + elder[2] + " ~ 0 3");
 				ctx.waitTicks(25);
-				ctx.takeScreenshot("11_" + elder[0] + "_face");
+				Shot.take(ctx, "11_" + elder[0] + "_face");
 				sp.getServer().runOnServer(s -> elders(s).forEach(net.minecraft.world.entity.Entity::discard));
 				sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-" + elder[2] + " ~ 0 0");
 				ctx.waitTicks(20);
@@ -1988,11 +1988,11 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run summon extremedimensions:veil_ray ^ ^4 ^6 {NoAI:1b,Rotation:[150f,0f]}");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 0 -29");
 			ctx.waitTicks(15);
-			ctx.takeScreenshot("13_veil_ray_below");
+			Shot.take(ctx, "13_veil_ray_below");
 			sp.getServer().runCommand("time set midnight");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~7.3 ~ 0 34");
 			ctx.waitTicks(15);
-			ctx.takeScreenshot("13_veil_ray_above");
+			Shot.take(ctx, "13_veil_ray_above");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runCommand("time set noon");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-7.3 ~ 0 0");
@@ -2003,19 +2003,19 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			ctx.runOnClient(mc -> fx(mc, 0));
 			ctx.waitTicks(22);
-			ctx.takeScreenshot("14_fx_sigils_day");
+			Shot.take(ctx, "14_fx_sigils_day");
 			sp.getServer().runCommand("time set midnight");
 			ctx.waitTicks(10);
 			ctx.runOnClient(mc -> fx(mc, 0));
 			ctx.waitTicks(22);
-			ctx.takeScreenshot("14_fx_sigils_night");
+			Shot.take(ctx, "14_fx_sigils_night");
 			ctx.runOnClient(mc -> fx(mc, 1));
 			ctx.waitTicks(4);
-			ctx.takeScreenshot("14_fx_impacts");
+			Shot.take(ctx, "14_fx_impacts");
 			ctx.waitTicks(40);
 			ctx.runOnClient(mc -> fx(mc, 2));
 			ctx.waitTicks(2);
-			ctx.takeScreenshot("14_fx_lines");
+			Shot.take(ctx, "14_fx_lines");
 			sp.getServer().runCommand("time set noon");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~-8 ~ 0 0");
 			ctx.waitTicks(30);
@@ -2122,10 +2122,10 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a run gamemode spectator @s");
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 0 16", home[0] + 299.5, 113.2, home[2] - 2.5));
 			ctx.waitTicks(80);
-			ctx.takeScreenshot("18_masonry");
+			Shot.take(ctx, "18_masonry");
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 0 22", home[0] + 297.5, 112.0, home[2] + 3.0));
 			ctx.waitTicks(15);
-			ctx.takeScreenshot("18_masonry_close");
+			Shot.take(ctx, "18_masonry_close");
 
 			// A rift a Seam Needle tears in the world: across the face of the crying obsidian it was opened on, the Seam
 			// hazy at the far end of its tunnel; straight on, and from aside
@@ -2152,10 +2152,10 @@ public class ClientShots implements FabricClientGameTest {
 			// the ring stands on the floor in front of the obsidian, its middle at the camera's height
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.2f %.1f 0 0", tear[0] + 0.5, tear[1] + 1.75 - 1.62, tear[2] - 4.5));
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("25_rift_world");
+			Shot.take(ctx, "25_rift_world");
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.2f %.1f 38 4", tear[0] + 4.5, tear[1] + 1.75 - 1.62, tear[2] - 2.6));
 			ctx.waitTicks(20);
-			ctx.takeScreenshot("25_rift_world_aside");
+			Shot.take(ctx, "25_rift_world_aside");
 
 			// Colossal buildings, one of each plan, each on its island as the Seam would design it (far out, in the sky)
 			// and a sixth: a citadel fallen to ruin, its stone worn to moss and cracks and its crowns broken
@@ -2178,27 +2178,27 @@ public class ClientShots implements FabricClientGameTest {
 				// from a corner first (its chunks take a while to show), then from the front, nearer
 				sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -45 10", cx - 60, skyTop + 40, cz - 60));
 				ctx.waitTicks(160);
-				ctx.takeScreenshot("18_colossus_" + plans[k] + "_corner");
+				Shot.take(ctx, "18_colossus_" + plans[k] + "_corner");
 				sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -8", cx, skyTop + 28, cz - 78));
 				ctx.waitTicks(60);
-				ctx.takeScreenshot("18_colossus_" + plans[k]);
+				Shot.take(ctx, "18_colossus_" + plans[k]);
 				if (k == 0 || k == 2) {
 					// up close on its face
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -12", cx, skyTop + 10, cz - 44));
 					ctx.waitTicks(30);
-					ctx.takeScreenshot("18_colossus_" + plans[k] + "_close");
+					Shot.take(ctx, "18_colossus_" + plans[k] + "_close");
 				}
 				if ((k == 0 || k == 2) && inside[0] != null) {
 					// inside, on a furnished floor
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.2f %.1f %.2f %.1f 18", inside[0][0], inside[0][1], inside[0][2], inside[0][3]));
 					ctx.waitTicks(30);
-					ctx.takeScreenshot("19_interior_" + plans[k]);
+					Shot.take(ctx, "19_interior_" + plans[k]);
 				}
 				if (k == 0) {
 					sp.getServer().runCommand("time set midnight");
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 -8", cx, skyTop + 28, cz - 78));
 					ctx.waitTicks(30);
-					ctx.takeScreenshot("18_colossus_night");
+					Shot.take(ctx, "18_colossus_night");
 					sp.getServer().runCommand("time set noon");
 				}
 			}
@@ -2220,24 +2220,24 @@ public class ClientShots implements FabricClientGameTest {
 				com.extremedimensions.ExtremeDimensions.LOGGER.info("Island shot {} ({}): {}", k, kinds[k], what);
 				sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -45 22", cx - 42, skyTop + 26, cz - 42));
 				ctx.waitTicks(160);
-				ctx.takeScreenshot("20_island_" + kinds[k]);
+				Shot.take(ctx, "20_island_" + kinds[k]);
 				if (k == 0 || k == 1) {
 					// on the ground, among what stands there
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 25 16", cx - 16, skyTop + 12, cz - 34));
 					ctx.waitTicks(40);
-					ctx.takeScreenshot("20_island_" + kinds[k] + "_close");
+					Shot.take(ctx, "20_island_" + kinds[k] + "_close");
 				}
 				if (k == 0 && inside[0] != null) {
 					// inside a house of the Thinned, from the foot of its ladder
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.2f %.1f %.2f %.1f 20", inside[0][0], inside[0][1], inside[0][2], inside[0][3]));
 					ctx.waitTicks(30);
-					ctx.takeScreenshot("19_interior_house");
+					Shot.take(ctx, "19_interior_house");
 				}
 				if (k == 2) {
 					// its underside, from below and off to the side
 					sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -45 -28", cx - 34, skyTop - 26, cz - 34));
 					ctx.waitTicks(40);
-					ctx.takeScreenshot("20_island_plain_under");
+					Shot.take(ctx, "20_island_plain_under");
 				}
 			}
 			// The land's own shapes: an arch of rock and a hill cut into terraces on a large plain island
@@ -2257,16 +2257,16 @@ public class ClientShots implements FabricClientGameTest {
 			com.extremedimensions.ExtremeDimensions.LOGGER.info("The land's shapes: {}", shapes);
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -30 18", lx - 26, skyTop + 16, lz - 40));
 			ctx.waitTicks(160);
-			ctx.takeScreenshot("40_land_shapes");
+			Shot.take(ctx, "40_land_shapes");
 			// (over the grass and flowers at its foot, which would fill the shot from eye height)
 			int archEye = sp.getServer().computeOnServer(s -> player(s).level().getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
 					lx - 11, lz - 18)) + 4;
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 0 12", lx - 11, archEye, lz - 18));
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("40_rock_arch");
+			Shot.take(ctx, "40_rock_arch");
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %d.5 %d %d.5 -20 20", lx + 3, skyTop + 9, lz - 14));
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("40_terraces");
+			Shot.take(ctx, "40_terraces");
 			// The Warm Chain: a ruined gate with its chain lying into it, warm (embers rise from it)
 			int[] warm = sp.getServer().computeOnServer(s -> {
 				net.minecraft.server.level.ServerLevel lvl = (net.minecraft.server.level.ServerLevel) player(s).level();
@@ -2298,11 +2298,11 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f %d 18", warm[0] + 0.5 + warm[3] * 11, warm[1] + 2.6,
 					warm[2] + 0.5 + warm[4] * 11, warm[5]));
 			ctx.waitTicks(60);
-			ctx.takeScreenshot("29_warm_chain");
+			Shot.take(ctx, "29_warm_chain");
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f %d 45", warm[0] + 0.5 + warm[3] * 4 + warm[4] * 2, warm[1] + 2.2,
 					warm[2] + 0.5 + warm[4] * 4 + warm[3] * 2, warm[5] + 20));
 			ctx.waitTicks(30);
-			ctx.takeScreenshot("29_warm_chain_close");
+			Shot.take(ctx, "29_warm_chain_close");
 			sp.getServer().runOnServer(s -> DataStore.warmGates().removeIf(g -> "shot-gate".equals(g.key)));
 			// The Held's chamber, raised in a block of netherrack as it would be carved into the Nether
 			int[] held = sp.getServer().computeOnServer(s -> {
@@ -2320,15 +2320,15 @@ public class ClientShots implements FabricClientGameTest {
 			// From just inside the door, looking at the Held
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 180 16", held[0] + 0.5, held[1] + 1.2, held[2] + 3.4));
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("29_held_chamber");
+			Shot.take(ctx, "29_held_chamber");
 			// The journal: the ruined gates with the note beside them, and the Held's letter
 			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.JournalScreen(java.util.Set.of("ruined_gate", "first_wound"), "", "",
 					java.util.Set.of("ruined_gate", "first_wound", "wanderer"), null)));
 			ctx.waitTicks(12);
-			ctx.takeScreenshot("29_journal_margin");
+			Shot.take(ctx, "29_journal_margin");
 			ctx.runOnClient(mc -> mc.gui.setScreen(new com.extremedimensions.client.screen.JournalScreen(java.util.Set.of("held"), "", "", java.util.Set.of(), null)));
 			ctx.waitTicks(12);
-			ctx.takeScreenshot("29_journal_held");
+			Shot.take(ctx, "29_journal_held");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			// The Art of Binding: the enchanted Tethers, books and the Wound Lens in the bag, and what their lines say
 			sp.getServer().runOnServer(s -> {
@@ -2383,7 +2383,7 @@ public class ClientShots implements FabricClientGameTest {
 				mc.gui.setScreen(new InventoryScreen(mc.player));
 			});
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("30_binding_bag");
+			Shot.take(ctx, "30_binding_bag");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			// Through the Wound Lens: scoping as through a spyglass, at the Held's chamber
 			// (a spectator cannot use anything: in survival for the moment)
@@ -2395,7 +2395,7 @@ public class ClientShots implements FabricClientGameTest {
 				System.out.println("[lens] using=" + mc.player.isUsingItem() + " item=" + mc.player.getUseItem().getItem() + " scoping=" + mc.player.isScoping());
 				check(mc.player.isScoping(), "holding use with the Wound Lens, the player is not looking through it");
 			});
-			ctx.takeScreenshot("30_wound_lens");
+			Shot.take(ctx, "30_wound_lens");
 			ctx.getInput().releaseKey(o -> o.keyUse);
 			sp.getServer().runCommand("execute as @a run gamemode spectator @s");
 			ctx.waitTicks(5);
@@ -2453,7 +2453,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ 180 12");
 			settle(ctx, sp, "echo");
 			ctx.waitTicks(30);
-			ctx.takeScreenshot("31_echo");
+			Shot.take(ctx, "31_echo");
 			sp.getServer().runOnServer(s -> com.extremedimensions.events.Echoes.forget(echo[0]));
 			// The Unanchored Build: three Endermen laying a ring round a pearl, half done, watched without staring
 			int[] ring = sp.getServer().computeOnServer(s -> {
@@ -2473,7 +2473,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 180 28", ring[0] + 0.5, ring[1] + 3.5, ring[2] + 8.5));
 			settle(ctx, sp, "unanchored");
 			ctx.waitTicks(20);
-			ctx.takeScreenshot("31_unanchored");
+			Shot.take(ctx, "31_unanchored");
 			sp.getServer().runOnServer(s -> {
 				com.extremedimensions.events.Unanchored.Build b = com.extremedimensions.events.Unanchored.of(player(s).getUUID());
 				check(b != null, "the build was broken off before it could finish (the player stared?)");
@@ -2481,7 +2481,7 @@ public class ClientShots implements FabricClientGameTest {
 				com.extremedimensions.events.Unanchored.clear();
 			});
 			ctx.waitTicks(20);
-			ctx.takeScreenshot("31_unanchored_done");
+			Shot.take(ctx, "31_unanchored_done");
 			// The Veil Lantern, standing and hanging
 			sp.getServer().runOnServer(s -> {
 				net.minecraft.server.level.ServerLevel lvl = (net.minecraft.server.level.ServerLevel) player(s).level();
@@ -2493,7 +2493,7 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "tp @a %.1f %.1f %.1f 180 10", ring[0] + 6.9, ring[1] + 0.6, ring[2] + 6.2));
 			ctx.waitTicks(20);
-			ctx.takeScreenshot("31_veil_lantern");
+			Shot.take(ctx, "31_veil_lantern");
 			ctx.runOnClient(mc -> {
 				ClientOptions.setGuidance(true);
 				mc.options.renderDistance().set(5);
@@ -2534,7 +2534,7 @@ public class ClientShots implements FabricClientGameTest {
 			});
 			ctx.waitTicks(10);
 			check(sp.getServer().computeOnServer(s -> DataStore.get(player(s).getUUID()).trialArmed), "taking the trial up did not reach the server");
-			ctx.takeScreenshot("09_trials");
+			Shot.take(ctx, "09_trials");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 
 			// Into the Seam with the trial taken up: it begins, and the timer carries its line. (Kept from harm while the
@@ -2582,14 +2582,14 @@ public class ClientShots implements FabricClientGameTest {
 				ClientState.briefAt = System.currentTimeMillis() - 3000;
 			});
 			ctx.waitTicks(2);
-			ctx.takeScreenshot("26_seam_briefing");
+			Shot.take(ctx, "26_seam_briefing");
 			ctx.runOnClient(mc -> ClientState.briefAt = 0);
 			ctx.waitTicks(2);
-			ctx.takeScreenshot("09_trial_hud");
+			Shot.take(ctx, "09_trial_hud");
 			// The timer as the mod's own panel, for whoever switches the boss bar off
 			sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.HUD_BOSS_BAR = 0);
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("09_trial_hud_panel");
+			Shot.take(ctx, "09_trial_hud_panel");
 			sp.getServer().runOnServer(s -> com.extremedimensions.config.Config.HUD_BOSS_BAR = 1);
 			// 3.36: the Seam's frame time, with its air in full and at the Effects option's least
 			measure(ctx, "seam", 60);
@@ -2600,7 +2600,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runOnServer(s -> com.extremedimensions.events.FrayedSeam.start((net.minecraft.server.level.ServerLevel) player(s).level(), player(s), s.getTickCount()));
 			ctx.waitTicks(60);
 			ctx.runOnClient(mc -> check(ClientState.frayed(mc.player.getX(), mc.player.getZ()), "the client did not hear its island was fraying"));
-			ctx.takeScreenshot("31_frayed_seam");
+			Shot.take(ctx, "31_frayed_seam");
 			sp.getServer().runOnServer(s -> {
 				com.extremedimensions.events.FrayedSeam.Fraying f = com.extremedimensions.events.FrayedSeam.on(player(s));
 				if (f != null) {
@@ -2612,7 +2612,7 @@ public class ClientShots implements FabricClientGameTest {
 			// News as Minecraft gives it: a toast in the corner for a new journal page
 			ctx.runOnClient(mc -> com.extremedimensions.client.hud.Toasts.journal(0));
 			ctx.waitTicks(24);
-			ctx.takeScreenshot("27_toast");
+			Shot.take(ctx, "27_toast");
 			// The mod in Minecraft's own progression: its advancement tab, and its recipes in the recipe book once their
 			// ingredients are held
 			sp.getServer().runOnServer(s -> {
@@ -2637,13 +2637,13 @@ public class ClientShots implements FabricClientGameTest {
 				tab.get().onSelectedTabChanged(root);
 			});
 			ctx.waitTicks(8);
-			ctx.takeScreenshot("28_advancements");
+			Shot.take(ctx, "28_advancements");
 			ctx.runOnClient(mc -> {
 				mc.player.getRecipeBook().setOpen(net.minecraft.world.inventory.RecipeBookType.CRAFTING, true);
 				mc.gui.setScreen(new InventoryScreen(mc.player));
 			});
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("28_recipe_book");
+			Shot.take(ctx, "28_recipe_book");
 			ctx.runOnClient(mc -> {
 				mc.player.getRecipeBook().setOpen(net.minecraft.world.inventory.RecipeBookType.CRAFTING, false);
 				mc.gui.setScreen(null);
@@ -2682,9 +2682,9 @@ public class ClientShots implements FabricClientGameTest {
 			}
 			check(sp.getServer().computeOnServer(rising::test), "nothing flies in as the Seam builds itself (" + sp.getServer().computeOnServer(
 					s -> com.extremedimensions.seam.SeamArchitect.pending()) + " blocks still to build)");
-			ctx.takeScreenshot("17_seam_rising");
+			Shot.take(ctx, "17_seam_rising");
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("17_seam_risen");
+			Shot.take(ctx, "17_seam_risen");
 
 			// The Return Gate the visitor stepped out of: from the processional way, from the side, at its threshold,
 			// and from far out in the fog
@@ -2699,20 +2699,20 @@ public class ClientShots implements FabricClientGameTest {
 			double gx = gate[0], gy = gate[1], gz = gate[2], ox = gate[3], oz = gate[4], sx2 = -oz, sz2 = ox;
 			eye(sp, gx + ox * 27, gy + 6, gz + oz * 27, gx, gz, -16);
 			ctx.waitTicks(60);
-			ctx.takeScreenshot("19_gate_front");
+			Shot.take(ctx, "19_gate_front");
 			eye(sp, gx + ox * 19 + sx2 * 24, gy + 9, gz + oz * 19 + sz2 * 24, gx, gz, -10);
 			ctx.waitTicks(50);
-			ctx.takeScreenshot("19_gate_side");
+			Shot.take(ctx, "19_gate_side");
 			eye(sp, gx + ox * 6.5 + sx2 * 2.5, gy + 1.2, gz + oz * 6.5 + sz2 * 2.5, gx, gz, -6);
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("19_gate_threshold");
+			Shot.take(ctx, "19_gate_threshold");
 			eye(sp, gx + ox * 170 + sx2 * 40, gy + 14, gz + oz * 170 + sz2 * 40, gx, gz, -4);
 			ctx.waitTicks(60);
-			ctx.takeScreenshot("19_gate_far");
+			Shot.take(ctx, "19_gate_far");
 			// From below and behind the gate: the underside of its rock and of the arrival island, an upside-down mountain
 			eye(sp, gx - ox * 30 + sx2 * 12, gy - 26, gz - oz * 30 + sz2 * 12, gx - ox * 4, gz - oz * 4, -22);
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("19_island_under");
+			Shot.take(ctx, "19_island_under");
 			// the compass points to where the server says the rift is
 			ctx.runOnClient(mc -> check(ClientState.riftKnown(), "the client does not know where the rift home is"));
 			// The tear over the rift home, the world above hazy at the end of its tunnel: straight on and close, from
@@ -2731,22 +2731,22 @@ public class ClientShots implements FabricClientGameTest {
 			ctx.runOnClient(mc -> check(!mc.level.getEntitiesOfClass(com.extremedimensions.seam.RiftPortal.class,
 					new net.minecraft.world.phys.AABB(rx - 3, ry - 3, rz - 3, rx + 3, ry + 3, rz + 3), com.extremedimensions.seam.RiftPortal::seen).isEmpty(),
 					"the rift home has no tear the visitor can see"));
-			ctx.takeScreenshot("25_portal_near");
+			Shot.take(ctx, "25_portal_near");
 			// (the gate's passage is deep: from much further aside its pylon hides the tear)
 			eye(sp, rx + fx * 6.5 - fz * 1.7, eyeY + 0.3, rz + fz * 6.5 + fx * 1.7, rx, rz, 0);
 			ctx.waitTicks(20);
-			ctx.takeScreenshot("25_portal_aside");
+			Shot.take(ctx, "25_portal_aside");
 			eye(sp, rx - fx * 5.5, eyeY, rz - fz * 5.5, rx, rz, 0);
 			ctx.waitTicks(20);
-			ctx.takeScreenshot("25_portal_behind");
+			Shot.take(ctx, "25_portal_behind");
 			sp.getServer().runCommand("time set midnight");
 			eye(sp, rx + fx * 4.6, eyeY, rz + fz * 4.6, rx, rz, 0);
 			ctx.waitTicks(50);
-			ctx.takeScreenshot("25_portal_night");
+			Shot.take(ctx, "25_portal_night");
 			sp.getServer().runCommand("time set noon");
 			eye(sp, rx + fx * 12, eyeY + 2, rz + fz * 12, rx, rz, -6);
 			ctx.waitTicks(50);
-			ctx.takeScreenshot("25_portal_gate");
+			Shot.take(ctx, "25_portal_gate");
 			// Back onto the arrival island for what follows: out along the processional way, well clear of the rift (it
 			// may have wandered off its threshold by now, under the Restless Rift twist, and would take a spectator home)
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f", gx + ox * 9, gate[6], gz + oz * 9));
@@ -2765,7 +2765,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f %.1f 32", sx, well[1] + 6, sz, inward));
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(30);
-			ctx.takeScreenshot("15_fray_well");
+			Shot.take(ctx, "15_fray_well");
 			// Down in the Fray, off to the side above the knot: its landing, its lanterns and the strands running off
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f -45 30", well[0] - 9.5, well[3] + 8, well[2] - 9.5));
 			sp.getConnection().waitForChunksRender();
@@ -2776,10 +2776,10 @@ public class ClientShots implements FabricClientGameTest {
 				ClientState.briefAt = System.currentTimeMillis() - 2000;
 			});
 			ctx.waitTicks(2);
-			ctx.takeScreenshot("26_fray_briefing");
+			Shot.take(ctx, "26_fray_briefing");
 			ctx.runOnClient(mc -> ClientState.briefAt = 0);
 			ctx.waitTicks(2);
-			ctx.takeScreenshot("15_fray_knot");
+			Shot.take(ctx, "15_fray_knot");
 			sp.getServer().runOnServer(s -> check(com.extremedimensions.seam.SeamDepth.inFray(player(s)), "above the knot, the player is not in the Fray"));
 
 			// The Frayed: a Veil Ray of the Fray beside one of the islands (the same model and texture layout, painted
@@ -2796,7 +2796,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getConnection().waitForChunksRender();
 			ctx.waitTicks(20);
 			sp.getServer().runOnServer(s -> check(com.extremedimensions.seam.SeamService.inSeam(player(s)), "the Frayed Ray is shot outside the Seam"));
-			ctx.takeScreenshot("26_frayed_ray");
+			Shot.take(ctx, "26_frayed_ray");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
 				if (m instanceof com.extremedimensions.seam.VeilRay ray) {
 					ray.setDiving(true);
@@ -2804,7 +2804,7 @@ public class ClientShots implements FabricClientGameTest {
 				}
 			}));
 			ctx.waitTicks(20);
-			ctx.takeScreenshot("26_frayed_ray_dive");
+			Shot.take(ctx, "26_frayed_ray_dive");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(m -> {
 				if (m instanceof com.extremedimensions.seam.VeilRay ray) {
 					ray.setDiving(false);
@@ -2815,7 +2815,7 @@ public class ClientShots implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run summon extremedimensions:veil_ray %d %d %d {NoAI:1b,Rotation:[45f,0f]}", kx - 14, ky + 7, kz + 2));
 			sp.getServer().runCommand(String.format(java.util.Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f -45 -38", kx - 17.5, ky + 1, kz - 9.5));
 			ctx.waitTicks(25);
-			ctx.takeScreenshot("26_rays_compared");
+			Shot.take(ctx, "26_rays_compared");
 			sp.getServer().runOnServer(s -> mobs(s).forEach(net.minecraft.world.entity.Entity::discard));
 			sp.getServer().runOnServer(s -> com.extremedimensions.trial.TrialService.weekOverride = null);
 
@@ -2847,23 +2847,23 @@ public class ClientShots implements FabricClientGameTest {
 		}
 		sp.getServer().runOnServer(s -> MendingService.wakeNow((net.minecraft.server.level.ServerLevel) player(s).level(), player(s)));
 		ctx.waitTicks(60);
-		ctx.takeScreenshot("35_heart_rise_cracks");
+		Shot.take(ctx, "35_heart_rise_cracks");
 		ctx.waitTicks(50);
-		ctx.takeScreenshot("35_heart_rise_claws");
+		Shot.take(ctx, "35_heart_rise_claws");
 		for (int i = 0; i < 20 && sp.getServer().computeOnServer(s -> MendingService.risingNow()); i++) {
 			ctx.waitTicks(5);
 		}
 		ctx.waitTicks(12);
-		ctx.takeScreenshot("35_heart_risen");
+		Shot.take(ctx, "35_heart_risen");
 		// The arena round it, once it stands: from out over the Heart's rim, and up under its crown
 		ctx.waitTicks(160);
 		eye(sp, hx + 62.5, hy + 30, hz + 0.5, hx + 0.5, hz + 0.5, 16);
 		sp.getConnection().waitForChunksRender();
 		ctx.waitTicks(30);
-		ctx.takeScreenshot("35_heart_arena");
+		Shot.take(ctx, "35_heart_arena");
 		eye(sp, hx + 0.5, hy + 4, hz + 14.5, hx + 0.5, hz + 0.5, -42);
 		ctx.waitTicks(20);
-		ctx.takeScreenshot("35_heart_crown");
+		Shot.take(ctx, "35_heart_crown");
 		// It sinks back, and its arena flies apart; everything as it was before the shots
 		sp.getServer().runOnServer(s -> {
 			com.extremedimensions.mending.StarvedOne so = MendingService.driven((net.minecraft.server.level.ServerLevel) player(s).level());

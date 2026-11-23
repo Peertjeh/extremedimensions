@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Extreme Dimensions wiki
+    url: https://peertjeh.github.io/extremedimensions/
+    about: How everything works, every curse, creature and setting. Many questions are answered there.
+  - name: Questions and stories (Discussions)
+    url: https://github.com/Peertjeh/extremedimensions/discussions
+    about: A question, a run you want to share, or a talk about where the mod should go.

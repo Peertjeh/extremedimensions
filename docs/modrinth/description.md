@@ -94,6 +94,11 @@ values from the same screen.
 
 ---
 
+**[Wiki](https://peertjeh.github.io/extremedimensions/)** ·
 [Source code](https://github.com/Peertjeh/extremedimensions) ·
 [Changelog](https://github.com/Peertjeh/extremedimensions/blob/main/CHANGELOG.md) ·
-[Report an issue](https://github.com/Peertjeh/extremedimensions/issues)
+[Report a problem or share an idea](https://github.com/Peertjeh/extremedimensions/issues/new/choose) ·
+[Discussions](https://github.com/Peertjeh/extremedimensions/discussions)
+
+Found a bug, or did something feel too hard, too easy or unclear? **Report a problem** at the top of the mod's
+settings screen opens a report with your versions and mods already filled in. Every report is read.

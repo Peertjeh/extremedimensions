@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.56.0: Out in the Open
+
+Nothing in the game's balance changes: this version is about reaching players, and hearing back from them.
+
+- **Report a problem** at the top of the settings screen: your versions and mod list go to the clipboard, and a new
+  bug report opens on GitHub with them already filled in (the game asks before it opens the browser). New report forms
+  there for bugs, ideas, and for telling how a part of the game felt: too hard, too easy, unclear or tedious.
+- **Wiki** beside it opens the wiki, now at a fixed public address: https://peertjeh.github.io/extremedimensions/
+- Each new version now also goes up on Modrinth and CurseForge by itself, with the same notes as here.
+- Screenshots for the store pages and the trailer at 1920x1080.
+
 ## 3.55.0: Less Friction
 
 A quality-of-life overhaul: nothing in the balance changes, the game tells you more and asks less of you.

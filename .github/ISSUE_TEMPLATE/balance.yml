@@ -1,0 +1,45 @@
+name: Too hard, too easy, or unclear
+description: Tell how a part of the game felt. Every report like this is read and weighed for the next version.
+title: "[Feel] "
+labels: [balance]
+body:
+  - type: dropdown
+    id: part
+    attributes:
+      label: Which part?
+      options:
+        - Tether time and anchors
+        - Collapse and curses
+        - Atonement and lifting curses
+        - The Seam
+        - The tribe and creatures
+        - Bosses (Elders, Starved One, the Knot-Mother...)
+        - Guides, hints and the journal
+        - Something else
+    validations:
+      required: true
+  - type: dropdown
+    id: feel
+    attributes:
+      label: How did it feel?
+      options:
+        - Too hard / too punishing
+        - Too easy
+        - Unclear: I did not know what to do or why it happened
+        - Tedious: too much waiting or grinding
+        - Just right, and I want to say so
+    validations:
+      required: true
+  - type: textarea
+    id: story
+    attributes:
+      label: What happened?
+      description: A few lines on the moment it felt that way. The Collapse recap card and the playtest log (Settings) help here.
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Versions and settings (optional)
+      description: The world's preset (Gentle, Standard, Brutal...) and any settings you changed.
+      render: text

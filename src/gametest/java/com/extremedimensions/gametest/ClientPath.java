@@ -96,7 +96,7 @@ public class ClientPath implements FabricClientGameTest {
 		ctx.waitTicks(16);
 		check(js.nextStep() == next, shot + ": the Path names " + js.nextStep() + " next, expected " + next);
 		check(hint == null || hint.equals(js.pathHint()), shot + ": the Path says " + js.pathHint() + ", expected " + hint);
-		ctx.takeScreenshot(shot);
+		Shot.take(ctx, shot);
 		ctx.runOnClient(mc -> js.onClose());
 		ctx.waitTicks(4);
 	}
@@ -168,7 +168,7 @@ public class ClientPath implements FabricClientGameTest {
 					"feeding the lodestone and binding a Tether to it did not bind the player");
 			path(ctx, sp, Path.Step.RETURN, "gui.extremedimensions.guide.3", "31_path_bound");
 			settle(sp);
-			ctx.takeScreenshot("31_bound_at_the_portal");
+			Shot.take(ctx, "31_bound_at_the_portal");
 
 			sp.getServer().runCommand("execute in minecraft:the_nether run forceload add 0 0");
 			ctx.waitTicks(20);
@@ -177,7 +177,7 @@ public class ClientPath implements FabricClientGameTest {
 			ctx.waitTicks(40);
 			check(sp.getServer().computeOnServer(s -> DataStore.get(player(s).getUUID()).inRun), "through to the Nether, no expedition began");
 			settle(sp);
-			ctx.takeScreenshot("32_beyond_the_wound");
+			Shot.take(ctx, "32_beyond_the_wound");
 			sp.getServer().runCommand(String.format(Locale.ROOT, "execute in minecraft:overworld run tp @a %d.5 %d %d.5 0 10", x, y, z));
 			ctx.waitTicks(40);
 			check(sp.getServer().computeOnServer(s -> !DataStore.get(player(s).getUUID()).inRun), "home again, the expedition did not end");
@@ -190,13 +190,13 @@ public class ClientPath implements FabricClientGameTest {
 			ctx.waitTicks(50);
 			check(sp.getServer().computeOnServer(s -> DataStore.get(player(s).getUUID()).hints.contains("fragment")),
 					"a Tether Fragment in hand brought no hint");
-			ctx.takeScreenshot("33_hint_fragment");
+			Shot.take(ctx, "33_hint_fragment");
 
 			// 4. A Seam Needle (its hint too), used on crying obsidian, and into the tear
 			sp.getServer().runOnServer(s -> player(s).getInventory().add(new ItemStack(ModItems.SEAM_NEEDLE)));
 			ctx.waitTicks(50);
 			path(ctx, sp, Path.Step.SEAM, "gui.extremedimensions.path.seam.tear", "34_path_needle");
-			ctx.takeScreenshot("34_hint_needle");
+			Shot.take(ctx, "34_hint_needle");
 			BlockPos crying = new BlockPos(x - 3, y, z + 2);
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
@@ -209,7 +209,7 @@ public class ClientPath implements FabricClientGameTest {
 			check(sp.getServer().computeOnServer(s -> DataStore.get(player(s).getUUID()).inSeam), "walking into the tear did not lead into the Seam");
 			ctx.waitTicks(80);
 			settle(sp);
-			ctx.takeScreenshot("35_seam_arrival");
+			Shot.take(ctx, "35_seam_arrival");
 			path(ctx, sp, Path.Step.SEAM_HOME, "gui.extremedimensions.path.seam_home", "35_path_in_the_seam");
 
 			// 5. Home through the rift the visitor arrived by: the Path turns to the seal
@@ -248,9 +248,9 @@ public class ClientPath implements FabricClientGameTest {
 			check(sp.getServer().computeOnServer(s -> DataStore.get(player(s).getUUID()).frameStrung), "the silk did not string the frame");
 			ctx.waitTicks(60);
 			unbrief(ctx);
-			ctx.takeScreenshot("37_frame_vision");
+			Shot.take(ctx, "37_frame_vision");
 			ctx.waitTicks(75);
-			ctx.takeScreenshot("37_frame_weave");
+			Shot.take(ctx, "37_frame_weave");
 
 			// 7. The First Knot, built at once out in the Seam's dark, from outside and from its chamber, and the Knot Mother
 			// pulled loose from its heart (kept from harm meanwhile: the Seam's Thinned do not wait for the shots)
@@ -266,11 +266,11 @@ public class ClientPath implements FabricClientGameTest {
 			ctx.waitTicks(60);
 			settle(sp);
 			unbrief(ctx);
-			ctx.takeScreenshot("38_first_knot");
+			Shot.take(ctx, "38_first_knot");
 			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %d.5 %d %d.5 -90 10", heart.getX() - 12, heart.getY() + 3, heart.getZ()));
 			ctx.waitTicks(30);
 			unbrief(ctx);
-			ctx.takeScreenshot("38_first_knot_chamber");
+			Shot.take(ctx, "38_first_knot_chamber");
 			sp.getServer().runCommand("gamemode survival @a");
 			sp.getServer().runOnServer(s -> {
 				ServerPlayer p = player(s);
@@ -279,10 +279,10 @@ public class ClientPath implements FabricClientGameTest {
 			});
 			ctx.waitTicks(50);
 			unbrief(ctx);
-			ctx.takeScreenshot("39_knot_mother_forming");
+			Shot.take(ctx, "39_knot_mother_forming");
 			ctx.waitTicks(140);
 			check(sp.getServer().computeOnServer(s -> com.extremedimensions.elder.WeaverService.knotMotherAwake()), "the Knot Mother did not wake");
-			ctx.takeScreenshot("39_knot_mother");
+			Shot.take(ctx, "39_knot_mother");
 			// Her own shape (3.23), once her name has faded: whole from inside her chamber looking up at her (her anchors round
 			// her), and as her Snare is drawn
 			ctx.waitTicks(80);
@@ -307,7 +307,7 @@ public class ClientPath implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %.2f %.2f %.2f %.1f %.1f", view[0], view[1], view[2], view[3], view[4]));
 			ctx.waitTicks(10);
 			unbrief(ctx);
-			ctx.takeScreenshot("39_knot_mother_whole");
+			Shot.take(ctx, "39_knot_mother_whole");
 			sp.getServer().runOnServer(s -> {
 				for (com.extremedimensions.elder.KnotMother m : player(s).level().getEntitiesOfClass(com.extremedimensions.elder.KnotMother.class,
 						player(s).getBoundingBox().inflate(96))) {
@@ -316,7 +316,7 @@ public class ClientPath implements FabricClientGameTest {
 			});
 			// (her patterns are laid at the twelfth tick and close no sooner than a second and a half after)
 			ctx.waitTicks(24);
-			ctx.takeScreenshot("39_knot_mother_snare");
+			Shot.take(ctx, "39_knot_mother_snare");
 			sp.getServer().runOnServer(s -> {
 				for (com.extremedimensions.elder.KnotMother m : player(s).level().getEntitiesOfClass(com.extremedimensions.elder.KnotMother.class,
 						player(s).getBoundingBox().inflate(96))) {
@@ -357,11 +357,11 @@ public class ClientPath implements FabricClientGameTest {
 			sp.getServer().runCommand(String.format(Locale.ROOT, "execute as @a at @s run tp @s %.2f %d %.2f 180 24", loomAt.getX() + 0.5, loomAt.getY(), loomAt.getZ() + 4.5));
 			ctx.waitTicks(40);
 			unbrief(ctx);
-			ctx.takeScreenshot("41_weavers_loom");
+			Shot.take(ctx, "41_weavers_loom");
 			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Tapestry.use(player(s), loomAt, ItemStack.EMPTY));
 			ctx.waitTicks(20);
 			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.TapestryScreen.shown() != null, "the loom showed no tapestry"));
-			ctx.takeScreenshot("41_tapestry");
+			Shot.take(ctx, "41_tapestry");
 			check(sp.getServer().computeOnServer(s -> DataStore.get(player(s).getUUID()).journal.contains(com.extremedimensions.journal.JournalEntry.CONTINUED_MENDED.id)),
 					"the loom after the ending gave no page in the player's own hand");
 			sp.getServer().runOnServer(s -> Journal.open(player(s), DataStore.get(player(s).getUUID())));
@@ -373,7 +373,7 @@ public class ClientPath implements FabricClientGameTest {
 				}
 			});
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("41_own_hand");
+			Shot.take(ctx, "41_own_hand");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			// The sixth panel: the Weaving begins; its first wave comes out of the rifts round the loom
 			sp.getServer().runOnServer(s -> {
@@ -397,21 +397,21 @@ public class ClientPath implements FabricClientGameTest {
 			check(foes > 0, "the Weaving's first wave brought no foes");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			ctx.waitTicks(2);
-			ctx.takeScreenshot("42_weaving");
+			Shot.take(ctx, "42_weaving");
 			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Weaving.finishNow(true));
 			ctx.waitTicks(10);
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("42_weaving_held");
+			Shot.take(ctx, "42_weaving_held");
 			check(sp.getServer().computeOnServer(s -> DataStore.tapestryDone()), "the held Weaving did not finish the tapestry");
 			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Tapestry.open(player(s)));
 			ctx.waitTicks(10);
-			ctx.takeScreenshot("43_tapestry_finished");
+			Shot.take(ctx, "43_tapestry_finished");
 			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.TapestryScreen.shown() != null
 					&& pressOnce(com.extremedimensions.client.screen.TapestryScreen.shown(), I18n.get("gui.extremedimensions.tapestry.new_thread_button")),
 					"the finished tapestry offers no New Thread+"));
 			ctx.waitTicks(5);
-			ctx.takeScreenshot("43_new_thread");
+			Shot.take(ctx, "43_new_thread");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			// The Unweaving: a full set, its price in the bag, the screen from the tapestry's button, then the knots round the loom
 			sp.getServer().runOnServer(s -> {
@@ -432,7 +432,7 @@ public class ClientPath implements FabricClientGameTest {
 			ctx.waitTicks(10);
 			ctx.runOnClient(mc -> check(com.extremedimensions.client.screen.UnweaveScreen.shown() != null && com.extremedimensions.client.screen.UnweaveScreen.shown().ready(0),
 					"the Unweaving screen did not open ready to unweave the full Beyond set"));
-			ctx.takeScreenshot("44_unweave");
+			Shot.take(ctx, "44_unweave");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Unweaving.request(player(s), "BEYOND"));
 			check(sp.getServer().computeOnServer(s -> com.extremedimensions.tapestry.Unweaving.knotsLeft()) > 0, "the Unweaving tied no knots round the loom");
@@ -440,10 +440,10 @@ public class ClientPath implements FabricClientGameTest {
 			ctx.waitTicks(90);
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			ctx.waitTicks(2);
-			ctx.takeScreenshot("44_unweave_knots");
+			Shot.take(ctx, "44_unweave_knots");
 			sp.getServer().runOnServer(s -> com.extremedimensions.tapestry.Unweaving.cutAll());
 			ctx.waitTicks(20);
-			ctx.takeScreenshot("44_unwoven");
+			Shot.take(ctx, "44_unwoven");
 			check(sp.getServer().computeOnServer(s -> !com.extremedimensions.tapestry.Unweaving.active()
 					&& com.extremedimensions.tapestry.Unweaving.stacks(DataStore.get(player(s).getUUID()), com.extremedimensions.penalty.Penalty.Group.BEYOND) == 0),
 					"cutting every knot did not lift the Beyond set");

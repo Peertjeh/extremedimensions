@@ -53,14 +53,14 @@ public class ClientCompat implements FabricClientGameTest {
 			sp.getServer().runCommand("weather clear");
 			sp.getServer().runCommand("effect give @a minecraft:resistance infinite 255 true");
 			ctx.waitTicks(80);
-			ctx.takeScreenshot("compat_01_overworld");
+			Shot.take(ctx, "compat_01_overworld");
 
 			// The journal, as the game opens it
 			JournalScreen before = ctx.computeOnClient(mc -> JournalScreen.last());
 			sp.getServer().runOnServer(s -> Journal.open(player(s), DataStore.get(player(s).getUUID())));
 			ctx.waitTicks(30);
 			check(ctx.computeOnClient(mc -> JournalScreen.last()) != before, "the journal did not open");
-			ctx.takeScreenshot("compat_02_journal");
+			Shot.take(ctx, "compat_02_journal");
 			ctx.runOnClient(mc -> mc.gui.setScreen(null));
 			ctx.waitTicks(4);
 
@@ -98,7 +98,7 @@ public class ClientCompat implements FabricClientGameTest {
 					}
 				});
 				ctx.waitTicks(10);
-				ctx.takeScreenshot("compat_03_mod_menu");
+				Shot.take(ctx, "compat_03_mod_menu");
 				boolean found = false;
 				for (var e : loader.getEntrypointContainers("modmenu", Object.class)) {
 					if (e.getProvider().getMetadata().getId().equals("extremedimensions")
@@ -110,7 +110,7 @@ public class ClientCompat implements FabricClientGameTest {
 				}
 				check(found, "Mod Menu's Configure does not open the mod's settings");
 				ctx.waitTicks(10);
-				ctx.takeScreenshot("compat_04_settings");
+				Shot.take(ctx, "compat_04_settings");
 				ctx.runOnClient(mc -> mc.gui.setScreen(null));
 				ctx.waitTicks(4);
 			}
@@ -128,7 +128,7 @@ public class ClientCompat implements FabricClientGameTest {
 						&& com.extremedimensions.client.compat.JeiStatus.infos > 0, "the mod's JEI plugin gave JEI nothing");
 				check(ctx.computeOnClient(mc -> com.extremedimensions.client.compat.JeiStatus.show()), "JEI's runtime never came up");
 				ctx.waitTicks(20);
-				ctx.takeScreenshot("compat_06_jei");
+				Shot.take(ctx, "compat_06_jei");
 				ctx.runOnClient(mc -> mc.gui.setScreen(null));
 				ctx.waitTicks(4);
 			}
@@ -204,10 +204,10 @@ public class ClientCompat implements FabricClientGameTest {
 			} catch (AssertionError late) {
 				System.out.println("[compat] chunks not drawn in time; going on");
 			}
-			ctx.takeScreenshot("compat_05_seam");
+			Shot.take(ctx, "compat_05_seam");
 			sp.getServer().runCommand("execute as @a at @s run tp @s ~ ~ ~ ~180 -10");
 			ctx.waitTicks(40);
-			ctx.takeScreenshot("compat_06_seam_behind");
+			Shot.take(ctx, "compat_06_seam_behind");
 
 			if (loader.isModLoaded("iris")) {
 				underShaders(ctx, sp);
@@ -298,12 +298,12 @@ public class ClientCompat implements FabricClientGameTest {
 		System.out.println("[compat] shader pack in use: " + inUse);
 		if (!inUse) {
 			// (a pack that does not compile on the job's software renderer: nothing to look at, which is not the mod's)
-			ctx.takeScreenshot("compat_07_seam_shader_failed");
+			Shot.take(ctx, "compat_07_seam_shader_failed");
 			ctx.runOnClient(mc -> shaders(false));
 			return;
 		}
 		ctx.waitTicks(20);
-		ctx.takeScreenshot("compat_07_seam_shader");
+		Shot.take(ctx, "compat_07_seam_shader");
 
 		// The lanterns in the pack's list, under a vanilla light's number (where the pack names that light at all)
 		Integer kindled = ctx.computeOnClient(mc -> shaderId(com.extremedimensions.registry.ModBlocks.KINDLED_SEAM_LANTERN.defaultBlockState()));
@@ -332,7 +332,7 @@ public class ClientCompat implements FabricClientGameTest {
 			most = Math.max(most, ctx.computeOnClient(mc -> mc.level == null || mc.level.endFlashState() == null ? 0f : mc.level.endFlashState().getIntensity(1f)));
 		}
 		check(most == 0f, "an End flash showed in the Seam under the shader pack: " + most);
-		ctx.takeScreenshot("compat_08_seam_shader_later");
+		Shot.take(ctx, "compat_08_seam_shader_later");
 
 		// (3.52.0) the mod's other glowing blocks, in a row five blocks ahead, each in the pack's list as its vanilla light
 		net.minecraft.world.level.block.state.BlockState[] row = {com.extremedimensions.registry.ModBlocks.EMBER_ANCHOR.defaultBlockState(),
@@ -356,7 +356,7 @@ public class ClientCompat implements FabricClientGameTest {
 			}
 		});
 		ctx.waitTicks(40);
-		ctx.takeScreenshot("compat_09_seam_shader_lights");
+		Shot.take(ctx, "compat_09_seam_shader_lights");
 		StringBuilder got = new StringBuilder();
 		for (int i = 0; i < row.length; i++) {
 			int k = i;

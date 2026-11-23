@@ -1,0 +1,33 @@
+name: wiki
+# 3.56: the wiki (docs/wiki) at a fixed public address, https://peertjeh.github.io/extremedimensions/, on the gh-pages
+# branch (one commit, replaced every time). Settings, Pages: "Deploy from a branch", gh-pages, / (root).
+on:
+  push:
+    branches: [main, claude/youthful-carson-roijnu]
+    paths: ['docs/wiki/**']
+  workflow_dispatch:
+
+concurrency:
+  group: wiki
+  cancel-in-progress: true
+
+jobs:
+  pages:
+    name: wiki to gh-pages
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: push the wiki to gh-pages
+        run: |
+          [ -s docs/wiki/index.html ] || { echo "docs/wiki/index.html is missing or empty"; exit 1; }
+          rm -rf /tmp/site && cp -r docs/wiki /tmp/site && touch /tmp/site/.nojekyll
+          cd /tmp/site
+          git init -q
+          git checkout -q -b gh-pages
+          git add -A
+          git -c user.name=ci -c user.email=ci@localhost commit -q -m "Wiki of ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
+          echo "Wiki pushed to gh-pages: https://${GITHUB_REPOSITORY_OWNER,,}.github.io/${GITHUB_REPOSITORY#*/}/"

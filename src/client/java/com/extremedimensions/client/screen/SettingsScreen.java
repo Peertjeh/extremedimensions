@@ -14,6 +14,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import com.extremedimensions.client.feedback.Report;
 import com.extremedimensions.client.options.ClientOptions;
 import com.extremedimensions.client.state.ClientState;
 import com.extremedimensions.client.ui.Ui;
@@ -204,6 +205,13 @@ public class SettingsScreen extends Screen {
 		toggles.clear();
 		resets.clear();
 		int x0 = x0(), y0 = y0();
+		// 3.56: the wiki, and the way to tell the maker something went wrong (no Discord needed), in the title bar
+		Link wiki = this.addRenderableWidget(new Link(x0 + 12, y0 + 3, 48, "gui.extremedimensions.settings.wiki",
+				() -> Ui.tr("gui.extremedimensions.settings.wiki"), () -> Report.openWiki(this)));
+		wiki.setTooltip(Tooltip.create(Component.translatable("gui.extremedimensions.settings.wiki.desc")));
+		Link report = this.addRenderableWidget(new Link(x0 + pw - 12 - 104, y0 + 3, 104, "gui.extremedimensions.settings.report",
+				() -> Ui.tr("gui.extremedimensions.settings.report"), () -> Report.open(this)));
+		report.setTooltip(Tooltip.create(Component.translatable("gui.extremedimensions.settings.report.desc")));
 		this.addRenderableWidget(new TabButton(x0 + 12, y0 + 22, (pw - 30) / 2, Tab.DISPLAY));
 		this.addRenderableWidget(new TabButton(x0 + 18 + (pw - 30) / 2, y0 + 22, (pw - 30) / 2, Tab.WORLD));
 

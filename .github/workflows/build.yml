@@ -98,11 +98,13 @@ jobs:
         run: |
           if [ -f /etc/apt/apt-mirrors.txt ]; then sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt; fi
           sudo apt-get -o Acquire::Retries=3 update -qq && sudo apt-get -o Acquire::Retries=3 install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers libegl1
+      # A commit message with [gallery] draws every shot again at 1920x1080 (for the store pages and the trailer)
       - name: client game test
-        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --no-configuration-cache
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClientGameTest --no-configuration-cache
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
-        timeout-minutes: 25
+          ED_SHOT_SIZE: ${{ contains(github.event.head_commit.message, '[gallery]') && '1920x1080' || '' }}
+        timeout-minutes: 40
       - name: capture screenshots
         if: always()
         uses: actions/upload-artifact@v7
@@ -174,6 +176,37 @@ jobs:
           git add .
           git -c user.name=ci -c user.email=ci@localhost commit -q -m "Tetherite, interior and Starved One screenshots of ${GITHUB_SHA}"
           git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-shots
+
+      # The store-page and trailer set at full size, on a branch of its own (gallery, one commit, replaced every time)
+      - name: gallery shots to the gallery branch
+        if: always() && github.event_name == 'push' && contains(github.event.head_commit.message, '[gallery]')
+        run: |
+          python3 -m pip install -q --break-system-packages pillow >/dev/null 2>&1 || pip install -q pillow
+          mkdir -p /tmp/gallery
+          python3 - <<'PY'
+          import glob, os
+          from PIL import Image
+          keep = ("00_title", "01_hud", "02_kindled", "02_tetherite_worn", "02_tetherite_spear", "03_curses_beyond", "06_tribe",
+                  "06_seamkin", "06_face", "08_pact", "10_", "11_", "12_fight_", "13_veil_ray", "13_status", "14_fx", "15_fray",
+                  "16_guides", "16_bestiary", "17_seam", "18_colossus", "18_masonry", "19_", "20_island", "25_", "26_frayed_ray",
+                  "29_warm_chain", "29_held_chamber", "31_veil_lantern", "32_beyond", "35_", "39_knot_mother", "40_", "41_",
+                  "43_tapestry")
+          n = 0
+          for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
+              b = os.path.basename(f)
+              if not any(k in b for k in keep):
+                  continue
+              im = Image.open(f).convert("RGB")
+              im.save("/tmp/gallery/" + b[:-4] + ".jpg", "JPEG", quality=90)
+              n += 1
+          print("gallery:", n, "shots at", im.size if n else None)
+          PY
+          cd /tmp/gallery
+          git init -q
+          git checkout -q -b gallery
+          git add .
+          git -c user.name=ci -c user.email=ci@localhost commit -q -m "Gallery shots of ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" gallery
 
   compat:
     name: client test with Sodium, Iris, Mod Menu and JEI
@@ -435,6 +468,7 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v6
       - name: release this version if it is new
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -462,3 +496,20 @@ jobs:
               on && /^## / {print ""; sub(/^## /, "### Also in "); print; next} on' CHANGELOG.md; } > notes.md
           gh release create "v$version" "$jar" --target "$GITHUB_SHA" --title "Extreme Dimensions $version${name:+ — $name}" --notes-file notes.md
           echo "Released v$version with $jar"
+          { echo "released=1"; echo "version=$version"; echo "mc=$mc"; echo "jar=$jar"; echo "title=Extreme Dimensions $version${name:+ — $name}"; } >> "$GITHUB_OUTPUT"
+      # 3.56: the same version on Modrinth and CurseForge (each skipped, with a notice, until its secrets are set; the
+      # publish workflow does it by hand for a version already out)
+      - name: publish to Modrinth and CurseForge
+        if: steps.release.outputs.released == '1'
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT: ${{ secrets.MODRINTH_PROJECT }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CURSEFORGE_PROJECT: ${{ secrets.CURSEFORGE_PROJECT }}
+          PUB_VERSION: ${{ steps.release.outputs.version }}
+          PUB_MC: ${{ steps.release.outputs.mc }}
+          PUB_JAR: ${{ steps.release.outputs.jar }}
+          PUB_TITLE: ${{ steps.release.outputs.title }}
+        run: |
+          python3 tools/release/publish.py --version "$PUB_VERSION" --mc "$PUB_MC" --jar "$PUB_JAR" --notes notes.md \
+            --title "$PUB_TITLE" --body docs/modrinth/description.md

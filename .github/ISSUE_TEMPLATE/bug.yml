@@ -1,0 +1,60 @@
+name: Bug or crash
+description: Something broke, crashed, or does not do what the wiki says.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. The **Report a problem** button in the mod's settings (Mod Menu, or the Settings key)
+        fills in the details below for you and copies them to your clipboard.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, and what you expected instead.
+      placeholder: "My Tether ran out while I was standing next to the portal..."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How can it be made to happen again?
+      description: The steps, as far as you know them. "It happened once" is fine too.
+      placeholder: |
+        1. Charge an Ember Anchor with 3 coal
+        2. Step through
+        3. ...
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where were you?
+      options:
+        - Overworld
+        - Nether
+        - The End
+        - The Seam
+        - In a menu or screen
+        - Not sure
+  - type: dropdown
+    id: play
+    attributes:
+      label: Singleplayer or a server?
+      options:
+        - Singleplayer
+        - A server (I am the admin)
+        - A server (I am a player)
+  - type: textarea
+    id: details
+    attributes:
+      label: Versions and mods
+      description: Filled in by the Report a problem button. Otherwise the mod version, the Minecraft version and the mods you run.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Crash report or log
+      description: For a crash, the file in `.minecraft/crash-reports`, or `logs/latest.log`. Drag it in, or paste it.
+      render: text
