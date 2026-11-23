@@ -10,9 +10,9 @@ Usage: fetch.py <mods dir>
 Prints what it found, one line per mod; a mod with no build for this game version yet is left out (the job then tests
 with the others). A mod that needs another mod beside it which neither it nor the others bring (WTHIT its packet
 library) gets what Modrinth names as needed by that build, or is left out when that cannot be had, as the game would
-not start without it. Of two mods Modrinth marks as not to be loaded together, the later in the list is left out (a
-fabric.mod.json's "breaks" names version ranges, often of old versions only, as Iris does Sodium's: the game itself
-judges those). A mod that needs a newer Fabric API than the build's is left out too, as the game would not start. Exits 0 when at least one was found, 3 when none was (the job reports
+not start without it. Of two mods Modrinth marks as not to be loaded together, the later in the list is left out. Where a
+fabric.mod.json's "breaks" names the version of another that was fetched (Sodium 0.9.3 breaks Iris up to 1.12.0), the
+mod that says so is taken at its newest build that does not, or else the other is left out. A mod that needs a newer Fabric API than the build's is left out too, as the game would not start. Exits 0 when at least one was found, 3 when none was (the job reports
 that and skips its test).
 
 With --shader it fetches a shader pack instead (3.51.1): the newest Solas, else Complementary Reimagined, for the test's
@@ -66,6 +66,12 @@ def numbers(v):
 
 
 def newest(slug, version, loader="fabric"):
+    found = versions(slug, version, loader)
+    return found[0] if found else None
+
+
+def versions(slug, version, loader="fabric"):
+    """Every build of a mod for this game version and loader: releases before betas before alphas, each newest first."""
     params = {"loaders": json.dumps([loader])}
     if version:
         params["game_versions"] = json.dumps([version])
@@ -77,7 +83,7 @@ def newest(slug, version, loader="fabric"):
     # releases before betas before alphas, each newest first (the API lists newest first)
     order = {"release": 0, "beta": 1, "alpha": 2}
     versions.sort(key=lambda v: order.get(v.get("version_type"), 3))
-    return versions[0] if versions else None
+    return versions
 
 
 def download(f, out):
@@ -120,6 +126,42 @@ def mod_ids(path):
     except zipfile.BadZipFile:
         pass
     return ids
+
+
+def base(v):
+    """A version without its build or pre-release part: 1.11.7+mc26.3 is 1.11.7."""
+    return re.split(r"[+-]", str(v), maxsplit=1)[0]
+
+
+def matches(constraint, ver):
+    """Whether a version meets a fabric.mod.json version predicate (a list: any of them; spaces: all of them)."""
+    if isinstance(constraint, list):
+        return any(matches(c, ver) for c in constraint)
+    c = str(constraint).strip()
+    if c in ("", "*"):
+        return True
+    have = numbers(base(ver))
+    for part in c.split():
+        m = re.match(r"(<=|>=|<|>|=|\^|~)?\s*(.+)", part)
+        op, want = m.group(1) or "=", m.group(2)
+        if want.endswith((".x", ".X", ".*")):
+            pre = numbers(want[:-2])
+            if have[:len(pre)] != pre:
+                return False
+            continue
+        w = numbers(base(want))
+        ok = {"<=": have <= w, "<": have < w, ">=": have >= w, ">": have > w, "=": have == w,
+              "^": have >= w and have[:1] == w[:1], "~": have >= w and have[:2] == w[:2]}[op]
+        if not ok:
+            return False
+    return True
+
+
+def breaks(path, other):
+    """Whether one mod jar's fabric.mod.json says it breaks the version of the other that is there."""
+    them = metadata(other)
+    said = metadata(path).get("breaks", {})
+    return them.get("id") in said and matches(said[them.get("id")], them.get("version", ""))
 
 
 def given(mod_id):
@@ -253,6 +295,44 @@ def main():
                 os.remove(p2)
                 del got[later]
                 print(f"COMPAT|{later}|none|left out: it and {first} will not be loaded together")
+    # A mod whose newest build says it breaks the build of another that is there (3.56: Sodium 0.9.3 breaks every Iris
+    # up to 1.12.0, while 26.3 has Iris 1.11.7) is taken at its newest build that does not; with none, the other stays out
+    for a in list(got):
+        for b in list(got):
+            if a == b or a not in got or b not in got:
+                continue
+            if not (breaks(got[a][1], got[b][1]) or breaks(got[b][1], got[a][1])):
+                continue
+            other = metadata(got[b][1])
+            fixed = False
+            try:
+                older = versions(a, version)[1:9]
+            except Exception as e:
+                older = []
+                print(f"COMPAT|{a}|error|{e}")
+            for v in older:
+                f = next((x for x in v["files"] if x.get("primary")), v["files"][0])
+                path = os.path.join(out, f["filename"])
+                if path == got[a][1]:
+                    continue
+                try:
+                    download(f, out)
+                except Exception as e:
+                    print(f"COMPAT|{a}|error|{e}")
+                    continue
+                if breaks(path, got[b][1]) or breaks(got[b][1], path):
+                    os.remove(path)
+                    continue
+                os.remove(got[a][1])
+                got[a] = (v, path)
+                print(f"COMPAT|{a}|{v['version_number']}|{f['filename']} (the newest will not load beside {b} "
+                      f"{other.get('version')})")
+                fixed = True
+                break
+            if not fixed:
+                os.remove(got[b][1])
+                del got[b]
+                print(f"COMPAT|{b}|none|left out: {a} will not load beside it, at any of its recent builds")
     sys.exit(0 if got else 3)
 
 
