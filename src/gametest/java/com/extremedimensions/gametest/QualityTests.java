@@ -155,8 +155,10 @@ public class QualityTests {
 					// only that a way is named is checked, and that a hoard straight east, where it is the one, reads as east)
 					check(helper, java.util.List.of("north", "north_east", "east", "south_east", "south", "south_west", "west", "north_west")
 							.contains(told.theft().bearing()), "the theft named no way it ran: %s", told.theft().bearing());
-					check(helper, !told.theft().hoard() || "east".equals(told.theft().bearing()), "it was told to run %s to its hoard, not east to it",
-							told.theft().bearing());
+					// (a test beside this one may have made a hoard of its own after this one put the others aside: the
+					// Lurker may run to that one instead, and then east is not the way)
+					check(helper, told.theft().hoard() != hoard || "east".equals(told.theft().bearing()),
+							"it was told to run %s to its hoard, not east to it", told.theft().bearing());
 				} finally {
 					Config.LURKER_XP_WEIGHT = xp;
 					Config.LURKER_ARMOR_WEIGHT = armor;

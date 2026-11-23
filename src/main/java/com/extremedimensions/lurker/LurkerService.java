@@ -140,7 +140,8 @@ public final class LurkerService {
 	}
 
 	/** A theft as its victim was told it (3.55.0): what was taken, the levels, which way it ran, and whether to its hoard. */
-	public record Theft(List<ItemStack> stacks, int levels, String bearing, boolean hoard) {}
+	/** A told theft; hoard is the one it runs to, or null when it runs away (3.56: which one, for the tests). */
+	public record Theft(List<ItemStack> stacks, int levels, String bearing, Hoard hoard) {}
 
 	/** The last theft told, and to whom (for the tests: a test player's client reads no chat). */
 	public record Told(UUID to, Theft theft) {}
@@ -909,7 +910,7 @@ public final class LurkerService {
 		p.sendSystemMessage(Component.translatable(st.hoard != null ? "gui.extremedimensions.lurker.took_hoard"
 				: "gui.extremedimensions.lurker.took", what, Component.translatable("gui.extremedimensions.dir." + bearing))
 				.withStyle(ChatFormatting.LIGHT_PURPLE));
-		lastTheft = new Told(p.getUUID(), new Theft(List.copyOf(st.untold), st.untoldLevels, bearing, st.hoard != null));
+		lastTheft = new Told(p.getUUID(), new Theft(List.copyOf(st.untold), st.untoldLevels, bearing, st.hoard));
 		st.untold.clear();
 		st.untoldLevels = 0;
 	}
