@@ -6,8 +6,8 @@ import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 
 /**
  * 3.56: every client screenshot goes through here. Normally the shot is the size of the test window (854x480); with
- * ED_SHOT_SIZE set (the [gallery] CI run sets 1920x1080) the frame is drawn again at that size for the store pages and
- * the trailer. The sized options are looked up by reflection, so a Fabric API without them still builds and the shot
+ * ED_SHOT_SIZE set (the [gallery] CI run sets 1920x1080) a view of the world is drawn again at that size, without the
+ * HUD, for the store pages and the trailer (a screen stays at the window's size). The sized options are looked up by reflection, so a Fabric API without them still builds and the shot
  * falls back to the window size, said once in the log.
  */
 final class Shot {
@@ -21,7 +21,11 @@ final class Shot {
 	}
 
 	static void take(ClientGameTestContext ctx, String name) {
-		if (SIZE != null && !failed) {
+		// (a screen is laid out for the window, not the larger frame: it would sit small in a corner, so it is taken at
+		// the window's size; the world is drawn large with the HUD hidden, as a store page or a trailer wants it)
+		if (SIZE != null && !failed && !ctx.computeOnClient(mc -> com.extremedimensions.client.title.Menus.current() != null)) {
+			boolean hidden = ctx.computeOnClient(mc -> mc.options.hideGui);
+			ctx.runOnClient(mc -> mc.options.hideGui = true);
 			try {
 				if (take == null) {
 					Class<?> options = Class.forName("net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions");
@@ -35,6 +39,8 @@ final class Shot {
 			} catch (ReflectiveOperationException | RuntimeException e) {
 				failed = true;
 				System.out.println("SHOT-SIZE fallback to the window size: " + e);
+			} finally {
+				ctx.runOnClient(mc -> mc.options.hideGui = hidden);
 			}
 		}
 		ctx.takeScreenshot(name);
