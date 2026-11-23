@@ -26,9 +26,14 @@ import net.minecraft.world.phys.Vec3;
  */
 public class LockTests {
 	private static int pearlsNear(ServerLevel level, Vec3 at, double r) {
+		return pearlsNear(level, at, r, java.util.Set.of());
+	}
+
+	/** The ender pearls lying within r of a spot, but for the item entities named (pearls that lay there before). */
+	private static int pearlsNear(ServerLevel level, Vec3 at, double r, java.util.Set<ItemEntity> before) {
 		int n = 0;
 		for (ItemEntity e : level.getEntitiesOfClass(ItemEntity.class, new AABB(at, at).inflate(r))) {
-			if (e.getItem().is(Items.ENDER_PEARL)) {
+			if (e.getItem().is(Items.ENDER_PEARL) && !before.contains(e)) {
 				n += e.getItem().getCount();
 			}
 		}
@@ -77,9 +82,14 @@ public class LockTests {
 					check(helper, level.getBlockState(p.blockPosition().below()).is(Blocks.END_STONE), "the player does not stand on an islet of end stone");
 					check(helper, pearlsNear(level, p.position(), 2) == 1, "there is not one pearl at the player's feet but %s", pearlsNear(level, p.position(), 2));
 					Vec3 at = in[0].position();
+					// (the pearl left at the player's feet, or one from a test beside this one, may lie within reach too:
+					// only what lies there after the blow is counted as the Lockwarden's drop)
+					java.util.Set<ItemEntity> before = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+					before.addAll(level.getEntitiesOfClass(ItemEntity.class, new AABB(at, at).inflate(4)));
 					in[0].hurtServer(level, level.damageSources().playerAttack(p), 500.0f);
 					check(helper, !in[0].isAlive(), "the Lockwarden did not die");
-					check(helper, pearlsNear(level, at, 4) == 16, "the slain Lockwarden dropped %s pearls, not 16", pearlsNear(level, at, 4));
+					check(helper, pearlsNear(level, at, 4, before) == 16, "the slain Lockwarden dropped %s pearls, not 16",
+							pearlsNear(level, at, 4, before));
 				} finally {
 					restore.run();
 					if (in[0].isAlive()) {

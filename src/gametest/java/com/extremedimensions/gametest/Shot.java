@@ -24,8 +24,8 @@ final class Shot {
 		// (a screen is laid out for the window, not the larger frame: it would sit small in a corner, so it is taken at
 		// the window's size; the world is drawn large with the HUD hidden, as a store page or a trailer wants it)
 		if (SIZE != null && !failed && !ctx.computeOnClient(mc -> com.extremedimensions.client.title.Menus.current() != null)) {
-			boolean hidden = ctx.computeOnClient(mc -> mc.options.hideGui);
-			ctx.runOnClient(mc -> mc.options.hideGui = true);
+			boolean hidden = ctx.computeOnClient(Shot::hud);
+			ctx.runOnClient(mc -> hud(mc, true));
 			try {
 				if (take == null) {
 					Class<?> options = Class.forName("net.fabricmc.fabric.api.client.gametest.v1.screenshot.TestScreenshotOptions");
@@ -40,10 +40,62 @@ final class Shot {
 				failed = true;
 				System.out.println("SHOT-SIZE fallback to the window size: " + e);
 			} finally {
-				ctx.runOnClient(mc -> mc.options.hideGui = hidden);
+				ctx.runOnClient(mc -> hud(mc, hidden));
 			}
 		}
 		ctx.takeScreenshot(name);
+	}
+
+	private static java.lang.reflect.Field hideField;
+	private static Object hideOwnerKind;
+	private static boolean hideLooked;
+
+	/** Whether the HUD is hidden (F1); where 26.3 keeps that switch is looked up once, by name. */
+	private static boolean hud(net.minecraft.client.Minecraft mc) {
+		Object owner = hideOwner(mc);
+		try {
+			return owner != null && hideField.getBoolean(owner);
+		} catch (ReflectiveOperationException e) {
+			return false;
+		}
+	}
+
+	private static void hud(net.minecraft.client.Minecraft mc, boolean hide) {
+		Object owner = hideOwner(mc);
+		if (owner == null) {
+			return;
+		}
+		try {
+			hideField.setBoolean(owner, hide);
+		} catch (ReflectiveOperationException e) {
+			System.out.println("SHOT-SIZE cannot hide the HUD: " + e);
+		}
+	}
+
+	private static Object hideOwner(net.minecraft.client.Minecraft mc) {
+		Object[] owners = { mc.options, mc.gui, mc };
+		if (!hideLooked) {
+			hideLooked = true;
+			StringBuilder seen = new StringBuilder();
+			for (int i = 0; i < owners.length && hideField == null; i++) {
+				for (Class<?> c = owners[i].getClass(); c != null && c != Object.class && hideField == null; c = c.getSuperclass()) {
+					for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+						String n = f.getName().toLowerCase(java.util.Locale.ROOT);
+						if (f.getType() == boolean.class && !java.lang.reflect.Modifier.isStatic(f.getModifiers())
+								&& (n.contains("hide") || n.contains("hidden"))) {
+							seen.append(c.getSimpleName()).append('.').append(f.getName()).append(' ');
+							if (n.equals("hidegui") || n.equals("hidehud") || n.equals("hidden")) {
+								f.setAccessible(true);
+								hideField = f;
+								hideOwnerKind = i;
+							}
+						}
+					}
+				}
+			}
+			System.out.println("SHOT-SIZE HUD switch: " + (hideField == null ? "none" : hideField) + " (fields seen: " + seen + ")");
+		}
+		return hideField == null ? null : owners[(Integer) hideOwnerKind];
 	}
 
 	private static int[] parse(String s) {
