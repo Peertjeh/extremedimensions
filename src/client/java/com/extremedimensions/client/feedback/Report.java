@@ -1,5 +1,6 @@
 package com.extremedimensions.client.feedback;
 
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -64,11 +65,11 @@ public final class Report {
 	public static void open(Screen parent) {
 		String details = details();
 		Minecraft.getInstance().keyboardHandler.setClipboard(details);
-		ConfirmLinkScreen.confirmLinkNow(parent, issueUrl(details));
+		ConfirmLinkScreen.confirmLinkNow(parent, URI.create(issueUrl(details)));
 	}
 
 	public static void openWiki(Screen parent) {
-		ConfirmLinkScreen.confirmLinkNow(parent, WIKI);
+		ConfirmLinkScreen.confirmLinkNow(parent, URI.create(WIKI));
 	}
 
 	private static String version(String id) {
