@@ -24,7 +24,7 @@ final class Shot {
 		// (a screen is laid out for the window, not the larger frame: it would sit small in a corner, so it is taken at
 		// the window's size; the world is drawn large with the HUD hidden, as a store page or a trailer wants it)
 		if (SIZE != null && !failed && !ctx.computeOnClient(mc -> com.extremedimensions.client.title.Menus.current() != null)) {
-			boolean hidden = ctx.computeOnClient(Shot::hud);
+			boolean hidden = ctx.computeOnClient(mc -> hudHidden(mc));
 			ctx.runOnClient(mc -> hud(mc, true));
 			try {
 				if (take == null) {
@@ -51,7 +51,7 @@ final class Shot {
 	private static boolean hideLooked;
 
 	/** Whether the HUD is hidden (F1); where 26.3 keeps that switch is looked up once, by name. */
-	private static boolean hud(net.minecraft.client.Minecraft mc) {
+	private static boolean hudHidden(net.minecraft.client.Minecraft mc) {
 		Object owner = hideOwner(mc);
 		try {
 			return owner != null && hideField.getBoolean(owner);
