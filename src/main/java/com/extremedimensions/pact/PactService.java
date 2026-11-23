@@ -183,10 +183,23 @@ public final class PactService {
 		return Config.PACT_FULL_SECONDS <= 0 ? 1 : Math.max(0, Math.min(1, d.runActive / (double) Config.PACT_FULL_SECONDS));
 	}
 
-	/** A death or a Collapse on an expedition under a pact: its reward is gone (the pact itself stays sworn). */
+	/**
+	 * An expedition under a pact ended without a safe return: its reward is gone (the pact itself stays sworn). Said at
+	 * once where nothing more follows (a Seam-Woven Tether unravelled).
+	 */
 	public static void broken(ServerPlayer p, PlayerData d) {
 		if (heat(d) > 0) {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.pact.broken"));
+		}
+	}
+
+	/**
+	 * As {@link #broken}, by a death or a Collapse (3.55.0): said at the respawn, in one line with the rest of what the
+	 * death cost (see ExpeditionService.onRespawn), not as a line of its own in the middle of it.
+	 */
+	public static void brokenByDeath(PlayerData d) {
+		if (heat(d) > 0) {
+			d.pactBroke = true;
 		}
 	}
 

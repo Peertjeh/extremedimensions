@@ -36,6 +36,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.phys.AABB;
@@ -48,9 +49,69 @@ import net.minecraft.world.phys.Vec3;
  * player is told about the wound.
  */
 public class LurkerTests {
+	/**
+	 * 3.31: every kind takes its health from its setting as it is made (half again its old health by default): the
+	 * Lurker 90, the Keeper 210; a setting changed holds for the next one made; the Starved One keeps its own 500.
+	 */
+	@GameTest
+	public void eachKindTakesItsHealthFromItsSetting(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		double magpie = Config.MAGPIE_HEALTH;
+		try {
+			check(helper, Config.LURKER_HEALTH == 90 && Config.KEEPER_HEALTH == 210 && Config.WICK_HEALTH == 6, "the defaults are not half again the old health");
+			Lurker l = ModEntities.LURKER.create(level, EntitySpawnReason.EVENT);
+			Keeper k = ModEntities.KEEPER.create(level, EntitySpawnReason.EVENT);
+			check(helper, l != null && l.getMaxHealth() == 90 && l.getHealth() == 90, "a Lurker is made with %s of %s health", l == null ? 0 : l.getHealth(),
+					l == null ? 0 : l.getMaxHealth());
+			check(helper, k != null && k.getMaxHealth() == 210, "a Keeper is made with %s health", k == null ? 0 : k.getMaxHealth());
+			Config.MAGPIE_HEALTH = 50;
+			var m = ModEntities.MAGPIE.create(level, EntitySpawnReason.EVENT);
+			check(helper, m != null && m.getMaxHealth() == 50 && m.getHealth() == 50, "a Magpie made after its setting changed has %s health",
+					m == null ? 0 : m.getMaxHealth());
+			var so = ModEntities.STARVED_ONE.create(level, EntitySpawnReason.EVENT);
+			check(helper, so != null && so.getMaxHealth() == com.extremedimensions.mending.StarvedOne.baseHealth(), "the Starved One took the Keeper's health (%s)",
+					so == null ? 0 : so.getMaxHealth());
+		} finally {
+			Config.MAGPIE_HEALTH = magpie;
+		}
+		helper.succeed();
+	}
+
 	private static void place(GameTestHelper helper, ServerPlayer p, double x, double y, double z) {
 		Vec3 at = helper.absoluteVec(new Vec3(x, y, z));
 		p.snapTo(at.x, at.y, at.z, 0f, 0f);
+	}
+
+	/**
+	 * 3.27.5: a companion told to stay (sneak, an empty hand) waits where it was left while its player walks off, and is
+	 * kept even when no one drives it; told again, it comes along.
+	 */
+	@GameTest(maxTicks = 260)
+	public void aCompanionToldToStayWaitsAndFollowsWhenCalled(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "stay-owner");
+		PlayerData d = DataStore.get(p.getUUID());
+		place(helper, p, 7.5, 0, 7.5);
+		Hollowling h = HollowService.befriend(p, helper.absolutePos(new BlockPos(1, 0, 1)));
+		check(helper, h != null, "no companion came");
+		Vec3 left = h.position();
+		check(helper, HollowService.stay(p, h, true).consumesAction(), "the companion would not stay");
+		check(helper, HollowService.waiting(d) && d.companionStayId.equals(h.getStringUUID()), "the player's data does not say where it waits");
+		check(helper, HollowService.isDriven(h), "a companion told to stay is not kept");
+		helper.runAfterDelay(80, () -> {
+			check(helper, h.isAlive() && h.position().distanceTo(left) < 1.0, "the companion told to stay moved %.1f blocks", h.position().distanceTo(left));
+			check(helper, HollowService.stay(p, h, false).consumesAction() && !HollowService.waiting(d), "the companion would not come along again");
+		});
+		helper.runAfterDelay(240, () -> {
+			try {
+				check(helper, h.isAlive() && h.distanceTo(p) < 6, "called again, the companion stayed %.1f blocks off", h.distanceTo(p));
+			} finally {
+				d.companion = false;
+				d.companionStay = null;
+				d.companionStayId = null;
+				h.discard();
+			}
+			helper.succeed();
+		});
 	}
 
 	private static int curses(PlayerData d) {
@@ -67,6 +128,27 @@ public class LurkerTests {
 			n += p.getInventory().getItem(i).isEmpty() ? 0 : 1;
 		}
 		return n;
+	}
+
+	/**
+	 * Looking for room or for the ground never reads a chunk that is not loaded now: a body at a chunk's edge reaches into
+	 * the next one, and reading a block of a chunk on its way in makes the server wait (the performance test caught a
+	 * Lurker's vantage doing so, 44 ms). In loaded ground it still finds room.
+	 */
+	@GameTest
+	public void roomIsSoughtOnlyInLoadedChunks(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		// Far out, where nothing is loaded, on the east edge of a chunk: a body there reaches into the next
+		int x = 1_600_015, z = 1_600_008;
+		var chunks = level.getChunkSource();
+		check(helper, chunks.getChunkNow(x >> 4, z >> 4) == null && chunks.getChunkNow((x + 1) >> 4, z >> 4) == null, "the far chunks were loaded already");
+		check(helper, !TribeMoves.roomFor(level, new BlockPos(x, 64, z), 1.4, 3.6), "room was found in chunks that are not loaded");
+		check(helper, TribeMoves.surface(level, x, z, 80, 1.4, 3.6) == null, "ground was found in a chunk that is not loaded");
+		check(helper, chunks.getChunkNow(x >> 4, z >> 4) == null && chunks.getChunkNow((x + 1) >> 4, z >> 4) == null, "looking for room loaded a chunk");
+		// Here, on a floor of stone, there is room as before
+		helper.setBlock(new BlockPos(1, 1, 1), Blocks.STONE.defaultBlockState());
+		check(helper, TribeMoves.roomFor(level, helper.absolutePos(new BlockPos(1, 2, 1)), 0.6, 1.8), "no room on a floor of stone in loaded ground");
+		helper.succeed();
 	}
 
 	/** Its reach: a claw that hurts, two things taken, and (sure to here) a curse left behind. Its glow pulses blue. */
@@ -338,12 +420,135 @@ public class LurkerTests {
 			check(helper, l != null, "no Lurker came");
 			LurkerService.adopt(level, l, p, "hunt");
 		});
-		helper.runAfterDelay(140, () -> {
+		// Watched every tick: once up beside its prey it strikes and may hop, so one tick's height says little
+		int[] upAt = {-1};
+		for (int t = 21; t <= 200; t++) {
+			int tick = t;
+			helper.runAfterDelay(t, () -> {
+				if (upAt[0] < 0 && l != null && l.isAlive() && l.onGround() && l.getY() >= top - 0.01) {
+					upAt[0] = tick;
+				}
+			});
+		}
+		helper.runAfterDelay(201, () -> {
 			try {
-				check(helper, l.isAlive() && l.getY() >= top - 0.01, "the Lurker stayed below the ledge (at %s, the top at %s)", l.getY(), top);
+				check(helper, upAt[0] >= 0, "the Lurker never stood on the ledge (at %s, the top at %s)", l.getY(), top);
 				check(helper, l.getHealth() == l.getMaxHealth(), "the leap hurt the Lurker (%s)", l.getHealth());
 			} finally {
 				l.discard();
+			}
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * Round a wall and up a step two blocks high: the big Lurker goes round the wall without turning where it stands
+	 * (never more than a few tens of degrees in a tick, never round and round on the spot) and leaps up onto the step its
+	 * prey stands on, the leap never taken through the wall.
+	 */
+	@GameTest(environment = Alone.LURKER_STRIDE, maxTicks = 360)
+	public void theBigLurkerGoesRoundAWallAndLeapsAStepWithoutSpinning(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		// A wall five high across most of the floor, a gap of two at its end; the prey on a step two high beyond it
+		for (int z = 0; z <= 5; z++) {
+			for (int y = 0; y <= 4; y++) {
+				helper.setBlock(new BlockPos(3, y, z), Blocks.STONE);
+			}
+		}
+		for (int x = 5; x <= 7; x++) {
+			for (int z = 0; z <= 2; z++) {
+				for (int y = 0; y <= 1; y++) {
+					helper.setBlock(new BlockPos(x, y, z), Blocks.STONE);
+				}
+			}
+		}
+		ServerPlayer p = TestPlayers.survivor(helper, "lurker-stride");
+		place(helper, p, 6.5, 2, 1.5);
+		Lurker[] in = {null};
+		double top = helper.absolutePos(new BlockPos(0, 2, 0)).getY();
+		helper.runAfterDelay(20, () -> {
+			in[0] = ModEntities.LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 1)), EntitySpawnReason.COMMAND);
+			check(helper, in[0] != null, "no Lurker came");
+			LurkerService.adopt(level, in[0], p, "hunt");
+		});
+		int first = 21, last = 330;
+		float[] yaw = new float[last + 1];
+		Vec3[] at = new Vec3[last + 1];
+		int[] upAt = {-1};
+		for (int t = first; t <= last; t++) {
+			int tick = t;
+			helper.runAfterDelay(t, () -> {
+				if (in[0] == null || upAt[0] >= 0 || !in[0].isAlive()) {
+					return;
+				}
+				yaw[tick] = in[0].getYRot();
+				at[tick] = in[0].position();
+				if (in[0].onGround() && in[0].getY() >= top - 0.01) {
+					upAt[0] = tick;
+				}
+			});
+		}
+		helper.runAfterDelay(last + 1, () -> {
+			try {
+				int end = upAt[0] >= 0 ? upAt[0] : last;
+				double most = 0, worstSpot = 0;
+				// (from a few ticks in: its first look round to the way it goes is no spin)
+				for (int t = first + 6; t <= end; t++) {
+					if (at[t] != null && at[t - 1] != null) {
+						most = Math.max(most, Math.abs(Mth.wrapDegrees(yaw[t] - yaw[t - 1])));
+					}
+				}
+				for (int t = first + 6; t + 20 <= end; t++) {
+					if (at[t] == null || at[t + 20] == null || at[t].distanceTo(at[t + 20]) >= 0.5) {
+						continue;
+					}
+					double turned = 0;
+					for (int k = t + 1; k <= t + 20; k++) {
+						turned += Math.abs(Mth.wrapDegrees(yaw[k] - yaw[k - 1]));
+					}
+					worstSpot = Math.max(worstSpot, turned);
+				}
+				String where = in[0] == null ? "gone" : in[0].blockPosition().toString();
+				check(helper, upAt[0] >= 0, "the Lurker never got up onto its prey's step (it is at %s)", where);
+				check(helper, most <= 40, "the Lurker turned %.0f degrees in one tick", most);
+				check(helper, worstSpot <= 150, "the Lurker turned %.0f degrees on the spot within a second", worstSpot);
+				check(helper, in[0].getHealth() == in[0].getMaxHealth(), "its way up hurt the Lurker (%s)", in[0].getHealth());
+			} finally {
+				if (in[0] != null) {
+					in[0].discard();
+				}
+			}
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * {@code /tether lurker <kind> <player>} (3.26.1): every kind takes a player (or a selector) after it, and calls its
+	 * Lurker on them rather than on whoever typed it. A kind that finds no place there fails without an error.
+	 */
+	@GameTest(environment = Alone.LURKER_NAMED, maxTicks = 80)
+	public void theLurkerCommandTakesAPlayerAfterEveryKind(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper, "lurker-named");
+		place(helper, p, 3.5, 0, 3.5);
+		helper.runAfterDelay(10, () -> {
+			var server = level.getServer();
+			var source = server.createCommandSourceStack().withSuppressedOutput();
+			var dispatcher = server.getCommands().getDispatcher();
+			try {
+				for (String kind : java.util.List.of("watch", "stalk", "hunt", "drain", "swarm", "cave", "sculk", "magpie", "wick", "tidewalker",
+						"gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback")) {
+					var parsed = dispatcher.parse("tether lurker " + kind + " " + p.getScoreboardName(), source);
+					check(helper, !parsed.getReader().canRead() && parsed.getExceptions().isEmpty(), "/tether lurker %s takes no player", kind);
+				}
+				dispatcher.execute("tether lurker watch " + p.getScoreboardName(), source);
+				dispatcher.execute("tether lurker cragback @a[name=" + p.getScoreboardName() + "]", source);
+			} catch (com.mojang.brigadier.exceptions.CommandSyntaxException e) {
+				throw helper.assertionException("the command did not take a player: %s", e.getMessage());
+			} finally {
+				for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(96), e -> e instanceof Lurker)) {
+					m.discard();
+				}
 			}
 			helper.succeed();
 		});
@@ -359,12 +564,17 @@ public class LurkerTests {
 		// on the floor (a test player does not fall), where the young can get at them
 		place(helper, p, 3.5, 0, 3.5);
 		int lurkers = Config.LURKER_SWARM_LURKERS, young = Config.LURKER_SWARM_HOLLOWLINGS, secs = Config.LURKER_SWARM_SECONDS;
-		double bite = Config.LURKER_SWARM_BITE;
+		double bite = Config.LURKER_SWARM_BITE, youngCurse = Config.HOLLOWLING_SWARM_CURSE_CHANCE, lurkerCurse = Config.LURKER_CURSE_CHANCE;
+		int youngCurses = Config.HOLLOWLING_SWARM_CURSES_MAX;
 		Runnable restore = () -> {
 			Config.LURKER_SWARM_LURKERS = lurkers;
 			Config.LURKER_SWARM_HOLLOWLINGS = young;
 			Config.LURKER_SWARM_SECONDS = secs;
 			Config.LURKER_SWARM_BITE = bite;
+			Config.HOLLOWLING_SWARM_CURSE_CHANCE = youngCurse;
+			Config.HOLLOWLING_SWARM_CURSES_MAX = youngCurses;
+			Config.LURKER_CURSE_CHANCE = lurkerCurse;
+			DataStore.get(p.getUUID()).curses.clear();
 			for (Mob m : level.getEntitiesOfClass(Mob.class, new AABB(p.blockPosition()).inflate(48), e -> e instanceof Lurker || e instanceof Hollowling)) {
 				m.discard();
 			}
@@ -376,11 +586,16 @@ public class LurkerTests {
 			Config.LURKER_SWARM_HOLLOWLINGS = 4;
 			Config.LURKER_SWARM_SECONDS = 30;
 			Config.LURKER_SWARM_BITE = 3;
+			// every bite that lands may curse, one curse for the whole swarm (and none from the Lurkers here)
+			Config.HOLLOWLING_SWARM_CURSE_CHANCE = 1;
+			Config.HOLLOWLING_SWARM_CURSES_MAX = 1;
+			Config.LURKER_CURSE_CHANCE = 0;
 			p.setHealth(20f);
 			try {
 				check(helper, LurkerService.swarm(p), "no swarm came");
 				check(helper, HollowService.biting(p.getUUID()) >= 1, "no young came with the swarm");
-				var hs = level.getEntitiesOfClass(Hollowling.class, new AABB(p.blockPosition()).inflate(40), e -> true);
+				// (only this swarm's young: a stray one from another test may stand near)
+				var hs = level.getEntitiesOfClass(Hollowling.class, new AABB(p.blockPosition()).inflate(40), e -> HollowService.bitingAt(e, p.getUUID()));
 				check(helper, !hs.isEmpty() && hs.stream().allMatch(x -> x.getLurkerMood() == LurkerBody.MOOD_HUNTER), "a swarm's young do not glow red");
 				// (brought to their prey at once, so the test waits on the bite, not on how far they spawned)
 				for (Hollowling x : hs) {
@@ -394,6 +609,9 @@ public class LurkerTests {
 		helper.runAfterDelay(170, () -> {
 			try {
 				check(helper, p.getHealth() < 20f, "the swarm's young did not bite (health %s)", p.getHealth());
+				int left = HollowService.swarmCurses(p.getUUID());
+				check(helper, left == 1, "the swarm's young left %s curses with their bites, not the one they may", left);
+				check(helper, DataStore.get(p.getUUID()).curses.values().stream().mapToInt(Integer::intValue).sum() >= 1, "a curse from a bite was not laid");
 			} finally {
 				restore.run();
 			}
@@ -640,6 +858,11 @@ public class LurkerTests {
 				striker.discard();
 				check(helper, "blow".equals(FleeService.danger(p)), "a blow from the tribe left the player in danger %s", FleeService.danger(p));
 				check(helper, FleeService.danger(calm) == null, "a player nothing touched is in danger %s", FleeService.danger(calm));
+				// The lock is known (3.25.1): to the player in the pause menu (never during play), to a tablist that asks
+				check(helper, FleeService.held(p) && !FleeService.held(calm), "the lock would not be shown rightly (held %s, calm %s)", FleeService.held(p),
+						FleeService.held(calm));
+				check(helper, "Hunted".equals(com.extremedimensions.compat.TabPlaceholders.values(p).get("danger").getString())
+						&& com.extremedimensions.compat.TabPlaceholders.values(calm).get("danger").getString().isEmpty(), "the danger placeholder is wrong");
 				// A swarm: leaving now is a flight from it
 				check(helper, LurkerService.swarm(p), "no swarm came");
 				check(helper, "swarm".equals(FleeService.danger(p)), "a swarm left the player in danger %s", FleeService.danger(p));
@@ -736,14 +959,34 @@ public class LurkerTests {
 		ServerLevel level = helper.getLevel();
 		helper.setBlock(new BlockPos(4, 2, 2), Blocks.END_PORTAL_FRAME.defaultBlockState());
 		Hints.look(p, d);
-		check(helper, d.hints.contains(Hints.Hint.END_PORTAL.key()), "no word beside an End portal");
+		check(helper, Hints.offered(p, Hints.Hint.END_PORTAL), "no word beside an End portal");
 		level.setBlock(helper.absolutePos(new BlockPos(2, 2, 4)), Blocks.NETHER_PORTAL.defaultBlockState(), 2 | 16);
 		Hints.look(p, d);
-		check(helper, d.hints.contains(Hints.Hint.PORTAL.key()), "no word beside a Nether portal before any anchor");
+		check(helper, Hints.offered(p, Hints.Hint.PORTAL), "no word beside a Nether portal before any anchor");
 		p.getInventory().add(new ItemStack(Items.LODESTONE));
 		Hints.look(p, d);
-		check(helper, d.hints.contains(Hints.Hint.LODESTONE.key()), "no word on a lodestone in hand");
+		check(helper, Hints.offered(p, Hints.Hint.LODESTONE), "no word on a lodestone in hand");
 		helper.setBlock(new BlockPos(2, 2, 4), Blocks.AIR.defaultBlockState());
+		helper.succeed();
+	}
+
+	/**
+	 * The tribe swims with only its head out of the water: each body floats with the water up to a little under its
+	 * eyes, not with vanilla's 0.4 blocks at its feet (which left a Lurker three-quarters out of the water).
+	 */
+	@GameTest
+	public void theTribeSwimsWithOnlyItsHeadOut(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		for (net.minecraft.world.entity.EntityType<? extends Mob> type : java.util.List.of(ModEntities.LURKER, ModEntities.CAVE_LURKER,
+				ModEntities.SCULK_LURKER, ModEntities.HOLLOWLING, ModEntities.KEEPER, ModEntities.THINNED)) {
+			Mob m = type.create(level, EntitySpawnReason.EVENT);
+			check(helper, m != null, "no %s could be made", type);
+			double depth = m.getFluidJumpThreshold(), eyes = m.getEyeHeight(), height = m.getBbHeight();
+			check(helper, Math.abs(depth - Math.max(0.4, eyes - 0.3)) < 1e-6, "%s floats with %s of water at its feet, not just under its eyes (%s)",
+					type, depth, eyes);
+			check(helper, height < 1.2 || depth >= height * 0.6, "%s floats with most of it out of the water (%s of %s under)", type, depth, height);
+			m.discard();
+		}
 		helper.succeed();
 	}
 }

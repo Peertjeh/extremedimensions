@@ -45,6 +45,10 @@ import net.minecraft.world.level.block.state.properties.SlabType;
  * slowly), the towers grow taller, a second ring of towers stands beyond the first, and the islands grow in number, in
  * size, in height and in how far out they hang. Towers, rim pillars and islands are all or nothing: one that would not
  * fit in the air there is left out, and so is a tower or pillar that would rise right beside a player.
+ *
+ * <p>Nothing an arena is built of changes by itself: no block grows, spreads, decays, falls or burns (no chorus flower,
+ * no nylium, no sapling, leaves, sand or fire), so when the arena comes apart exactly what it put up comes down, and
+ * nothing it grew is left behind.
  */
 final class ArenaDesign {
 	private ArenaDesign() {}
@@ -57,6 +61,9 @@ final class ArenaDesign {
 
 	/** What a group of an arena's blocks is: the floor (it never comes down), a building, an island, a core, grown later. */
 	static final int FLOOR = 0, BUILT = 1, ISLE = 2, CORE = 3, GROWN = 4;
+
+	/** The style of the Heart's arena round the Starved One (3.48), after the Elders' own; designed by {@link HeartArena}. */
+	static final int HEART = 5;
 
 	/**
 	 * An arena's blocks in the order they come, and its chains; what each group of them is; its islands and cores; and
@@ -74,12 +81,18 @@ final class ArenaDesign {
 	}
 
 	private static final double TAU = Math.PI * 2;
+	/**
+	 * How high over the floor a great piece may first cross the middle of the arena, where its Elder stands: clear of
+	 * the tallest of them (the Pale Mason, 18 blocks, his halo to 21) with room for an ultimate's rise.
+	 */
+	static final int OVER_ELDER = 26;
+
 	private static final Map<String, BlockState> LOOKUP = new java.util.concurrent.ConcurrentHashMap<>();
 
 	// ------------------------------------------------------------------ blocks
 
 	/** A vanilla block by id, looked up at runtime (block constants come and go between versions). */
-	private static BlockState mc(String id, BlockState fallback) {
+	static BlockState mc(String id, BlockState fallback) {
 		BlockState s = LOOKUP.computeIfAbsent(id, k -> BuiltInRegistries.BLOCK.get(Identifier.fromNamespaceAndPath("minecraft", k))
 				.map(h -> h.value().defaultBlockState()).orElse(Blocks.AIR.defaultBlockState()));
 		return s.isAir() ? fallback : s;
@@ -127,6 +140,9 @@ final class ArenaDesign {
 		return switch (style) {
 			case 0 -> "minecraft:reverse_portal";
 			case 1 -> "minecraft:flame";
+			case 3 -> "minecraft:portal";
+			// the Heart's, souls
+			case HEART -> "minecraft:soul";
 			default -> "minecraft:end_rod";
 		};
 	}
@@ -136,6 +152,8 @@ final class ArenaDesign {
 		return switch (style) {
 			case 0 -> "minecraft:block.rooted_dirt.break";
 			case 1 -> "minecraft:item.firecharge.use";
+			case 3 -> "minecraft:entity.enderman.teleport";
+			case HEART -> "minecraft:particle.soul_escape";
 			default -> "minecraft:block.amethyst_block.chime";
 		};
 	}
@@ -205,14 +223,47 @@ final class ArenaDesign {
 				p.core = mc("shroomlight");
 				p.cap = mc("crimson_planks");
 				p.tip = mc("lantern", Blocks.SOUL_LANTERN.defaultBlockState());
-				p.isleTop = mc("crimson_nylium");
+				// (no nylium: it turns to netherrack by itself under anything laid over it, and that would stay when the
+				// arena goes; wart and hyphae stay as they are)
+				p.isleTop = mc("nether_wart_block");
 				p.isle = axis(mc("basalt"), Direction.Axis.Y);
 				p.isleVein = mc("magma_block");
 				p.isleTip = mc("shroomlight");
 				p.under = mc("blackstone_wall");
 				p.isleTop2 = mc("netherrack");
-				p.isleTop3 = mc("nether_wart_block");
+				p.isleTop3 = axis(mc("crimson_hyphae", mc("nether_wart_block")), Direction.Axis.Y);
 				p.decor = mc("crimson_roots");
+			}
+			case 3 -> {
+				// The Pale Mason's: the stone of the End and of his anchors, purpur and end stone, lit violet and gold
+				p.floor = new BlockState[] {mc("end_stone_bricks"), mc("end_stone"), mc("purpur_block")};
+				p.line = mc("ochre_froglight", mc("glowstone"));
+				p.glow = mc("pearlescent_froglight", mc("amethyst_block"));
+				p.gem = mc("purpur_block");
+				p.border = axis(mc("purpur_pillar"), Direction.Axis.X);
+				p.rim = mc("purpur_block");
+				p.rimSlab = slab(mc("purpur_slab"), false);
+				p.pillar = mc("end_stone_bricks");
+				p.pillarTop = facing(mc("end_rod"), Direction.UP);
+				p.deck = mc("purpur_block");
+				p.deckLine = axis(mc("purpur_pillar"), Direction.Axis.Y);
+				p.base = mc("end_stone_bricks");
+				p.corner = mc("obsidian");
+				p.shaft = axis(mc("purpur_pillar"), Direction.Axis.Y);
+				p.wall = mc("end_stone_brick_wall");
+				p.core = mc("pearlescent_froglight", mc("amethyst_block"));
+				p.cap = mc("purpur_block");
+				p.tip = facing(mc("end_rod"), Direction.UP);
+				p.isleTop = mc("end_stone");
+				p.isle = mc("end_stone");
+				p.isleVein = mc("obsidian");
+				p.isleTip = facing(mc("end_rod"), Direction.DOWN);
+				p.under = mc("end_stone_brick_wall");
+				p.isleTop2 = mc("end_stone_bricks");
+				p.isleTop3 = mc("purpur_block");
+				// (no chorus flowers: they grow chorus plants the arena never put up, which stay when it goes and drop their
+				// fruit as they break; what grows on his islands are rods of light)
+				p.decor = facing(mc("end_rod"), Direction.UP);
 			}
 			default -> {
 				p.floor = new BlockState[] {mc("deepslate_tiles"), mc("polished_deepslate"), mc("cracked_deepslate_tiles")};
@@ -249,7 +300,7 @@ final class ArenaDesign {
 	// ------------------------------------------------------------------ the plan
 
 	/** A design in progress: pieces in the order they will come, built up a structure at a time. */
-	private static final class Plan {
+	static final class Plan {
 		final ServerLevel level;
 		final boolean grief;
 		final Random rnd;
@@ -267,13 +318,17 @@ final class ArenaDesign {
 		final java.util.Set<Integer> arches = new java.util.HashSet<>();
 
 		Plan(ServerLevel level, boolean grief, long seed) {
+			// Room for about as many blocks as an arena of this size holds (some 3,000 a square of its size), so the
+			// table is not grown, and rehashed whole, partway through a great one
+			this(level, grief, seed, (int) (3000 * Math.pow(Math.max(0.5, Math.min(12.0, Config.ELDER_ARENA_SIZE)), 2)) + 1024);
+		}
+
+		/** A design with room for about {@code room} blocks (an arena of a size of its own, as the Heart's). */
+		Plan(ServerLevel level, boolean grief, long seed, int room) {
 			this.level = level;
 			this.grief = grief;
 			this.rnd = new Random(seed);
-			// Room for about as many blocks as an arena of this size holds (some 3,000 a square of its size), so the
-			// table is not grown, and rehashed whole, partway through a great one
-			double size = Math.max(0.5, Math.min(12.0, Config.ELDER_ARENA_SIZE));
-			this.pieces = new Long2ObjectLinkedOpenHashMap<>((int) (3000 * size * size) + 1024);
+			this.pieces = new Long2ObjectLinkedOpenHashMap<>(Math.max(1024, room));
 		}
 
 		void begin() {
@@ -445,8 +500,13 @@ final class ArenaDesign {
 		private record Step(String name, Runnable run) {}
 
 		Draft(ServerLevel level, int style, BlockPos centre, boolean grief, long seed) {
-			Plan plan = new Plan(level, grief, seed);
+			Plan plan = style == HEART ? new Plan(level, grief, seed, HeartArena.ROOM) : new Plan(level, grief, seed);
 			this.plan = plan;
+			if (style == HEART) {
+				// The Heart's own (3.48): its ring wall, its crown and its islands, a structure a step
+				HeartArena.design(plan, bp, centre, (name, run) -> steps.add(new Step(name, run)));
+				return;
+			}
 			double size = Math.max(0.5, Math.min(12.0, Config.ELDER_ARENA_SIZE));
 			// Where things are spreads with the size; how broad they are grows only with its root
 			double wide = Math.sqrt(Math.max(1, size));
@@ -544,6 +604,9 @@ final class ArenaDesign {
 							}
 						}
 					}));
+				} else if (style == 3) {
+					// The Pale Mason's unfinished anchor: four broken pillars, and its broken halo over the middle
+					steps.add(new Step("great piece", () -> origins.addAll(halo(plan, pal, cx, gy, cz, floorR, turn, wide))));
 				} else {
 					steps.add(new Step("great piece", () -> origins.addAll(loom(plan, bp, pal, cx, gy, cz, floorR, turn, wide))));
 				}
@@ -740,6 +803,8 @@ final class ArenaDesign {
 		return switch (style) {
 			case 0 -> mc("verdant_froglight", mc("shroomlight"));
 			case 1 -> mc("sea_lantern");
+			// the Pale Mason's keystones burn gold
+			case 3 -> mc("ochre_froglight", mc("glowstone"));
 			default -> mc("pearlescent_froglight", mc("amethyst_block"));
 		};
 	}
@@ -912,8 +977,9 @@ final class ArenaDesign {
 	private static int[] rootArch(Plan plan, int cx, int gy, int cz, int floorR, double turn, double wide, int i) {
 		BlockState bark = mc("dark_oak_wood"), root = mc("mangrove_roots", mc("dark_oak_wood")), moss = mc("moss_block");
 		BlockState hanging = mc("hanging_roots", mc("mangrove_roots"));
-		double foot = floorR * 0.8, apex = floorR * 0.45;
 		double rb = 1.2 * wide + 1, rt = 0.5 * wide + 1;
+		// (in a small arena too they meet well over her crown)
+		double foot = floorR * 0.8, apex = Math.max(floorR * 0.45, OVER_ELDER + rt * 1.6 + 2);
 		double a = turn + TAU * (i + 0.5) / 8;
 		double ux = Math.cos(a), uz = Math.sin(a);
 		plan.begin();
@@ -931,7 +997,7 @@ final class ArenaDesign {
 				blob(plan, px + sx, py + sy, pz + sz, Math.max(0.9, rr * 0.32), root, null);
 			}
 			// Lanterns on chains and hanging roots beneath it, where it is high enough
-			if (h > 12 && along - lastLantern > 9 + rr) {
+			if (h > 12 && along - lastLantern > 9 + rr && Math.abs(along) > 6) {
 				lastLantern = along;
 				int bx = (int) Math.floor(px), bz = (int) Math.floor(pz);
 				int under = (int) Math.floor(py - rr) - 1;
@@ -1066,16 +1132,19 @@ final class ArenaDesign {
 	}
 
 	/**
-	 * The Weaver's loom: two great posts either side of the heart of its web, a beam across their tops and another
-	 * low down, the warp strung between them in threads of light and the first few threads of weft woven in.
+	 * The Weaver's loom: two great posts either side of the heart of its web, a beam across their tops and the breast
+	 * beam under it, the warp strung between them in threads of light and the first few threads of weft woven in. The
+	 * whole frame stands over her: its lowest beam passes well above her crown (3.41), so she fights under her loom as the
+	 * Matriarch does under her roots, not caught in it.
 	 */
 	private static List<int[]> loom(Plan plan, Blueprint bp, Palette pal, int cx, int gy, int cz, int floorR, double turn, double wide) {
 		List<int[]> cores = new ArrayList<>();
 		double half = floorR * 0.55;
-		int high = (int) Math.round(floorR * 0.5);
 		int t = Math.max(2, (int) Math.round(wide * 0.7));
 		int bh = Math.max(1, t - 1);
-		int breast = (int) Math.round(high * 0.22);
+		// her crown stands 15 blocks up and rises in her ultimate: the breast beam keeps clear of it
+		int breast = Math.max(OVER_ELDER + bh + 1, (int) Math.round(floorR * 0.22));
+		int high = Math.max((int) Math.round(floorR * 0.5), breast + 14);
 		double a = turn + TAU / 16;
 		double ux = Math.cos(a), uz = Math.sin(a);
 		BlockState calcite = mc("calcite"), lamp = pal.core, cap = mc("chiseled_deepslate");
@@ -1191,6 +1260,7 @@ final class ArenaDesign {
 		BlockState s = switch (style) {
 			case 0 -> matriarchFloor(plan, pal, d, theta, r, c, k, w);
 			case 1 -> ferrymanFloor(plan, pal, d, theta, r, c, k, w);
+			case 3 -> masonFloor(plan, pal, d, theta, r, c, k, w);
 			default -> weaverFloor(plan, pal, d, theta, r, c, k, w);
 		};
 		plan.begin();
@@ -1290,6 +1360,40 @@ final class ArenaDesign {
 		}
 		if (Math.abs(d - (r - 0.5)) < 0.6 * w) {
 			return ((int) Math.round(theta * 8 / TAU * 6)) % 6 == 0 ? mc("chiseled_deepslate") : pal.border;
+		}
+		return base(plan, pal, c);
+	}
+
+	/**
+	 * The Pale Mason's floor: the round floor of an anchor, as the ones in the Pale Reach have: a fitting of light in
+	 * the middle ringed with gold, a ring of purpur, six spokes of purpur out to a second ring of gold and violet light.
+	 */
+	private static BlockState masonFloor(Plan plan, Palette pal, double d, double theta, int r, int[] c, double k, double w) {
+		if (d < 0.8 * w) {
+			return pal.glow;
+		}
+		if (d < 1.8 * w) {
+			return pal.line;
+		}
+		if (d < 3 * k) {
+			return pal.floor[0];
+		}
+		if (Math.abs(d - 3.5 * k) < 0.55 * w) {
+			return pal.deck;
+		}
+		if (Math.abs(d - 8.5 * k) < 0.55 * w) {
+			// a ring of light, gold and violet by turns
+			return ((int) Math.floor((theta + TAU) * 12 * w / TAU)) % 2 == 0 ? pal.line : pal.glow;
+		}
+		if (d > 3.5 * k && d < 8.5 * k && spoke(theta, d, 6) < 0.55 * w) {
+			return pal.deck;
+		}
+		if (Math.abs(d - (r - 0.5)) < 0.6 * w) {
+			return pal.border;
+		}
+		if (d > r - 2.5 * w && noise(c[0] * 3 + 5, c[1] * 3) > 0.78) {
+			// the edge breaking up into the bare stone of the island
+			return mc("end_stone");
 		}
 		return base(plan, pal, c);
 	}
@@ -1423,6 +1527,7 @@ final class ArenaDesign {
 		double[] top = switch (style) {
 			case 0 -> lanternTower(plan, pal, x, y0, z, great, lift);
 			case 1 -> gallows(plan, pal, x, y0, z, a, great, lift);
+			case 3 -> anchorPillar(plan, pal, x, y0, z, great, lift);
 			default -> spire(plan, pal, x, y0, z, great, lift);
 		};
 		return plan.commit(0.85) ? top : null;
@@ -1574,6 +1679,141 @@ final class ArenaDesign {
 		plan.air(x, top + 3, z, pal.tip);
 		plan.air(x, top + 4, z, facing(mc("end_rod"), Direction.UP));
 		return new double[] {x + 0.5, top + 0.5, z + 0.5};
+	}
+
+	/**
+	 * A pillar of an unfinished anchor round the Pale Mason's arena: a shaft of purpur on a plinth of end stone and
+	 * obsidian, a band of gold every few blocks, broken off short of its height with its stones hanging over the break.
+	 */
+	private static double[] anchorPillar(Plan plan, Palette pal, int x, int y, int z, boolean great, int lift) {
+		int h = (great ? 14 : 8) + lift - plan.rnd.nextInt(great ? 5 : 3);
+		int t = great ? 1 : 0;
+		for (int dx = -t - 1; dx <= t + 1; dx++) {
+			for (int dz = -t - 1; dz <= t + 1; dz++) {
+				boolean corner = Math.abs(dx) == t + 1 && Math.abs(dz) == t + 1;
+				plan.air(x + dx, y, z + dz, corner ? pal.corner : pal.base);
+			}
+		}
+		BlockState gold = mc("gold_block");
+		for (int i = 1; i <= h; i++) {
+			for (int dx = -t; dx <= t; dx++) {
+				for (int dz = -t; dz <= t; dz++) {
+					// broken: the top course or two crumbles away at the corners
+					if (i > h - 2 && (dx != 0 || dz != 0) && plan.rnd.nextInt(3) == 0) {
+						continue;
+					}
+					plan.air(x + dx, y + i, z + dz, i % 6 == 3 ? gold : (dx != 0 && dz != 0) ? pal.pillar : pal.shaft);
+				}
+			}
+		}
+		plan.air(x, y + h + 1, z, pal.glow);
+		if (great) {
+			// a stone left hanging over the break, on a chain
+			plan.air(x, y + h + 4, z, mc("end_stone_bricks"));
+			plan.air(x, y + h + 3, z, hanging(chain()));
+			plan.air(x, y + h + 2, z, hanging(chain()));
+		}
+		return new double[] {x + 0.5, y + h + 1.5, z + 0.5};
+	}
+
+	/**
+	 * The Pale Mason's great piece, the anchor he will never finish: four broken pillars of end stone and purpur round
+	 * the middle, banded in gold, and high over the middle, standing on its edge, a great broken halo of purpur with
+	 * golden spokes running in to a hub of gold light. A core stands against the inner face of each pillar. The halo
+	 * hangs over him (3.41): its lowest arc passes well above his hood, so it frames the sky he stands under instead of
+	 * running through him.
+	 */
+	private static List<int[]> halo(Plan plan, Palette pal, int cx, int gy, int cz, int floorR, double turn, double wide) {
+		List<int[]> cores = new ArrayList<>();
+		double reach = floorR * 0.55;
+		int high = (int) Math.round(floorR * 0.55);
+		int t = Math.max(1, (int) Math.round(wide * 0.6));
+		BlockState gold = mc("gold_block");
+		for (int k = 0; k < 4; k++) {
+			double a = turn + TAU / 8 + TAU * k / 4;
+			int px = (int) Math.round(cx + Math.cos(a) * reach), pz = (int) Math.round(cz + Math.sin(a) * reach);
+			int h = high - (k % 2) * (int) Math.round(high * 0.25) - plan.rnd.nextInt(Math.max(1, high / 6));
+			plan.begin();
+			for (int dx = -t - 1; dx <= t + 1; dx++) {
+				for (int dz = -t - 1; dz <= t + 1; dz++) {
+					BlockPos g = plan.ground(px + dx, gy, pz + dz);
+					int bottom = g == null || g.getY() < gy - 6 ? gy - 2 : Math.min(gy, g.getY() + 1);
+					boolean rim = Math.abs(dx) == t + 1 || Math.abs(dz) == t + 1;
+					boolean corner = Math.abs(dx) == t + 1 && Math.abs(dz) == t + 1;
+					int top = rim ? gy + 2 : gy + h;
+					for (int y = bottom; y <= top; y++) {
+						BlockState st;
+						if (rim) {
+							st = corner ? pal.corner : pal.base;
+						} else if ((y - gy) % 7 == 4) {
+							st = gold;
+						} else {
+							st = (dx == 0 || dz == 0) ? pal.shaft : pal.pillar;
+						}
+						// broken off: its last courses crumble
+						if (!rim && y > gy + h - 3 && plan.rnd.nextInt(3) == 0) {
+							continue;
+						}
+						plan.air(px + dx, y, pz + dz, st);
+					}
+				}
+			}
+			plan.air(px, gy + h + 1, pz, pal.glow);
+			plan.commit(0.0);
+			// A keystone at its foot, facing the middle
+			double off = t + 2.5;
+			double ux = Math.cos(a), uz = Math.sin(a);
+			cores.add(new int[] {(int) Math.floor(px + 0.5 - ux * off - 0.5), gy + 1, (int) Math.floor(pz + 0.5 - uz * off - 0.5)});
+		}
+		// The halo: a ring on its edge over the middle, broken through a quarter of its round
+		double ring = floorR * 0.38;
+		double hubY = gy + OVER_ELDER + 6 + ring;
+		double a = turn;
+		double ux = Math.cos(a), uz = Math.sin(a);
+		int thick = Math.max(1, (int) Math.round(wide * 0.6));
+		plan.begin();
+		double gap = plan.rnd.nextDouble() * TAU;
+		for (double th = 0; th < TAU; th += 0.6 / Math.max(4, ring)) {
+			double off = Math.abs(Math.atan2(Math.sin(th - gap), Math.cos(th - gap)));
+			if (off < TAU / 8) {
+				continue;
+			}
+			for (int w = -thick; w <= thick; w++) {
+				for (double rr = ring - thick; rr <= ring + thick; rr += 0.5) {
+					double sx = Math.cos(th) * rr, sy = Math.sin(th) * rr;
+					int bx = (int) Math.floor(cx + 0.5 + ux * sx - uz * w), bz = (int) Math.floor(cz + 0.5 + uz * sx + ux * w);
+					int by = (int) Math.floor(hubY + sy);
+					boolean edge = Math.abs(rr - ring) >= thick - 0.25;
+					plan.air(bx, by, bz, edge ? pal.rim : mc("end_stone_bricks"));
+				}
+			}
+		}
+		// Its spokes of gold, every thirtieth part of the round, in to the hub (one or two fallen away)
+		for (int i = 0; i < 12; i++) {
+			double th = TAU * i / 12;
+			double off = Math.abs(Math.atan2(Math.sin(th - gap), Math.cos(th - gap)));
+			if (off < TAU / 8 || plan.rnd.nextInt(6) == 0) {
+				continue;
+			}
+			for (double rr = 2; rr < ring - thick; rr += 0.5) {
+				int bx = (int) Math.floor(cx + 0.5 + ux * Math.cos(th) * rr), bz = (int) Math.floor(cz + 0.5 + uz * Math.cos(th) * rr);
+				plan.air(bx, (int) Math.floor(hubY + Math.sin(th) * rr), bz, gold);
+			}
+			// and a spike of gold out past the ring
+			for (double rr = ring + thick + 0.5; rr < ring + thick + 3; rr += 0.5) {
+				int bx = (int) Math.floor(cx + 0.5 + ux * Math.cos(th) * rr), bz = (int) Math.floor(cz + 0.5 + uz * Math.cos(th) * rr);
+				plan.air(bx, (int) Math.floor(hubY + Math.sin(th) * rr), bz, gold);
+			}
+		}
+		// The hub: gold light in a cage of gold
+		for (int dx = -1; dx <= 1; dx++) {
+			for (int dy = -1; dy <= 1; dy++) {
+				plan.air((int) Math.floor(cx + 0.5 + ux * dx), (int) Math.floor(hubY) + dy, (int) Math.floor(cz + 0.5 + uz * dx),
+						dx == 0 && dy == 0 ? pal.line : gold);
+			}
+		}
+		plan.commit(0.0);
+		return cores;
 	}
 
 	/**

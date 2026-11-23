@@ -6,11 +6,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.extremedimensions.client.ModKeys;
 import com.extremedimensions.client.inventory.CursesButton;
+import com.extremedimensions.client.ui.CurseLine;
 import com.extremedimensions.client.ui.Ui;
 import com.extremedimensions.network.ModPackets;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.penalty.Penalty.Group;
+
+import com.mojang.blaze3d.platform.InputConstants;
 
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.client.Minecraft;
@@ -23,9 +27,12 @@ import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.InputWithModifiers;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.world.level.Level;
 
@@ -58,6 +65,9 @@ public class CursesScreen extends Screen {
 	 */
 	private record Entry(Penalty pen, int stacks, int max, int progress, int cost, String value, boolean readable, int deed, int deedTarget) {}
 
+	/** A curse gained lately: how many stacks, how long ago (seconds, when the data came), from what, and whether new. */
+	private record Recent(Penalty pen, int stacks, long age, String source, boolean fresh) {}
+
 	/** A player standing close by: stacks per set (beyond, Overworld, everywhere, extreme), and their clan (0 none, 1 ours, 2 another). */
 	private record Nearby(UUID id, String name, int[] sets, int clan) {}
 
@@ -65,6 +75,13 @@ public class CursesScreen extends Screen {
 	private final long openAt = System.currentTimeMillis();
 	private final Map<Penalty, Entry> entries = new HashMap<>();
 	private final List<Nearby> nearby = new ArrayList<>();
+	/** The newest curses gained, newest first (see CurseLog on the server). */
+	private final List<Recent> recent = new ArrayList<>();
+	/** When {@link #recent} came, to count their age on. */
+	private long recentAt = System.currentTimeMillis();
+	/** Curses that came since the screen was last opened: marked in the grid while it stays open. */
+	private final java.util.Set<Penalty> fresh = new java.util.HashSet<>();
+	private LatestStrip latest;
 	private final List<Socket> sockets = new ArrayList<>();
 	private final List<Tab> tabs = new ArrayList<>();
 	/** The heads of the players near, as buttons: a click holds out a Blood Cord to them. */
@@ -76,6 +93,14 @@ public class CursesScreen extends Screen {
 	/** The pact as the server sent it: "unlocked;away;id:n,id:n". */
 	private String pactData = "";
 	private boolean overworldOn = true;
+	/** Whether the player may open the operators' Players screen (3.27). */
+	private boolean admin;
+	/**
+	 * The Fresh Wound (3.49): seconds of play it lasts yet, and of those no Tether binds yet; and the seconds before
+	 * another Mending Cloth may be used. All 0 from an older server.
+	 */
+	private int woundIn, woundBindIn, clothIn;
+	private AdminButton adminButton;
 	private Group tab = Group.BEYOND;
 	private Penalty selected;
 	private Button atone;
@@ -83,6 +108,28 @@ public class CursesScreen extends Screen {
 
 	/** The Curses screen on display, if any, so a fresh payload can refresh it in place. */
 	private static CursesScreen shown;
+
+	/**
+	 * The grid's two toggles (3.55.0): only the curses carried, and the heaviest first. Kept for as long as the game
+	 * runs, so the screen opens the way it was left.
+	 */
+	private static boolean carriedOnly, byStacks;
+	/** Whether the Extreme tab shows a row of Abyssal sockets now, and whether the grid shows none at all (the toggles may leave none). */
+	private boolean deepShown, gridEmpty;
+
+	/**
+	 * The screen to come back to from the next Curses screen to open, and when it was asked for (3.55.0): the curse
+	 * choice opens the Curses on top of itself and comes back to it.
+	 */
+	private static Screen returnTo;
+	private static long returnAskedAt;
+
+	/** Asks the server for the Curses screen, to come back to {@code back} when it closes. */
+	public static void openOver(Screen back) {
+		returnTo = back;
+		returnAskedAt = System.currentTimeMillis();
+		ClientPlayNetworking.send(new ModPackets.RequestCursesPayload(true));
+	}
 
 	public CursesScreen(String data, Screen parent) {
 		super(Component.translatable("gui.extremedimensions.curses.title"));
@@ -101,16 +148,98 @@ public class CursesScreen extends Screen {
 			}
 		}
 		selected = heaviest(tab);
+		// A curse that came since the screen was last opened: open on it, so the newest is the first thing seen
+		if (!recent.isEmpty() && recent.get(0).fresh() && shown(recent.get(0).pen())) {
+			tab = recent.get(0).pen().group;
+			selected = recent.get(0).pen();
+		}
 	}
 
-	/** A Curses payload arrived: open the screen, or refresh it if it is already open. */
+	/** When the Pact key asked for the curses (3.55.0): the answer that follows opens the pact instead of this screen. */
+	private static long pactAskedAt;
+
+	/** The Pact key: the pact needs the curses carried, so they are asked for first (see {@link #receive}). */
+	public static void requestPact() {
+		pactAskedAt = System.currentTimeMillis();
+		ClientPlayNetworking.send(new ModPackets.RequestCursesPayload(true));
+	}
+
+	/** A Curses payload arrived: open the screen (or the pact, for its key), or refresh it if it is already open. */
 	public static void receive(String data, boolean open) {
 		Minecraft mc = Minecraft.getInstance();
-		if (open) {
-			mc.gui.setScreen(new CursesScreen(data, CursesButton.takeReturn()));
+		if (open && System.currentTimeMillis() - pactAskedAt < 3000) {
+			pactAskedAt = 0;
+			Screen pact = new CursesScreen(data, null).pact(null);
+			if (pact != null) {
+				mc.gui.setScreen(pact);
+			} else {
+				// (not open in this world yet: said as the brand in the Curses screen says it)
+				com.extremedimensions.client.hud.Toasts.tell(Component.translatable("gui.extremedimensions.pact.title"),
+						Component.translatable("gui.extremedimensions.pact.locked"));
+			}
+		} else if (open) {
+			// (asked for over another screen of the mod a moment ago: back to that one, else as the inventory button says)
+			boolean over = returnTo != null && System.currentTimeMillis() - returnAskedAt < 3000;
+			Screen back = over ? returnTo : CursesButton.takeReturn();
+			returnTo = null;
+			mc.gui.setScreen(new CursesScreen(data, back));
 		} else if (shown != null) {
 			shown.update(data);
 		}
+	}
+
+	/**
+	 * The pact screen for the curses this screen holds, going back to parent when it closes (null: back to the game);
+	 * null while pacts are not open in this world. Its own key closes it too (3.55.0).
+	 */
+	private Screen pact(Screen parent) {
+		if (!pactData.startsWith("1")) {
+			return null;
+		}
+		Map<Penalty, int[]> carried = new HashMap<>();
+		for (Penalty p : Penalty.values()) {
+			Entry e = entry(p);
+			carried.put(p, new int[] {e.stacks(), e.max(), e.readable() ? 1 : 0});
+		}
+		return new PactScreen(parent, pactData, carried) {
+			@Override
+			public boolean keyPressed(KeyEvent event) {
+				return ModKeys.closes(this, ModKeys.PACT, event) || super.keyPressed(event);
+			}
+		};
+	}
+
+	/**
+	 * Keys (3.55.0): the Curses key closes the screen, the Pact key opens the pact, and Tab (Shift+Tab back) moves on to
+	 * the next set's tab. Escape closes it as ever.
+	 */
+	@Override
+	public boolean keyPressed(KeyEvent event) {
+		if (ModKeys.closes(this, ModKeys.CURSES, event)) {
+			return true;
+		}
+		if (ModKeys.PACT.matches(event)) {
+			Screen pact = pact(this);
+			if (pact != null) {
+				Minecraft.getInstance().gui.setScreen(pact);
+				return true;
+			}
+		}
+		if (event.key() == InputConstants.KEY_TAB) {
+			Group[] all = Group.values();
+			openTab(all[(tab.ordinal() + (ModKeys.shift(event) ? all.length - 1 : 1)) % all.length]);
+			return true;
+		}
+		return super.keyPressed(event);
+	}
+
+	/** Opens a set's tab, on the curse picked in it before or else its heaviest. */
+	private void openTab(Group group) {
+		tab = group;
+		if (selected == null || selected.group != group) {
+			selected = heaviest(group);
+		}
+		showTab();
 	}
 
 	private void update(String data) {
@@ -162,6 +291,44 @@ public class CursesScreen extends Screen {
 					// skip malformed entry
 				}
 			}
+		}
+		recent.clear();
+		recentAt = System.currentTimeMillis();
+		if (parts.length > 7 && !parts[7].isEmpty()) {
+			for (String part : parts[7].split(";")) {
+				String[] kv = part.split(",");
+				Penalty pen = kv.length >= 5 ? Penalty.byId(kv[0]) : null;
+				if (pen == null) {
+					continue;
+				}
+				try {
+					Recent r = new Recent(pen, Integer.parseInt(kv[1]), Long.parseLong(kv[2]), kv[3], "1".equals(kv[4]));
+					recent.add(r);
+					if (r.fresh()) {
+						fresh.add(pen);
+					}
+				} catch (NumberFormatException e) {
+					// skip malformed entry
+				}
+			}
+		}
+		admin = parts.length > 8 && "1".equals(parts[8]);
+		woundIn = woundBindIn = clothIn = 0;
+		if (parts.length > 9) {
+			String[] kv = parts[9].split(",");
+			try {
+				woundIn = kv.length > 0 ? Integer.parseInt(kv[0]) : 0;
+				woundBindIn = kv.length > 1 ? Integer.parseInt(kv[1]) : 0;
+				clothIn = kv.length > 2 ? Integer.parseInt(kv[2]) : 0;
+			} catch (NumberFormatException e) {
+				// keep none
+			}
+		}
+		if (adminButton != null) {
+			adminButton.visible = admin;
+		}
+		if (latest != null) {
+			latest.refresh();
 		}
 		showSockets();
 		refreshButton();
@@ -287,6 +454,12 @@ public class CursesScreen extends Screen {
 		this.addRenderableWidget(new RelicChip(x0 + PW - 14 - 132, y0 + 176, 132));
 		this.addRenderableWidget(new PactButton(x0 + 7, y0 + 5));
 		this.addRenderableWidget(new TrialsButton(x0 + 22, y0 + 5));
+		adminButton = this.addRenderableWidget(new AdminButton(x0 + 37, y0 + 5));
+		adminButton.visible = admin;
+		// The newest curse along the top of the panel (or under it, on a short screen): a click opens it
+		int ly = y0 >= 26 ? y0 - 24 : y0 + PH + 4;
+		latest = this.addRenderableWidget(new LatestStrip(x0, ly, PW));
+		latest.refresh();
 		heads.clear();
 		for (int i = 0; i < 8; i++) {
 			heads.add(this.addRenderableWidget(new Head()));
@@ -296,6 +469,16 @@ public class CursesScreen extends Screen {
 				ClientPlayNetworking.send(new ModPackets.AtonePayload(selected.id));
 			}
 		}).pos(x0 + 168, y0 + 148).size(PW - 168 - 14, 18).build());
+		// Under the grid (3.55.0): only what is carried, the heaviest first; and in the header, all that is carried
+		Toggle only = this.addRenderableWidget(new Toggle(x0 + 16, y0 + 156, "gui.extremedimensions.curses.carried_only", () -> carriedOnly, () -> {
+			carriedOnly = !carriedOnly;
+			showSockets();
+		}));
+		this.addRenderableWidget(new Toggle(only.getX() + only.getWidth() + 4, y0 + 156, "gui.extremedimensions.curses.by_stacks", () -> byStacks, () -> {
+			byStacks = !byStacks;
+			showSockets();
+		}));
+		this.addRenderableWidget(new SummaryButton(x0 + 52, y0 + 5));
 		refreshButton();
 		showTab();
 	}
@@ -306,10 +489,35 @@ public class CursesScreen extends Screen {
 		refreshButton();
 	}
 
+	/**
+	 * Shows the open set's sockets and lays them out in the grid: all of them in the set's order, or (3.55.0) only those
+	 * carried, and the heaviest first. The Abyssal row is laid out the same way under the Extreme tab's own curses.
+	 */
 	private void showSockets() {
+		List<Socket> main = new ArrayList<>(), deep = new ArrayList<>();
 		for (Socket s : sockets) {
-			s.visible = s.pen.group == tab && shown(s.pen);
+			s.visible = s.pen.group == tab && shown(s.pen) && (!carriedOnly || entry(s.pen).stacks() > 0);
+			if (s.visible) {
+				(s.pen.abyssal ? deep : main).add(s);
+			}
 		}
+		if (byStacks) {
+			// (a stable sort: curses of equal weight keep the set's order)
+			java.util.Comparator<Socket> heaviest = java.util.Comparator.comparingInt(s -> -entry(s.pen).stacks());
+			main.sort(heaviest);
+			deep.sort(heaviest);
+		}
+		int x0 = x0(), y0 = y0();
+		for (int i = 0; i < main.size(); i++) {
+			main.get(i).setX(x0 + 16 + (i % COLS) * CELL);
+			main.get(i).setY(y0 + 44 + (i / COLS) * CELL);
+		}
+		for (int i = 0; i < deep.size(); i++) {
+			deep.get(i).setX(x0 + 16 + (i % ACOLS) * ACELL);
+			deep.get(i).setY(y0 + ATOP + (i / ACOLS) * ACELL);
+		}
+		deepShown = !deep.isEmpty();
+		gridEmpty = main.isEmpty() && deep.isEmpty();
 	}
 
 	/** The open tab is wide enough for its name; the others shrink to sigil and stacks. */
@@ -377,6 +585,7 @@ public class CursesScreen extends Screen {
 		g.fill(0, 0, this.width, this.height, Ui.argb((int) (70 * fade), tint));
 		Ui.panel(g, x0, y0, PW, PH, accent, fade);
 		Ui.heading(g, this.font, Ui.tr("gui.extremedimensions.curses.title").toUpperCase(), cx, y0 + 8, accent, fade);
+		wound(g, x0, y0, mouseX, mouseY, fade);
 
 		// The line between grid and detail
 		g.fill(x0 + 158, y0 + 42, x0 + 159, y0 + 168, Ui.argb(fade * 0.5, accent));
@@ -387,20 +596,40 @@ public class CursesScreen extends Screen {
 				ly += 10;
 			}
 		}
-		if (tab == Group.EXTREME && abyssRow()) {
+		if (carriedOnly && gridEmpty) {
+			// (only the curses carried, and none in this set)
+			int ly = y0 + 50;
+			for (String line : Ui.wrap(this.font, Ui.tr("gui.extremedimensions.curses.carried_none"), 136)) {
+				g.text(this.font, line, x0 + 16, ly, Ui.argb(fade, Ui.MUTED));
+				ly += 10;
+			}
+		}
+		if (tab == Group.EXTREME && abyssRow() && deepShown) {
 			// The Abyssal row's heading: its name and a violet rule to the grid's edge
 			int ay = y0 + ATOP - 11, abyss = Ui.abyss();
 			String label = Ui.tr("gui.extremedimensions.curses.abyssal_row").toUpperCase();
 			g.text(this.font, label, x0 + 16, ay, Ui.argb(fade, Ui.mix(abyss, 0xFFFFFF, 0.35)));
 			g.fill(x0 + 20 + this.font.width(label), ay + 4, x0 + 152, ay + 5, Ui.argb(fade * 0.6, abyss));
 		}
-		detail(g, x0 + 168, y0 + 44, PW - 168 - 14, fade, accent);
+		detail(g, x0 + 168, y0 + 44, PW - 168 - 14, fade, accent, mouseX, mouseY);
 		footer(g, x0, y0 + 172, fade, accent);
 		nearbyPanel(g, x0, y0, mouseX, mouseY, fade);
 	}
 
-	/** The selected curse: rune and name, stacks, effect, lore and atonement. */
-	private void detail(GuiGraphicsExtractor g, int x, int y, int w, double fade, int accent) {
+	/**
+	 * A line cut to a width (3.55.0): drawn with an ellipsis where it had to be cut, and then read whole in a tooltip
+	 * while the mouse is over it.
+	 */
+	private void cut(GuiGraphicsExtractor g, String text, int x, int y, int w, int colour, double fade, int mouseX, int mouseY) {
+		String shown = Ui.ellipsize(this.font, text, w);
+		g.text(this.font, shown, x, y, Ui.argb(fade, colour));
+		if (!shown.equals(text) && mouseX >= x && mouseX < x + w && mouseY >= y - 1 && mouseY < y + 9) {
+			g.setTooltipForNextFrame(this.font, Component.literal(text), mouseX, mouseY);
+		}
+	}
+
+	/** The selected curse: rune and name, stacks, effect, its total, lore and atonement. */
+	private void detail(GuiGraphicsExtractor g, int x, int y, int w, double fade, int accent, int mouseX, int mouseY) {
 		if (selected == null) {
 			return;
 		}
@@ -419,7 +648,13 @@ public class CursesScreen extends Screen {
 
 		int ly = y + 26;
 		for (String line : new String[] {Ui.tr(selected.lineKey(1), e.value()), Ui.tr(selected.lineKey(2), e.value())}) {
-			g.text(this.font, Ui.ellipsize(this.font, Ui.curse(line, plain), w), x, ly, Ui.argb(fade, Ui.TEXT));
+			cut(g, Ui.curse(line, plain), x, ly, w, Ui.TEXT, fade, mouseX, mouseY);
+			ly += 10;
+		}
+		// The lines above read one stack; what all of them come to now (3.55.0), never for a curse still in runes
+		String total = has && plain ? CurseLine.total("now", selected, e.stacks(), e.value()) : null;
+		if (total != null) {
+			cut(g, total, x, ly, w, Ui.WARN, fade, mouseX, mouseY);
 			ly += 10;
 		}
 		ly += 3;
@@ -436,7 +671,8 @@ public class CursesScreen extends Screen {
 			}
 		} else {
 			List<String> lore = Ui.wrap(this.font, "“" + Ui.tr(selected.loreKey()) + "”", w);
-			for (int i = 0; i < lore.size() && i < 3; i++) {
+			// (a line less of it under a total, so it still ends above the atonement)
+			for (int i = 0; i < lore.size() && i < (total != null ? 2 : 3); i++) {
 				g.text(this.font, lore.get(i), x, ly, Ui.argb(fade * 0.85, Ui.mix(Ui.SOUL, Ui.TEXT, 0.4)));
 				ly += 10;
 			}
@@ -466,6 +702,27 @@ public class CursesScreen extends Screen {
 		Ui.meter(g, x, y + 31, w, 4, Math.min(1.0, e.deed() / (double) target), abyss, fade, e.stacks() > 0);
 	}
 
+	/**
+	 * A Fresh Wound, in the header right of the title (left of the gear): how long it lasts yet, and on hover what it
+	 * takes and how long no Tether binds yet.
+	 */
+	private void wound(GuiGraphicsExtractor g, int x0, int y0, int mouseX, int mouseY, double fade) {
+		if (woundIn <= 0) {
+			return;
+		}
+		String line = Ui.ellipsize(this.font, Ui.tr("gui.extremedimensions.curses.wounded", Ui.time(woundIn)), 110);
+		int right = x0 + PW - 26, lx = right - this.font.width(line);
+		g.text(this.font, line, lx, y0 + 8, Ui.argb(fade, Ui.DANGER));
+		if (mouseX >= lx && mouseX < right && mouseY >= y0 + 6 && mouseY < y0 + 18) {
+			String hearts = com.extremedimensions.config.Config.format(Math.max(0, com.extremedimensions.config.Config.DEATH_WOUND_HEALTH) / 2.0);
+			long faster = Math.round((Math.max(1, com.extremedimensions.config.Config.DEATH_WOUND_DRAIN) - 1) * 100);
+			Component tip = woundBindIn > 0
+					? Component.translatable("gui.extremedimensions.curses.wounded.desc_bind", hearts, faster, Ui.time(woundBindIn))
+					: Component.translatable("gui.extremedimensions.curses.wounded.desc", hearts, faster);
+			g.setTooltipForNextFrame(this.font, tip, mouseX, mouseY);
+		}
+	}
+
 	/** Scars, and how curses come off in this set. */
 	private void footer(GuiGraphicsExtractor g, int x0, int y, double fade, int accent) {
 		Ui.divider(g, x0 + 12, y, PW - 24, accent, fade);
@@ -479,7 +736,9 @@ public class CursesScreen extends Screen {
 		g.text(this.font, drain, px + 40, y + 6, Ui.argb(fade, Ui.MUTED));
 		String hint = Ui.tr("gui.extremedimensions.curses.hint_" + tab.id());
 		Ui.centered(g, this.font, hint, x0 + PW / 2, y + 18, Ui.MUTED, fade);
-		Ui.centered(g, this.font, Ui.tr("gui.extremedimensions.curses.hint_mend"), x0 + PW / 2, y + 29, Ui.MUTED, fade * 0.8);
+		// (with the wait before the next Mending Cloth, while there is one)
+		String mend = clothIn > 0 ? Ui.tr("gui.extremedimensions.curses.hint_mend_wait", (clothIn + 59) / 60) : Ui.tr("gui.extremedimensions.curses.hint_mend");
+		Ui.centered(g, this.font, Ui.ellipsize(this.font, mend, PW - 24), x0 + PW / 2, y + 29, Ui.MUTED, fade * 0.8);
 	}
 
 	/**
@@ -747,15 +1006,10 @@ public class CursesScreen extends Screen {
 
 		@Override
 		public void onPress(InputWithModifiers input) {
-			if (!unlocked()) {
-				return;
+			Screen pact = pact(CursesScreen.this);
+			if (pact != null) {
+				Minecraft.getInstance().gui.setScreen(pact);
 			}
-			Map<Penalty, int[]> carried = new HashMap<>();
-			for (Penalty p : Penalty.values()) {
-				Entry e = entry(p);
-				carried.put(p, new int[] {e.stacks(), e.max(), e.readable() ? 1 : 0});
-			}
-			Minecraft.getInstance().gui.setScreen(new PactScreen(CursesScreen.this, pactData, carried));
 		}
 
 		@Override
@@ -824,18 +1078,68 @@ public class CursesScreen extends Screen {
 		}
 	}
 
-	/** The relic bound to the Tether: its name, its gift and price on hover, and a click takes it off again. */
+	/** Operators only (3.27): a crown beside the rift's slit; opens the Players screen (every player, their curses). */
+	private final class AdminButton extends AbstractButton {
+		private static final String[] CROWN = {
+			"#..#..#",
+			"##.#.##",
+			"#######",
+			"#.#.#.#",
+			"#######",
+			".......",
+			"#######",
+		};
+
+		AdminButton(int x, int y) {
+			super(x, y, 13, 13, Component.translatable("gui.extremedimensions.admin.title"));
+			this.setTooltip(Tooltip.create(Component.translatable("gui.extremedimensions.admin.button")));
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			AdminScreen.request(CursesScreen.this);
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			int x = this.getX(), y = this.getY();
+			int col = this.isHovered() ? Ui.WARN : Ui.mix(Ui.EMBER, Ui.MUTED, 0.35);
+			for (int r = 0; r < CROWN.length; r++) {
+				for (int k = 0; k < CROWN[r].length(); k++) {
+					if (CROWN[r].charAt(k) == '#') {
+						g.fill(x + 3 + k, y + 3 + r, x + 4 + k, y + 4 + r, Ui.argb(255, col));
+					}
+				}
+			}
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
+		}
+	}
+
+	/**
+	 * The relic bound to the Tether: its name, its gift and price on hover. While relics serve once it stays bound until
+	 * another takes its place, and a click does nothing; with relics serving more than once, a click takes it off again
+	 * (the server decides either way).
+	 */
 	private final class RelicChip extends AbstractButton {
-		/** The relic the tooltip was made for (rebuilt only when the relic changes). */
+		/** The relic the tooltip was made for, and whether relics served once then (rebuilt only when either changes). */
 		private Object shownFor = this;
+		private boolean shownSingle;
 
 		RelicChip(int x, int y, int w) {
 			super(x, y, w, 12, Component.translatable("gui.extremedimensions.relic.title"));
 		}
 
+		private static boolean single() {
+			return com.extremedimensions.config.Config.RELIC_SINGLE_USE > 0;
+		}
+
 		@Override
 		public void onPress(InputWithModifiers input) {
-			if (relic != null) {
+			if (relic != null && !single()) {
 				ClientPlayNetworking.send(new ModPackets.UnbindRelicPayload());
 			}
 		}
@@ -845,19 +1149,24 @@ public class CursesScreen extends Screen {
 			var font = Minecraft.getInstance().font;
 			int x = this.getX(), y = this.getY(), w = this.getWidth();
 			boolean has = relic != null;
-			if (shownFor != relic) {
+			boolean single = single();
+			if (shownFor != relic || shownSingle != single) {
 				shownFor = relic;
+				shownSingle = single;
 				this.setTooltip(Tooltip.create(has
-						? Component.empty().append(Component.translatable(relic.nameKey())).append("\n")
+						? Component.empty().append(Component.translatable(relic.nameKey()).withStyle(relic.tier.colour)).append("\n")
 								.append(Component.literal("+ ").append(Component.translatable(relic.giftKey(), relic.giftArgs())).withStyle(net.minecraft.ChatFormatting.GREEN)).append("\n")
 								.append(Component.literal("- ").append(Component.translatable(relic.priceKey(), relic.priceArgs())).withStyle(net.minecraft.ChatFormatting.RED)).append("\n")
-								.append(Component.translatable("gui.extremedimensions.relic.unbind").withStyle(net.minecraft.ChatFormatting.GRAY))
+								.append(Component.translatable(single ? "gui.extremedimensions.relic.stays" : "gui.extremedimensions.relic.unbind")
+										.withStyle(net.minecraft.ChatFormatting.GRAY))
 						: Component.translatable("gui.extremedimensions.relic.none_tip")));
 			}
-			Ui.chip(g, x, y, w, this.getHeight(), has ? (this.isHovered() ? Ui.WARN : Ui.VOID) : Ui.MUTED, has ? 1.0 : 0.5);
+			boolean hot = this.isHovered() && !single;
+			Ui.chip(g, x, y, w, this.getHeight(), has ? (hot ? Ui.WARN : Ui.VOID) : Ui.MUTED, has ? 1.0 : 0.5);
 			String label = has ? Ui.tr(relic.nameKey()) : Ui.tr("gui.extremedimensions.relic.none");
 			g.text(font, label, x + 4, y + 2, Ui.argb(has ? 1.0 : 0.7, has ? Ui.PARCHMENT : Ui.MUTED));
-			if (has) {
+			if (has && !single) {
+				// (the mark that takes it off, only where it can come off)
 				g.text(font, "×", x + w - 8, y + 2, Ui.argb(this.isHovered() ? 1.0 : 0.6, this.isHovered() ? Ui.WARN : Ui.MUTED));
 			}
 		}
@@ -873,14 +1182,274 @@ public class CursesScreen extends Screen {
 		return Component.literal(Ui.curse(Ui.tr(pen.nameKey()), entry(pen).readable()));
 	}
 
+	/** How long ago, in words ("just now", "3 min ago", "2 h ago"). */
+	static String ago(long seconds) {
+		if (seconds < 60) {
+			return Ui.tr("gui.extremedimensions.curses.ago.now");
+		}
+		if (seconds < 3600) {
+			return Ui.tr("gui.extremedimensions.curses.ago.minutes", seconds / 60);
+		}
+		if (seconds < 86400) {
+			return Ui.tr("gui.extremedimensions.curses.ago.hours", seconds / 3600);
+		}
+		return Ui.tr("gui.extremedimensions.curses.ago.days", seconds / 86400);
+	}
+
+	private String source(String id) {
+		return Ui.tr("gui.extremedimensions.curses.from." + id);
+	}
+
+	/**
+	 * The newest curse gained, along the top of the panel: its name and stacks, where it came from and how long ago
+	 * (marked while it is new). Hover it for the ones before; click it to open the curse.
+	 */
+	private final class LatestStrip extends AbstractButton {
+		LatestStrip(int x, int y, int w) {
+			super(x, y, w, 20, Component.translatable("gui.extremedimensions.curses.latest"));
+		}
+
+		void refresh() {
+			this.visible = !recent.isEmpty() && CursesScreen.this.height >= this.getY() + 20;
+			if (recent.isEmpty()) {
+				return;
+			}
+			Component lines = Component.translatable("gui.extremedimensions.curses.latest_list").withStyle(net.minecraft.ChatFormatting.GRAY);
+			for (int i = 0; i < recent.size() && i < 6; i++) {
+				Recent r = recent.get(i);
+				lines = Component.empty().append(lines).append("\n").append(Component.literal(Ui.tr("gui.extremedimensions.curses.latest_line",
+						curseName(r.pen()).getString(), r.stacks(), source(r.source()), ago(r.age() + (System.currentTimeMillis() - recentAt) / 1000)))
+						.withStyle(r.fresh() ? net.minecraft.ChatFormatting.YELLOW : net.minecraft.ChatFormatting.WHITE));
+			}
+			this.setTooltip(Tooltip.create(lines));
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			if (recent.isEmpty() || !shown(recent.get(0).pen())) {
+				return;
+			}
+			tab = recent.get(0).pen().group;
+			select(recent.get(0).pen());
+			showTab();
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			if (recent.isEmpty()) {
+				return;
+			}
+			Recent r = recent.get(0);
+			int x = this.getX(), y = this.getY(), w = this.getWidth();
+			int col = r.pen().abyssal ? Ui.abyss() : color(r.pen().group);
+			Ui.panel(g, x, y, w, 20, col, 1.0);
+			if (this.isHovered()) {
+				g.fill(x + 2, y + 2, x + w - 2, y + 18, Ui.argb(0.18, col));
+			}
+			String label = Ui.tr("gui.extremedimensions.curses.latest").toUpperCase();
+			g.text(CursesScreen.this.font, label, x + 8, y + 6, Ui.argb(255, r.fresh() ? Ui.WARN : Ui.MUTED));
+			int tx = x + 14 + CursesScreen.this.font.width(label);
+			sigil(g, r.pen().group, tx, y + 6, col, 1.0);
+			tx += 12;
+			String name = curseName(r.pen()).getString() + " +" + r.stacks();
+			long age = r.age() + (System.currentTimeMillis() - recentAt) / 1000;
+			String tail = "  " + Ui.tr("gui.extremedimensions.curses.latest_tail", source(r.source()), ago(age));
+			int room = x + w - 8 - tx;
+			String shownName = Ui.ellipsize(CursesScreen.this.font, name, Math.max(40, room - CursesScreen.this.font.width(tail)));
+			g.text(CursesScreen.this.font, shownName, tx, y + 6, Ui.argb(255, r.fresh() ? Ui.DANGER : Ui.PARCHMENT));
+			int after = tx + CursesScreen.this.font.width(shownName);
+			g.text(CursesScreen.this.font, Ui.ellipsize(CursesScreen.this.font, tail, Math.max(0, x + w - 8 - after)), after, y + 6, Ui.argb(255, Ui.MUTED));
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
+		}
+	}
+
+	/**
+	 * A curse's tooltip in the grid (3.55.0): its name and stacks, what one stack does and what all of them come to now,
+	 * so the grid reads without clicking through it. A curse still in runes keeps its runes, and shows no total.
+	 */
+	private Component curseTip(Penalty pen) {
+		Entry e = entry(pen);
+		boolean plain = e.readable();
+		MutableComponent tip = Component.empty().append(curseName(pen).copy().withStyle(ChatFormatting.WHITE));
+		tip.append("\n").append(Component.literal(Ui.tr("gui.extremedimensions.curses.stacks", e.stacks(), e.max()))
+				.withStyle(e.stacks() >= e.max() && e.stacks() > 0 ? ChatFormatting.RED : ChatFormatting.GRAY));
+		String effect = Ui.curse(Ui.tr(pen.lineKey(1), e.value()) + " " + Ui.tr(pen.lineKey(2), e.value()), plain);
+		boolean numbered = plain && com.extremedimensions.penalty.CurseTotals.spec(pen) != null;
+		tip.append("\n").append(Component.literal(numbered ? Ui.tr("gui.extremedimensions.curses.per_stack", effect) : effect).withStyle(ChatFormatting.GRAY));
+		String total = numbered ? CurseLine.total("now", pen, e.stacks(), e.value()) : null;
+		if (total != null) {
+			tip.append("\n").append(Component.literal(total).withStyle(ChatFormatting.YELLOW));
+		}
+		return tip;
+	}
+
+	/** One of the grid's toggles (3.55.0), a small chip under it: lit while on. Its tooltip says what it does. */
+	private final class Toggle extends AbstractButton {
+		private final java.util.function.BooleanSupplier on;
+		private final Runnable press;
+
+		Toggle(int x, int y, String key, java.util.function.BooleanSupplier on, Runnable press) {
+			super(x, y, Minecraft.getInstance().font.width(Ui.tr(key)) + 14, 11, Component.translatable(key));
+			this.on = on;
+			this.press = press;
+			this.setTooltip(Tooltip.create(Component.translatable(key + ".desc")));
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			press.run();
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			var font = Minecraft.getInstance().font;
+			boolean lit = on.getAsBoolean();
+			int x = this.getX(), y = this.getY(), col = lit ? accent() : Ui.MUTED;
+			Ui.chip(g, x, y, this.getWidth(), this.getHeight(), col, lit ? 1.0 : this.isHovered() ? 0.8 : 0.55);
+			// (a box, ticked while on)
+			g.fill(x + 3, y + 3, x + 8, y + 8, Ui.argb(1.0, Ui.SHADOW));
+			if (lit) {
+				g.fill(x + 4, y + 4, x + 7, y + 7, Ui.argb(1.0, Ui.mix(col, 0xFFFFFF, 0.3)));
+			}
+			g.text(font, this.getMessage().getString(), x + 11, y + 2, Ui.argb(lit ? 1.0 : 0.75, lit ? Ui.PARCHMENT : Ui.TEXT));
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
+		}
+	}
+
+	/**
+	 * Everything carried, at a glance (3.55.0): a small mark in the header with the stacks carried in every set, and on
+	 * hover every curse carried, set by set with what it comes to, the pact's stacks (on top while on an expedition) and
+	 * the Fresh Wound. The tabs only ever show one set at a time.
+	 */
+	private final class SummaryButton extends AbstractButton {
+		private static final String[] MARK = {
+			"#.#####",
+			".......",
+			"#.#####",
+			".......",
+			"#.#####",
+			".......",
+			"#.####.",
+		};
+		private String tipFor = null;
+
+		SummaryButton(int x, int y) {
+			super(x, y, 24, 13, Component.translatable("gui.extremedimensions.curses.all"));
+		}
+
+		@Override
+		public void onPress(InputWithModifiers input) {
+			// (a summary to hover, nothing to press)
+		}
+
+		/** Every stack carried, in every set. */
+		private int total() {
+			int n = 0;
+			for (Entry e : entries.values()) {
+				n += e.stacks();
+			}
+			return n;
+		}
+
+		@Override
+		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+			var font = Minecraft.getInstance().font;
+			int n = total();
+			String count = String.valueOf(n);
+			this.setWidth(13 + font.width(count) + 3);
+			String state = n + "|" + entries.hashCode() + "|" + pactData + "|" + (woundIn + 59) / 60;
+			if (!state.equals(tipFor)) {
+				tipFor = state;
+				this.setTooltip(Tooltip.create(summary()));
+			}
+			int x = this.getX(), y = this.getY();
+			int col = this.isHovered() ? Ui.WARN : n > 0 ? Ui.mix(Ui.DANGER, Ui.MUTED, 0.3) : Ui.MUTED;
+			for (int r = 0; r < MARK.length; r++) {
+				for (int k = 0; k < MARK[r].length(); k++) {
+					if (MARK[r].charAt(k) == '#') {
+						g.fill(x + 3 + k, y + 3 + r, x + 4 + k, y + 4 + r, Ui.argb(255, col));
+					}
+				}
+			}
+			g.text(font, count, x + 13, y + 3, Ui.argb(1.0, n > 0 ? Ui.PARCHMENT : Ui.MUTED));
+		}
+
+		@Override
+		protected void updateWidgetNarration(NarrationElementOutput out) {
+			out.add(NarratedElementType.TITLE, this.getMessage());
+		}
+	}
+
+	/** The summary's text: every curse carried by set, the pact's stacks and the Fresh Wound (see {@link SummaryButton}). */
+	private Component summary() {
+		int stacks = 0, curses = 0;
+		for (Entry e : entries.values()) {
+			stacks += e.stacks();
+			curses += e.stacks() > 0 ? 1 : 0;
+		}
+		MutableComponent out = Component.empty().append(Component.translatable(curses == 0 ? "gui.extremedimensions.curses.all.none"
+				: "gui.extremedimensions.curses.all.title", stacks, curses).withStyle(ChatFormatting.WHITE));
+		for (Group g : Group.values()) {
+			List<Entry> held = new ArrayList<>();
+			for (Penalty p : Penalty.values()) {
+				if (p.group == g && entry(p).stacks() > 0) {
+					held.add(entry(p));
+				}
+			}
+			if (held.isEmpty()) {
+				continue;
+			}
+			held.sort(java.util.Comparator.comparingInt(e -> -e.stacks()));
+			out.append("\n").append(Component.translatable(tabKey(g)).withStyle(ChatFormatting.WHITE, ChatFormatting.UNDERLINE));
+			for (Entry e : held) {
+				String line = " " + curseName(e.pen()).getString() + " " + e.stacks() + "/" + e.max();
+				String total = e.readable() ? CurseLine.total("now", e.pen(), e.stacks(), e.value()) : null;
+				out.append("\n").append(Component.literal(total == null ? line : line + " · " + total).withStyle(ChatFormatting.GRAY));
+			}
+		}
+		// The pact: its stacks act on top of these on every expedition (and act now, while on one)
+		String[] pact = pactData.split(";", -1);
+		if (pact.length > 2 && !pact[2].isEmpty()) {
+			List<String> sworn = new ArrayList<>();
+			for (String part : pact[2].split(",")) {
+				String[] kv = part.split(":");
+				Penalty p = kv.length == 2 ? Penalty.byId(kv[0]) : null;
+				if (p != null) {
+					sworn.add(curseName(p).getString() + " +" + kv[1]);
+				}
+			}
+			if (!sworn.isEmpty()) {
+				out.append("\n").append(Component.translatable("1".equals(pact[1]) ? "gui.extremedimensions.curses.all.pact_now"
+						: "gui.extremedimensions.curses.all.pact", String.join(", ", sworn)).withStyle(ChatFormatting.GOLD));
+			}
+		}
+		if (woundIn > 0) {
+			String hearts = com.extremedimensions.config.Config.format(Math.max(0, com.extremedimensions.config.Config.DEATH_WOUND_HEALTH) / 2.0);
+			long faster = Math.round((Math.max(1, com.extremedimensions.config.Config.DEATH_WOUND_DRAIN) - 1) * 100);
+			out.append("\n").append(Component.translatable("gui.extremedimensions.curses.all.wound", hearts, faster, Ui.time(woundIn))
+					.withStyle(ChatFormatting.RED));
+		}
+		return out;
+	}
+
 	/** A curse in the grid: its rune, its pips, selected or not. */
 	private final class Socket extends AbstractButton {
 		final Penalty pen;
 
+		/** What the tooltip was made for (rebuilt only when the curse's stacks or reading change). */
+		private String tipFor = "";
+
 		Socket(Penalty pen, int x, int y) {
 			super(x, y, pen.abyssal ? 16 : 18, pen.abyssal ? 16 : 21, CursesScreen.this.curseName(pen));
 			this.pen = pen;
-			this.setTooltip(Tooltip.create(this.getMessage()));
 		}
 
 		@Override
@@ -891,6 +1460,11 @@ public class CursesScreen extends Screen {
 		@Override
 		protected void extractContents(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 			Entry e = entry(pen);
+			String state = e.stacks() + "/" + e.max() + "/" + e.value() + "/" + e.readable();
+			if (!state.equals(tipFor)) {
+				tipFor = state;
+				this.setTooltip(Tooltip.create(curseTip(pen)));
+			}
 			boolean has = e.stacks() > 0;
 			int accent = accent();
 			boolean sel = pen == selected;
@@ -909,6 +1483,7 @@ public class CursesScreen extends Screen {
 				if (pen.id.equals(atoning) && has) {
 					g.fill(x + 12, y + 1, x + 15, y + 4, Ui.argb(255, Ui.SOUL));
 				}
+				freshMark(g, x, y);
 				return;
 			}
 			Ui.runeSocket(g, pen.id, x, y, has ? accent : Ui.MUTED, alpha, sel || this.isHovered() ? 1.0 : has ? 0.5 : 0.1);
@@ -920,6 +1495,17 @@ public class CursesScreen extends Screen {
 			}
 			int pw = e.max() * 4 - 1;
 			pips(g, x + 9 - pw / 2, y + 19, e.stacks(), e.max(), accent, has ? 1.0 : 0.5);
+			freshMark(g, x, y);
+		}
+
+		/** A curse that came since the screen was last opened: a small pulsing mark on its corner. */
+		private void freshMark(GuiGraphicsExtractor g, int x, int y) {
+			if (!fresh.contains(pen)) {
+				return;
+			}
+			double pulse = 0.65 + 0.35 * Math.sin(System.currentTimeMillis() / 180.0);
+			g.fill(x - 2, y - 2, x + 4, y + 4, Ui.argb(255, Ui.SHADOW));
+			g.fill(x - 1, y - 1, x + 3, y + 3, Ui.argb(pulse, Ui.WARN));
 		}
 
 		@Override
@@ -942,11 +1528,7 @@ public class CursesScreen extends Screen {
 
 		@Override
 		public void onPress(InputWithModifiers input) {
-			tab = group;
-			if (selected == null || selected.group != group) {
-				selected = heaviest(group);
-			}
-			showTab();
+			openTab(group);
 		}
 
 		@Override

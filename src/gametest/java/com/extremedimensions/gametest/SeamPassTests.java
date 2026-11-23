@@ -62,6 +62,25 @@ public class SeamPassTests {
 	}
 
 	/** The Thread and the Shears lie on the altar for as long as it takes, and fire cannot burn them. */
+	/**
+	 * While the Heart waits, everyone who steps through one rift lands at one spot on the ring round it (a party arrives
+	 * together, at one gate), and rifts torn elsewhere land elsewhere on it.
+	 */
+	@GameTest
+	public void aPartyLandsTogetherAtTheHeart(GameTestHelper helper) {
+		int[] a = MendingService.arrival(120.5, -340.5), b = MendingService.arrival(120.5, -340.5);
+		check(helper, a[0] == b[0] && a[1] == b[1], "one rift landed at %s,%s and at %s,%s", a[0], a[1], b[0], b[1]);
+		double r = Math.sqrt((double) (a[0] - MendingService.HX) * (a[0] - MendingService.HX) + (double) (a[1] - MendingService.HZ) * (a[1] - MendingService.HZ));
+		check(helper, Math.abs(r - 34) <= 1.5, "a rift landed %s blocks from the Heart, not on the ring at 34", r);
+		java.util.Set<Long> spots = new java.util.HashSet<>();
+		for (int i = 0; i < 12; i++) {
+			int[] c = MendingService.arrival(i * 97.5, i * -53.5);
+			spots.add(((long) c[0] << 32) | (c[1] & 0xFFFFFFFFL));
+		}
+		check(helper, spots.size() >= 6, "twelve rifts torn in different places landed on only %s spots round the Heart", spots.size());
+		helper.succeed();
+	}
+
 	@GameTest
 	public void theEndingLiesSafe(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();

@@ -372,9 +372,27 @@ public final class FallenService {
 		}
 		for (ServerPlayer q : ((ServerLevel) p.level()).players()) {
 			if (q != p && q != lifter && !FALLEN.containsKey(q.getUUID()) && Allies.allied(p, q) && q.distanceToSqr(p) <= 48 * 48) {
-				q.sendSystemMessage(Component.translatable("gui.extremedimensions.coop.ally_fallen", p.getDisplayName(), secs), true);
+				// (how far, and which way from where they look: 3.55.0)
+				q.sendSystemMessage(Component.translatable("gui.extremedimensions.coop.ally_fallen", p.getDisplayName(), secs,
+						(int) Math.round(Math.sqrt(q.distanceToSqr(p))), arrow(q, p)), true);
 			}
 		}
+	}
+
+	/** The eight ways an arrow points, clockwise from straight ahead. */
+	private static final String[] ARROWS = {"\u2191", "\u2197", "\u2192", "\u2198", "\u2193", "\u2199", "\u2190", "\u2196"};
+
+	/**
+	 * Which way the fallen lie from where an ally looks (3.55.0), as an arrow: straight up is ahead, right is to their
+	 * right. A dot when they stand on top of them.
+	 */
+	private static String arrow(ServerPlayer from, ServerPlayer to) {
+		double dx = to.getX() - from.getX(), dz = to.getZ() - from.getZ();
+		if (dx * dx + dz * dz < 1) {
+			return "\u2022";
+		}
+		float bearing = (float) (net.minecraft.util.Mth.atan2(dz, dx) * net.minecraft.util.Mth.RAD_TO_DEG) - 90.0F;
+		return ARROWS[Math.floorMod(Math.round(net.minecraft.util.Mth.wrapDegrees(bearing - from.getYRot()) / 45.0F), 8)];
 	}
 
 	/** An ally lifts a fallen player up: back on their feet with a share of their health, a moment's shelter. */

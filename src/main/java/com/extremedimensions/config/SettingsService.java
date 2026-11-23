@@ -16,7 +16,6 @@ import com.extremedimensions.network.Sync;
 import com.extremedimensions.penalty.CurseEffects;
 
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -32,12 +31,9 @@ public final class SettingsService {
 	private static final Gson GSON = new Gson();
 
 	/** Operators, and the owner of a world that is not open to LAN, may change the world's settings. */
+	/** Whether this player may change the settings: the permission {@code extremedimensions.admin.settings} (3.29). */
 	public static boolean canEdit(ServerPlayer p) {
-		MinecraftServer s = p.level().getServer();
-		if (s != null && s.isSingleplayer() && !s.isPublished()) {
-			return true;
-		}
-		return Commands.hasPermission(Commands.LEVEL_GAMEMASTERS).test(p.createCommandSourceStack());
+		return com.extremedimensions.server.Perms.has(p, com.extremedimensions.server.Perms.Node.SETTINGS);
 	}
 
 	public static void send(ServerPlayer p) {
@@ -91,6 +87,18 @@ public final class SettingsService {
 	public static void applyPreset(MinecraftServer s, Preset preset, String by) {
 		apply(s, preset.values, new ArrayList<>(), by);
 		sendAll(s);
+	}
+
+	/**
+	 * Changes these settings for a command (3.30): every value that fits is taken and saved together, everyone plays by
+	 * them at once and every player's settings screen shows them. Returns how many were taken.
+	 */
+	public static int set(MinecraftServer s, Map<String, String> changes, String by) {
+		int taken = apply(s, changes, new ArrayList<>(), by);
+		if (taken > 0) {
+			sendAll(s);
+		}
+		return taken;
 	}
 
 	/** Takes every value that fits, saves them together and lets everyone play by them at once. Returns how many. */

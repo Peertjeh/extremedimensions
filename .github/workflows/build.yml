@@ -37,10 +37,11 @@ jobs:
           if unzip -l "$jar" | grep -q "com/terraformersmc/"; then echo "Mod Menu stand-ins in $jar"; exit 1; fi
           if unzip -l "$jar" | grep -q "eu/pb4/"; then echo "Text Placeholder API stand-ins in $jar"; exit 1; fi
           unzip -l "$jar" | grep -q "assets/extremedimensions/lang/nl_nl.json" || { echo "nl_nl.json missing from $jar"; exit 1; }
-          # What a player downloads, and a tripwire for an asset added by mistake (the jar is about 20 MB)
+          # What a player downloads, and a tripwire for an asset added by mistake (the jar is about 30 MB: 18.5 MB of
+          # music and sounds, 9 MB of textures; 10 MB left for new music before it trips)
           ls -l build/libs/*.jar | awk '{printf "JAR %s %.1f MB\n", $NF, $5 / 1048576}'
           size=$(stat -c %s "$jar")
-          if [ "$size" -gt 31457280 ]; then echo "$jar is $((size / 1048576)) MB, over the 30 MB this mod allows itself"; exit 1; fi
+          if [ "$size" -gt 41943040 ]; then echo "$jar is $((size / 1048576)) MB, over the 40 MB this mod allows itself"; exit 1; fi
       # Development aid: a commit message with [probe] prints the signatures of the classes in tools/probe.txt (a class
       # after a ! with its code as well), and finds classes by the patterns after a # in that file, from the game jar the
       # build used
@@ -49,15 +50,26 @@ jobs:
         run: |
           find ~/.gradle/caches/fabric-loom .gradle/loom-cache -name "*.jar" 2>/dev/null | grep -i minecraft | grep -v sources | xargs ls -la 2>/dev/null | sed "s/^/APIJAR|/"
           cp=$(find ~/.gradle/caches/fabric-loom .gradle/loom-cache -name "*.jar" 2>/dev/null | grep -i minecraft | grep -v -e sources -e "minecraft-server.jar" -e "minecraft-client.jar" | paste -sd:)
-          grep -v -e '^#' -e '^@' tools/probe.txt | while read -r c; do
+          grep -v -e '^#' -e '^@' -e '^\$' -e '^%' tools/probe.txt | while read -r c; do
             case "$c" in
               '!'*) javap -cp "$cp" -p -c "${c#!}" 2>&1 | sed "s/^/APIC|/" ;;
               ?*) javap -cp "$cp" -p "$c" 2>&1 | sed "s/^/API|/" ;;
             esac
           done
           for j in $(echo "$cp" | tr ':' ' '); do unzip -l "$j" | awk '{print $4}'; done | sort -u | grep -E "$(grep '^#' tools/probe.txt | sed 's/^#//' | paste -sd'|')" | sed "s/^/APICLASS|/" | head -300
-          # lines with an @ print a file from the game jars (a vanilla loot table, a recipe, ...)
-          grep '^@' tools/probe.txt | sed 's/^@//' | while read -r f; do for j in $(echo "$cp" | tr ':' ' '); do unzip -p "$j" "$f" 2>/dev/null | sed "s/^/APIFILE|/"; done; done
+          # lines with an @ print a file from the game jars (a vanilla loot table, a recipe, a model, ...)
+          all=$(find ~/.gradle/caches/fabric-loom .gradle/loom-cache -name "*.jar" 2>/dev/null | grep -i minecraft | grep -v sources | paste -sd:)
+          grep '^@' tools/probe.txt | sed 's/^@//' | while read -r f; do for j in $(echo "$all" | tr ':' ' '); do unzip -p "$j" "$f" 2>/dev/null | sed "s/^/APIFILE|/"; done; done
+          # lines with a $ list the game's files (assets and data) whose paths match the pattern after it
+          for j in $(echo "$all" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null; done | sort -u | grep -E "$(grep '^\$' tools/probe.txt | sed 's/^\$//' | paste -sd'|')" | grep -v '\.class$' | sed "s/^/APIASSET|/" | head -300 || true
+          # lines with a % print a binary file (a vanilla texture) from the game jars as base64, on one line
+          grep '^%[^%]' tools/probe.txt | sed 's/^%//' | while read -r f; do for j in $(echo "$all" | tr ':' ' '); do d=$(unzip -p "$j" "$f" 2>/dev/null | base64 -w0); if [ -n "$d" ]; then echo "APIB64|$f|$d"; break; fi; done; done
+          # lines with %% print every PNG under a folder of the game's (all of vanilla's item textures, say), the same way
+          grep '^%%' tools/probe.txt | sed 's/^%%//' | while read -r dir; do for j in $(echo "$all" | tr ':' ' '); do unzip -Z1 "$j" 2>/dev/null | grep "^$dir" | grep '\.png$' | while read -r f; do echo "APIB64|$f|$(unzip -p "$j" "$f" | base64 -w0)"; done; done; done || true
+      # The recipe viewers (EMI, JEI, REI) for this game version and their plugin API, on a commit marked [probe]
+      - name: recipe viewer probe
+        if: always() && contains(github.event.head_commit.message, '[probe]')
+        run: python3 tools/compat/probe_viewers.py build/viewer-probe || true
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:
@@ -67,6 +79,9 @@ jobs:
   client:
     name: client test and screenshots
     runs-on: ubuntu-24.04
+    # (to push the Tetherite screenshots to the ci-shots branch)
+    permissions:
+      contents: write
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
@@ -78,13 +93,18 @@ jobs:
           cache: 'gradle'
       - name: make gradle wrapper executable
         run: chmod +x ./gradlew
+      # (the runners' own Azure mirror is left out: when it cannot be reached, apt does not fall back to the next one)
       - name: virtual display
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers libegl1
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt; fi
+          sudo apt-get -o Acquire::Retries=3 update -qq && sudo apt-get -o Acquire::Retries=3 install -y -qq xvfb libgl1-mesa-dri mesa-vulkan-drivers libegl1
+      # A commit message with [gallery] draws every shot again at 1920x1080 (for the store pages and the trailer)
       - name: client game test
-        run: xvfb-run -a -s "-screen 0 1280x720x24" ./gradlew runClientGameTest --no-configuration-cache
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" ./gradlew runClientGameTest --no-configuration-cache
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
-        timeout-minutes: 25
+          ED_SHOT_SIZE: ${{ contains(github.event.head_commit.message, '[gallery]') && '1920x1080' || '' }}
+        timeout-minutes: 40
       - name: capture screenshots
         if: always()
         uses: actions/upload-artifact@v7
@@ -101,6 +121,7 @@ jobs:
           python3 - <<'PY'
           import glob, base64, io, os
           from PIL import Image
+          later = []
           for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
               im = Image.open(f).convert("RGB")
               im.thumbnail((800, 450))
@@ -108,10 +129,87 @@ jobs:
               s = base64.b64encode(b.getvalue()).decode()
               for i in range(0, len(s), 3000):
                   print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
+              if "tetherite_gear" in f or "tetherite_worn" in f:
+                  later.append(f)
+          # last of all (so a short tail of the log holds them): the inventory with the gear at one image pixel to the
+          # GUI pixel, read straight off the screen at the GUI scale the game chose, and the set worn, small
+          for f in later:
+              full = Image.open(f).convert("RGB")
+              w, h = full.size
+              if "gear" in f:
+                  k = 1
+                  while w // (k + 1) >= 320 and h // (k + 1) >= 240:
+                      k += 1
+                  g = full.resize((w // k, h // k), Image.NEAREST)
+                  gw, gh = g.size
+                  c = g.crop((gw // 2 - 100, gh // 2 - 95, gw // 2 + 100, gh // 2 + 95))
+                  b = io.BytesIO(); c.save(b, "PNG")
+              else:
+                  c = full.copy(); c.thumbnail((480, 270))
+                  b = io.BytesIO(); c.save(b, "JPEG", quality=80)
+              s = base64.b64encode(b.getvalue()).decode()
+              for i in range(0, len(s), 3000):
+                  print(f"IMG|tail_{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
           PY
+      # The Tetherite shots at one image pixel to the GUI pixel, on a branch of their own (ci-shots, one commit, replaced
+      # every time), to read the item art pixel by pixel beside vanilla's
+      - name: screenshots to the ci-shots branch
+        if: always() && github.event_name == 'push' && contains(github.event.head_commit.message, '[shots]')
+        run: |
+          mkdir -p /tmp/shots
+          python3 - <<'PY'
+          import glob, os
+          from PIL import Image
+          for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
+              if not any(k in f for k in ("tetherite", "interior", "starved", "magpie", "wick", "tidewalker", "gatebreaker", "lockwarden", "threadbiter", "edgecrawler", "cragback", "seamkin", "06_tribe", "knot_mother", "players_admin", "03_curses_beyond", "07_settings", "pale", "12_fight_", "10_elder", "kindled")):
+                  continue
+              full = Image.open(f).convert("RGB")
+              w, h = full.size
+              k = 1
+              while w // (k + 1) >= 320 and h // (k + 1) >= 240:
+                  k += 1
+              full.resize((w // k, h // k), Image.NEAREST).save("/tmp/shots/" + os.path.basename(f))
+          PY
+          cd /tmp/shots
+          git init -q
+          git checkout -q -b ci-shots
+          git add .
+          git -c user.name=ci -c user.email=ci@localhost commit -q -m "Tetherite, interior and Starved One screenshots of ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" ci-shots
+
+      # The store-page and trailer set at full size, on a branch of its own (gallery, one commit, replaced every time)
+      - name: gallery shots to the gallery branch
+        if: always() && github.event_name == 'push' && contains(github.event.head_commit.message, '[gallery]')
+        run: |
+          python3 -m pip install -q --break-system-packages pillow >/dev/null 2>&1 || pip install -q pillow
+          mkdir -p /tmp/gallery
+          python3 - <<'PY'
+          import glob, os
+          from PIL import Image
+          keep = ("00_title", "01_hud", "02_kindled", "02_tetherite_worn", "02_tetherite_spear", "03_curses_beyond", "06_tribe",
+                  "06_seamkin", "06_face", "08_pact", "10_", "11_", "12_fight_", "13_veil_ray", "13_status", "14_fx", "15_fray",
+                  "16_guides", "16_bestiary", "17_seam", "18_colossus", "18_masonry", "19_", "20_island", "25_", "26_frayed_ray",
+                  "29_warm_chain", "29_held_chamber", "31_veil_lantern", "32_beyond", "35_", "39_knot_mother", "40_", "41_",
+                  "43_tapestry")
+          n = 0
+          for f in sorted(glob.glob("build/run/clientGameTest/screenshots/*.png")):
+              b = os.path.basename(f)
+              if not any(k in b for k in keep):
+                  continue
+              im = Image.open(f).convert("RGB")
+              im.save("/tmp/gallery/" + b[:-4] + ".jpg", "JPEG", quality=90)
+              n += 1
+          print("gallery:", n, "shots at", im.size if n else None)
+          PY
+          cd /tmp/gallery
+          git init -q
+          git checkout -q -b gallery
+          git add .
+          git -c user.name=ci -c user.email=ci@localhost commit -q -m "Gallery shots of ${GITHUB_SHA}"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" gallery
 
   compat:
-    name: client test with Sodium, Iris and Mod Menu
+    name: client test with Sodium, Iris, Mod Menu and JEI
     runs-on: ubuntu-24.04
     steps:
       - name: checkout repository
@@ -127,14 +225,17 @@ jobs:
       # Sodium and Iris draw with OpenGL (the game alone falls back to Vulkan): the display needs GLX, in software
       - name: virtual display with OpenGL
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libgl1 libegl1 mesa-utils mesa-vulkan-drivers
+          if [ -f /etc/apt/apt-mirrors.txt ]; then sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt; fi
+          sudo apt-get -o Acquire::Retries=3 update -qq && sudo apt-get -o Acquire::Retries=3 install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libgl1 libegl1 mesa-utils mesa-vulkan-drivers
           xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" glxinfo -B || echo "no GLX on the virtual display"
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
           GALLIUM_DRIVER: llvmpipe
       # The newest Fabric builds for this game version from Modrinth; none yet for any of them leaves nothing to test
-      - name: fetch Sodium, Iris and Mod Menu
+      - name: fetch Sodium, Iris, Mod Menu and JEI
         id: fetch
+        env:
+          COMPAT_SET: core
         run: |
           set +e
           python3 tools/compat/fetch.py build/compat-mods
@@ -142,9 +243,63 @@ jobs:
           echo "code=$code" >> "$GITHUB_OUTPUT"
           if [ $code -eq 3 ]; then echo "None of them has a build for this game version yet: nothing to test with"; exit 0; fi
           exit $code
+      # A shader pack (3.51.1: Solas, else Complementary Reimagined) for the test's last look, at the Seam and the mod's
+      # lanterns under one; laid in the test's game folder, selected for Iris but left off, once that folder is cleared
+      # (build.gradle), and the test turns it on at the end. None to be had leaves that out.
+      - name: fetch a shader pack
+        if: steps.fetch.outputs.code == '0'
+        run: |
+          python3 tools/compat/fetch.py --shader build/compat-shaders || echo "No shader pack to be had, so the test leaves that look out"
+          # (on a commit marked [probe]: what the pack's own list gives the vanilla lights the mod's lanterns are shown as)
+          if ${{ contains(github.event.head_commit.message, '[probe]') }}; then
+            for z in build/compat-shaders/*.zip; do
+              [ -f "$z" ] || continue
+              for e in $(unzip -Z1 "$z" | grep -E 'block\.properties$|dimension\.properties$|shaders\.properties$'); do
+                echo "SHADERPROPS|== $e"
+                unzip -p "$z" "$e" | grep -n -i -E 'crying|soul_lantern|amethyst|(^|[ :=])light([ :]|$)|lantern|voxel|end_flash|endFlash|world1|the_end' | head -60 | sed "s/^/SHADERPROPS|/"
+              done
+              # and how it draws the End's sky (the Seam wears it, Iris running the End's programme there)
+              unzip -Z1 "$z" | grep -i -E 'world1/|skytextured|skybasic' | head -40 | sed "s/^/SHADERSKY|/"
+              for e in $(unzip -Z1 "$z" | grep -i -E 'world1/(gbuffers_skytextured|gbuffers_skybasic|deferred|composite)[0-9]*\.fsh$' | head -4); do
+                echo "SHADERSKY|== $e"
+                unzip -p "$z" "$e" | head -60 | sed "s/^/SHADERSKY|/"
+              done
+            done || true
+          fi
+      # On a commit marked [probe]: which of the mods players pair with this one have a build for this game version yet
+      - name: other mods' builds
+        if: always() && contains(github.event.head_commit.message, '[probe]')
+        run: python3 tools/compat/fetch.py --check jade,wthit,xaeros-minimap,xaeros-world-map,journeymap,emi,rei || true
+      # On a commit marked [probe]: Iris's classes for how it maps blocks to a shader pack's ids (to look up, not to build on)
+      - name: iris probe
+        if: always() && contains(github.event.head_commit.message, '[probe]')
+        run: |
+          for j in build/compat-mods/*iris*.jar; do
+            [ -f "$j" ] || continue
+            echo "IRISJAR|$j"
+            unzip -Z1 "$j" | grep -iE 'materialmap|idmap|WorldRenderingSettings|BlockRenderingSettings|BlockMaterial' | sed "s/^/IRISCLASS|/"
+            for c in $(unzip -Z1 "$j" | grep -E '(WorldRenderingSettings|BlockRenderingSettings|BlockMaterialMapping|IdMap|BlockEntry)\.class$' | sed 's/\.class$//; s#/#.#g'); do javap -cp "$j" -p "$c" 2>&1 | sed "s/^/IRIS|/"; done
+            # and how it hands a shader pack the unseen light blocks (voxelizeLightBlocks)
+            rm -rf /tmp/iris-all && mkdir -p /tmp/iris-all && unzip -q -o "$j" '*.class' -d /tmp/iris-all
+            for f in $(grep -rl -a 'shouldVoxelizeLightBlocks\|LightBlock' /tmp/iris-all | head -10); do
+              c=$(echo "${f#/tmp/iris-all/}" | sed 's/\.class$//; s#/#.#g')
+              echo "IRISLIGHT|$c"
+              javap -cp /tmp/iris-all -c -p "$c" 2>&1 | grep -n -B8 -A8 'shouldVoxelizeLightBlocks\|LightBlock\|Blocks.LIGHT' | head -80 | sed "s/^/IRISLIGHT|/"
+            done
+            # and where it reads the End's flashes (for a shader pack's uniforms)
+            rm -rf /tmp/iris-classes && mkdir -p /tmp/iris-classes && unzip -q -o "$j" '*.class' -d /tmp/iris-classes
+            for f in $(grep -rl -a 'EndFlash' /tmp/iris-classes | head -8); do
+              c=$(echo "${f#/tmp/iris-classes/}" | sed 's/\.class$//; s#/#.#g')
+              echo "IRISFLASH|$c"
+              javap -cp /tmp/iris-classes -c -p "$c" 2>&1 | grep -n -B4 -A4 'EndFlash' | head -60 | sed "s/^/IRISFLASH|/"
+            done
+          done || true
       - name: client game test with them
         if: steps.fetch.outputs.code == '0'
-        run: xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
+        # (a game still running after 12 minutes is stuck: every thread of it is printed, to see where, and then ended)
+        run: |
+          ( sleep 720; for p in $(pgrep -f 'net.fabricmc.devlaunchinjector.Main|KnotClient'); do echo "STUCK|game $p still running after 12 minutes"; jstack -l "$p" 2>&1 | sed "s/^/STUCK|/"; kill "$p"; done ) &
+          xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
           GALLIUM_DRIVER: llvmpipe
@@ -152,7 +307,8 @@ jobs:
           # (the virtual display has no GLX visual of the kind the game asks for; through EGL Mesa makes one)
           SDL_VIDEO_FORCE_EGL: '1'
           SDL_VIDEO_X11_FORCE_EGL: '1'
-        timeout-minutes: 20
+        # (a shader pack drawn in software at the end is slow)
+        timeout-minutes: 30
       - name: capture screenshots
         if: always()
         uses: actions/upload-artifact@v7
@@ -176,6 +332,68 @@ jobs:
                   print(f"IMG|{os.path.basename(f)}|{i//3000}|{s[i:i+3000]}")
           PY
 
+  # The same client test beside the mods players pair with this one (Jade, WTHIT, JourneyMap, Xaero's Minimap) as
+  # well: not a gate for a release, as Fabric's client test harness sometimes deadlocks closing its world with them
+  # beside it (all three of its threads waiting on each other after every check has passed; a stuck game is printed
+  # thread by thread). Watched, and to be put right; it says nothing of the game a player runs.
+  compat-extra:
+    name: client test with Jade, JourneyMap and Xaero beside them
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+          cache: 'gradle'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      # Sodium and Iris draw with OpenGL (the game alone falls back to Vulkan): the display needs GLX, in software
+      - name: virtual display with OpenGL
+        run: |
+          if [ -f /etc/apt/apt-mirrors.txt ]; then sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt; fi
+          sudo apt-get -o Acquire::Retries=3 update -qq && sudo apt-get -o Acquire::Retries=3 install -y -qq xvfb libgl1-mesa-dri libglx-mesa0 libgl1 libegl1 mesa-utils mesa-vulkan-drivers
+          xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" glxinfo -B || echo "no GLX on the virtual display"
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+      # The newest Fabric builds for this game version from Modrinth; none yet for any of them leaves nothing to test
+      - name: fetch them, and Jade, WTHIT, JourneyMap and Xaero
+        id: fetch
+        run: |
+          set +e
+          python3 tools/compat/fetch.py build/compat-mods
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ $code -eq 3 ]; then echo "None of them has a build for this game version yet: nothing to test with"; exit 0; fi
+          exit $code
+      # A shader pack (3.51.1: Solas, else Complementary Reimagined) for the test's last look, at the Seam and the mod's
+      # lanterns under one; laid in the test's game folder, selected for Iris but left off, once that folder is cleared
+      # (build.gradle), and the test turns it on at the end. None to be had leaves that out.
+      - name: client game test with them
+        if: steps.fetch.outputs.code == '0'
+        # (a game still running after 12 minutes is stuck: every thread of it is printed, to see where, and then ended)
+        run: |
+          ( sleep 720; for p in $(pgrep -f 'net.fabricmc.devlaunchinjector.Main|KnotClient'); do echo "STUCK|game $p still running after 12 minutes"; jstack -l "$p" 2>&1 | sed "s/^/STUCK|/"; kill "$p"; done ) &
+          xvfb-run -a -s "-screen 0 1280x720x24 +extension GLX +render -noreset" ./gradlew runClientGameTest --no-configuration-cache -Pcompat
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          GALLIUM_DRIVER: llvmpipe
+          MESA_GL_VERSION_OVERRIDE: '4.6'
+          # (the virtual display has no GLX visual of the kind the game asks for; through EGL Mesa makes one)
+          SDL_VIDEO_FORCE_EGL: '1'
+          SDL_VIDEO_X11_FORCE_EGL: '1'
+        # (a shader pack drawn in software at the end is slow)
+        timeout-minutes: 30
+      - name: capture screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Compat-extra screenshots
+          path: build/run/clientGameTest/screenshots/
+          if-no-files-found: warn
   bench:
     name: performance with and without the mod
     runs-on: ubuntu-24.04
@@ -209,10 +427,39 @@ jobs:
   # A version not released yet goes out by itself: once the build, the client test and the compatibility run pass on a
   # push to the default branch or the development branch, the jar is published as release v<version> (the version in
   # gradle.properties), with that version's part of CHANGELOG.md as its notes. A version already released is left alone.
+  # The canary: the mod built against the newest Minecraft version Fabric knows (snapshots too), on every release, on a
+  # commit marked [canary] and on a run started by hand, so a new version's breakage is seen early. It reports on the
+  # run's summary page and never blocks anything (tools/canary/canary.py).
+  canary:
+    name: canary against the newest Minecraft
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release]') || contains(github.event.head_commit.message, '[canary]')
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build against the newest version
+        run: python3 tools/canary/canary.py
+        timeout-minutes: 25
+      - name: keep the canary's log
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: Canary log
+          path: canary.log
+          if-no-files-found: ignore
+
   release:
     name: release a new version
     needs: [build, client, compat]
-    if: github.event_name == 'push' && (github.ref_name == github.event.repository.default_branch || github.ref_name == 'claude/youthful-carson-roijnu')
+    # (only with the owner's say-so: a version goes out from a commit marked [release], once everything is green)
+    if: github.event_name == 'push' && (github.ref_name == github.event.repository.default_branch || github.ref_name == 'claude/youthful-carson-roijnu') && contains(github.event.head_commit.message, '[release]')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -221,6 +468,7 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v6
       - name: release this version if it is new
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -233,7 +481,35 @@ jobs:
           gh run download "$GITHUB_RUN_ID" -n Artifacts -D dist
           jar="dist/extremedimensions-$version.jar"
           [ -f "$jar" ] || { echo "no $jar among the build's artifacts:"; ls dist; exit 1; }
+          # (the token CI is given may not tag a commit its branch has moved on from: say so plainly, rather than fail on a 403)
+          head=$(git ls-remote origin "refs/heads/$GITHUB_REF_NAME" | cut -f1)
+          if [ -n "$head" ] && [ "$head" != "$GITHUB_SHA" ]; then
+            echo "::error::$GITHUB_REF_NAME moved on to $head while this release ran; CI cannot tag the older $GITHUB_SHA. Release again from the branch's head."
+            exit 1
+          fi
           name=$(sed -n "s/^## $version: //p" CHANGELOG.md | head -1)
-          { echo "Minecraft $mc · Fabric · Java 25"; echo; awk -v v="## $version:" 'index($0, v) == 1 {on = 1; next} on && /^## / {exit} on' CHANGELOG.md; } > notes.md
+          # The notes: this version's part of the changelog, and every version's after the last one published (a version
+          # that was never published on its own goes out with the next)
+          last=$(gh release view --json tagName -q .tagName 2>/dev/null | sed 's/^v//')
+          { echo "Minecraft $mc · Fabric · Java 25"; echo
+            awk -v v="## $version:" -v stop="## $last:" 'index($0, v) == 1 {on = 1; next} on && stop != "## :" && index($0, stop) == 1 {exit}
+              on && /^## / {print ""; sub(/^## /, "### Also in "); print; next} on' CHANGELOG.md; } > notes.md
           gh release create "v$version" "$jar" --target "$GITHUB_SHA" --title "Extreme Dimensions $version${name:+ — $name}" --notes-file notes.md
           echo "Released v$version with $jar"
+          { echo "released=1"; echo "version=$version"; echo "mc=$mc"; echo "jar=$jar"; echo "title=Extreme Dimensions $version${name:+ — $name}"; } >> "$GITHUB_OUTPUT"
+      # 3.56: the same version on Modrinth and CurseForge (each skipped, with a notice, until its secrets are set; the
+      # publish workflow does it by hand for a version already out)
+      - name: publish to Modrinth and CurseForge
+        if: steps.release.outputs.released == '1'
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT: ${{ secrets.MODRINTH_PROJECT }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CURSEFORGE_PROJECT: ${{ secrets.CURSEFORGE_PROJECT }}
+          PUB_VERSION: ${{ steps.release.outputs.version }}
+          PUB_MC: ${{ steps.release.outputs.mc }}
+          PUB_JAR: ${{ steps.release.outputs.jar }}
+          PUB_TITLE: ${{ steps.release.outputs.title }}
+        run: |
+          python3 tools/release/publish.py --version "$PUB_VERSION" --mc "$PUB_MC" --jar "$PUB_JAR" --notes notes.md \
+            --title "$PUB_TITLE" --body docs/modrinth/description.md

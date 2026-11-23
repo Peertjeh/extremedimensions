@@ -1,0 +1,22 @@
+name: Idea or wish
+description: Something you would like to see, or would like to be different.
+title: "[Idea] "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What would you like? A curse, a creature, a setting, a change to how something works...
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why?
+      description: What it would make better, or what it is like now that bothers you.
+  - type: textarea
+    id: details
+    attributes:
+      label: Versions (optional)
+      render: text

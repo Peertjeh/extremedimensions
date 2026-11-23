@@ -29,8 +29,11 @@ import com.extremedimensions.server.Rules;
 import com.extremedimensions.server.WorldFx;
 import com.extremedimensions.world.WorldService;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -131,7 +134,19 @@ public final class LurkerService {
 		int sightTicks;
 		int boltIn;
 		int boltWindup;
+		/** What its last reach took and the player has not been told yet (3.55.0): told as it runs. */
+		final List<ItemStack> untold = new ArrayList<>();
+		int untoldLevels;
 	}
+
+	/** A theft as its victim was told it (3.55.0): what was taken, the levels, which way it ran, and whether to its hoard. */
+	/** A told theft; hoard is the one it runs to, or null when it runs away (3.56: which one, for the tests). */
+	public record Theft(List<ItemStack> stacks, int levels, String bearing, Hoard hoard) {}
+
+	/** The last theft told, and to whom (for the tests: a test player's client reads no chat). */
+	public record Told(UUID to, Theft theft) {}
+
+	public static volatile Told lastTheft = null;
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
 	private static final Map<UUID, ServerLevel> LEVELS = new HashMap<>();
@@ -227,6 +242,8 @@ public final class LurkerService {
 				// Lurker's Tooth: the tribe smells its own on you
 				often *= Math.max(0, Config.RELIC_LURKERS_TOOTH_OFTEN);
 			}
+			// Tetherite calls to them: the metal of swallowed Tethers is what the tribe is always after
+			often *= com.extremedimensions.tetherite.Tetherite.lure(p);
 			if (rnd.nextDouble() >= Config.LURKER_SPAWN_CHANCE * often) {
 				continue;
 			}
@@ -574,6 +591,10 @@ public final class LurkerService {
 					st.startDist = dist;
 					whisper(l, p, 0.7f);
 				}
+			} else if (seamHunts(p)) {
+				// In the Seam it never steals; but where a visitor's thread runs thin, it may come to hurt
+				com.extremedimensions.world.AmbientService.dread(p);
+				hunt(l, st, p);
 			} else {
 				later.add(() -> {
 					WorldService.offering((ServerLevel) l.level(), l.getX(), l.getY(), l.getZ());
@@ -581,6 +602,15 @@ public final class LurkerService {
 				});
 			}
 		}
+	}
+
+	/**
+	 * Whether a Lurker that watched a visitor in the Seam turns to hunt them: only once their thread runs thin, not for
+	 * its kin, and at {@code lurker_seam_hunt_chance}.
+	 */
+	private static boolean seamHunts(ServerPlayer p) {
+		return Dims.SEAM.equals(Dims.of(p)) && WorldService.tribeSteals() && !kin(p) && com.extremedimensions.seam.SeamFauna.thin(p)
+				&& ThreadLocalRandom.current().nextDouble() < Config.LURKER_SEAM_HUNT_CHANCE;
 	}
 
 	/**
@@ -659,6 +689,7 @@ public final class LurkerService {
 			// Its claw rakes the player as it reaches; then it takes what it can, and may leave a curse behind
 			hurt(l, p, Config.LURKER_CLAW_DAMAGE, false);
 			boolean took = false;
+			int had = st.loot.stacks.size(), hadLevels = st.loot.levels;
 			for (int i = 0; i < Math.max(1, Config.LURKER_THEFTS); i++) {
 				if (!snatch(l, st, p)) {
 					break;
@@ -667,6 +698,11 @@ public final class LurkerService {
 			}
 			if (took) {
 				taken(p);
+				// What this reach took, to be told as it runs (when it knows where to)
+				for (int i = had; i < st.loot.stacks.size(); i++) {
+					st.untold.add(st.loot.stacks.get(i).copy());
+				}
+				st.untoldLevels += Math.max(0, st.loot.levels - hadLevels);
 			}
 			curseChance(l, st, p);
 		}
@@ -716,7 +752,7 @@ public final class LurkerService {
 				case 1 -> stealXp(p, st.loot);
 				case 2 -> stealArmor(p, st.loot);
 				default -> PenaltyService.curse(p, Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties(),
-						Config.LURKER_CURSE_EXTREME_CHANCE) != null;
+						Config.LURKER_CURSE_EXTREME_CHANCE, com.extremedimensions.penalty.CurseLog.Source.LURKER) != null;
 			};
 			if (took && pick == 3) {
 				st.curses++;
@@ -841,7 +877,42 @@ public final class LurkerService {
 				st.limit = 20 * 25;
 			}
 		}
+		tellTheft(l, st, p);
 		flee(l, st, p, new ArrayList<>());
+	}
+
+	/**
+	 * The player is told what the Lurker took and which way it ran (3.55.0): "The Lurker took your [Diamond Pickaxe] and
+	 * ran north-east, to its hoard", each thing taken shown on hover. Before, only the screen's flicker said that
+	 * something had gone, and not what.
+	 */
+	private static void tellTheft(Lurker l, State st, ServerPlayer p) {
+		if (st.untold.isEmpty() && st.untoldLevels <= 0) {
+			return;
+		}
+		MutableComponent what = Component.empty();
+		boolean first = true;
+		for (ItemStack stack : st.untold) {
+			// (the item's own name, which shows the item on hover)
+			Component name = stack.getDisplayName();
+			what.append(first ? "" : ", ").append(stack.getCount() > 1
+					? Component.translatable("gui.extremedimensions.lurker.took_count", stack.getCount(), name) : name);
+			first = false;
+		}
+		if (st.untoldLevels > 0) {
+			what.append(first ? "" : ", ").append(Component.translatable("gui.extremedimensions.lurker.took_levels",
+					st.untoldLevels));
+		}
+		// Which way: towards its hoard where it runs to one, else on away from the player
+		double dx = st.hoard != null ? st.hoard.x + 0.5 - p.getX() : l.getX() - p.getX();
+		double dz = st.hoard != null ? st.hoard.z + 0.5 - p.getZ() : l.getZ() - p.getZ();
+		String bearing = com.extremedimensions.seam.FirstKnot.bearing(dx, dz);
+		p.sendSystemMessage(Component.translatable(st.hoard != null ? "gui.extremedimensions.lurker.took_hoard"
+				: "gui.extremedimensions.lurker.took", what, Component.translatable("gui.extremedimensions.dir." + bearing))
+				.withStyle(ChatFormatting.LIGHT_PURPLE));
+		lastTheft = new Told(p.getUUID(), new Theft(List.copyOf(st.untold), st.untoldLevels, bearing, st.hoard));
+		st.untold.clear();
+		st.untoldLevels = 0;
 	}
 
 	/**
@@ -894,6 +965,14 @@ public final class LurkerService {
 		}
 	}
 
+	/**
+	 * What a Lurker drinks from an anchor in a tick, come for this player: twice as much from one holding the charge of
+	 * the Anchor Rivet's bearer (see RelicService).
+	 */
+	public static double sip(ServerPlayer p, Anchor a) {
+		return Config.LURKER_DRAIN_PER_SECOND / 20.0 * com.extremedimensions.relic.RelicService.drink(p, a);
+	}
+
 	/** Drinks an anchor: its light streams into the Lurker's arms. */
 	private static void drain(Lurker l, State st, ServerPlayer p, List<Runnable> later) {
 		Anchor a = DataStore.anchors().get(st.anchor);
@@ -922,7 +1001,7 @@ public final class LurkerService {
 		}
 		l.getNavigation().stop();
 		l.getLookControl().setLookAt(a.x + 0.5, a.y + 0.5, a.z + 0.5);
-		a.leak(Config.LURKER_DRAIN_PER_SECOND / 20.0);
+		a.leak(sip(p, a));
 
 		beam(l, a, st.ticks);
 	}
@@ -1226,9 +1305,9 @@ public final class LurkerService {
 			}
 		}
 		stand(l);
-		if (!st.sentYoung && Config.LURKER_YOUNG > 0) {
-			st.sentYoung = true;
-			sendYoung(l, st, p, hunter);
+		// (no room beside it for them this time, against a wall: it calls again a moment later)
+		if (!st.sentYoung && Config.LURKER_YOUNG > 0 && st.ticks % 10 == 0) {
+			st.sentYoung = sendYoung(l, st, p, hunter);
 		}
 		if (!hunter && st.loot.any()) {
 			run(l, st, p, false);
@@ -1266,15 +1345,16 @@ public final class LurkerService {
 		}
 	}
 
-	/** It calls its young out of the dark to do what it cannot: two of them, from where it stands. */
-	private static void sendYoung(Lurker l, State st, ServerPlayer p, boolean bite) {
+	/** It calls its young out of the dark to do what it cannot: two of them, from where it stands. False if none came. */
+	private static boolean sendYoung(Lurker l, State st, ServerPlayer p, boolean bite) {
 		List<UUID> sent = HollowService.errand((ServerLevel) l.level(), l.blockPosition(), p, l.getUUID(), bite, Config.LURKER_YOUNG, Config.LURKER_YOUNG_SECONDS);
 		if (sent.isEmpty()) {
-			return;
+			return false;
 		}
 		st.limit = Math.max(st.limit, st.ticks + (Math.max(5, Config.LURKER_YOUNG_SECONDS) + 10) * 20);
 		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:lurker_shriek", "hostile", l.getX(), l.getY() + 2.5, l.getZ(), 1.0f, 1.7f);
 		WorldFx.soundIn(Dims.fullId(p), "extremedimensions:hollowling_giggle", "hostile", l.getX(), l.getY() + 0.8, l.getZ(), 1.0f, 0.8f);
+		return true;
 	}
 
 	/** One of its young brings it what it took from its prey. False when this Lurker is no longer about to take it. */
@@ -1324,7 +1404,7 @@ public final class LurkerService {
 			double dx = p.getX() - l.getX(), dz = p.getZ() - l.getZ();
 			double d = Math.max(0.3, Math.sqrt(dx * dx + dz * dz));
 			p.setDeltaMovement(dx / d * 0.55, 0.32, dz / d * 0.55);
-			p.needsSync = true;
+			com.extremedimensions.server.WorldFx.moved(p);
 		}
 		if (hit) {
 			WorldFx.soundIn(Dims.fullId(p), "minecraft:entity.warden.attack_impact", "hostile", p.getX(), p.getY() + 1, p.getZ(), 0.7f, 1.3f);
@@ -1341,7 +1421,7 @@ public final class LurkerService {
 			return;
 		}
 		boolean overworld = Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties();
-		if (PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE) != null) {
+		if (PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE, com.extremedimensions.penalty.CurseLog.Source.LURKER) != null) {
 			st.curses++;
 			WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.06, 20);
 			WorldFx.soundFor(p, "extremedimensions:lurker_whisper", "hostile", l.getX(), l.getY() + 2, l.getZ(), 1.0f, 0.7f);

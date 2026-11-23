@@ -39,6 +39,9 @@ public final class ElderSpells {
 
 	private static final Identifier SLOW = ExtremeDimensions.id("matriarch_hex");
 	private static final Identifier HEAVY = ExtremeDimensions.id("styx_weight");
+	private static final Identifier SNARED = ExtremeDimensions.id("knot_snare");
+	/** Ticks each player is still held fast in one of the Knot Mother's knots. */
+	private static final Map<UUID, Integer> SNARES = new HashMap<>();
 	/** How long one laying of a spell lasts; it is laid again while the player stays in reach. */
 	private static final int SPELL_TICKS = 40;
 	/** Ticks each player has glided near an Elder without a break. */
@@ -60,7 +63,8 @@ public final class ElderSpells {
 		}
 		int needed = Math.max(1, (int) Math.round(Config.ELDER_SNARE_SECONDS * 20));
 		for (ServerPlayer q : ElderFx.targets(b, ElderPower.reach(64))) {
-			if (!q.isFallFlying()) {
+			// (the Unbound Pinion's bearer flies as they please)
+			if (!q.isFallFlying() || !com.extremedimensions.relic.RelicService.grounds(q)) {
 				GLIDING.remove(q.getUUID());
 				continue;
 			}
@@ -72,8 +76,14 @@ public final class ElderSpells {
 		}
 	}
 
-	/** It pulls a flyer out of the air: a hard drag to the ground, a blow, and their wings bound (public for tests). */
+	/**
+	 * It pulls a flyer out of the air: a hard drag to the ground, a blow, and their wings bound (public for tests). Never
+	 * the Unbound Pinion's bearer.
+	 */
 	public static void snare(ElderBoss b, ServerPlayer q) {
+		if (!com.extremedimensions.relic.RelicService.grounds(q)) {
+			return;
+		}
 		ServerLevel level = (ServerLevel) b.level();
 		int who = ElderFx.index(b);
 		float yaw = ElderFx.yawTo(b, q.getX(), q.getZ());
@@ -87,7 +97,7 @@ public final class ElderSpells {
 		double dx = b.getX() - q.getX(), dz = b.getZ() - q.getZ();
 		double d = Math.max(1, Math.sqrt(dx * dx + dz * dz));
 		q.setDeltaMovement(dx / d * 0.4, -2.4, dz / d * 0.4);
-		q.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(q);
 		if (Config.ELDER_SNARE_DAMAGE > 0) {
 			q.hurtServer(level, level.damageSources().mobAttack(b), (float) Config.ELDER_SNARE_DAMAGE);
 		}
@@ -108,6 +118,16 @@ public final class ElderSpells {
 			double steady = com.extremedimensions.binding.Charms.steadfast(p);
 			hold(p, Attributes.MOVEMENT_SPEED, SLOW, p.hasEffect(ModEffects.HEX) ? -Math.max(0, Math.min(0.9, Config.MATRIARCH_HEX_SLOW)) * steady : 0);
 			hold(p, Attributes.JUMP_STRENGTH, HEAVY, p.hasEffect(ModEffects.WEIGHT) ? -Math.max(0, Math.min(0.9, Config.FERRYMAN_WEIGHT_JUMP)) * steady : 0);
+			// Held fast in a knot: no step and no jump until it gives (Steadfast leggings loosen it a little)
+			Integer left = SNARES.get(p.getUUID());
+			boolean held = left != null && left > 0 && p.isAlive();
+			if (held) {
+				SNARES.put(p.getUUID(), left - 1);
+			} else if (left != null) {
+				SNARES.remove(p.getUUID());
+			}
+			hold(p, Attributes.MOVEMENT_SPEED, SNARED, held ? -steady : 0);
+			hold(p, Attributes.JUMP_STRENGTH, SNARED, held ? -steady : 0);
 			if (p.isFallFlying() && p.hasEffect(ModEffects.BOUND_WINGS)) {
 				p.stopFallFlying();
 			}
@@ -153,11 +173,24 @@ public final class ElderSpells {
 		return InteractionResult.FAIL;
 	}
 
+	/** Holds a player fast in a knot for this many ticks (the longer hold wins if they are caught again). */
+	static void snare(ServerPlayer p, int ticks) {
+		SNARES.merge(p.getUUID(), Math.max(1, ticks), Math::max);
+	}
+
+	/** Whether a player is held fast in one of the Knot Mother's knots. */
+	public static boolean snared(ServerPlayer p) {
+		Integer left = SNARES.get(p.getUUID());
+		return left != null && left > 0;
+	}
+
 	public static void forget(UUID id) {
 		GLIDING.remove(id);
+		SNARES.remove(id);
 	}
 
 	public static void clear() {
 		GLIDING.clear();
+		SNARES.clear();
 	}
 }

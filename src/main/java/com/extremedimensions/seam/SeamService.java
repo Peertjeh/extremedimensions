@@ -161,6 +161,7 @@ public final class SeamService {
 	 * and no collapse counted (a trial they were on is simply over).
 	 */
 	private static void lost(ServerPlayer p, PlayerData d) {
+		com.extremedimensions.expedition.ExpeditionRecord.ended(p, d, true, com.extremedimensions.expedition.ExpeditionRecord.Outcome.REMADE);
 		d.seamLost = false;
 		d.seamPull = 0;
 		d.trial = null;
@@ -300,7 +301,7 @@ public final class SeamService {
 		int z = (int) Math.floor(from.z);
 		if (MendingService.opensNearHeart()) {
 			// The seal is broken: every rift opens near the Heart, where all the threads meet
-			int[] a = MendingService.arrival();
+			int[] a = MendingService.arrival(from.x, from.z);
 			x = a[0];
 			z = a[1];
 		}
@@ -368,12 +369,25 @@ public final class SeamService {
 		d.riftYaw = riftYaw;
 		d.inSeam = true;
 		d.seamVisits++;
-		d.seamMax = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * TetherService.carriedTier(p, d)
+		// A visit of its own (not a detour of an expedition) has a Last Stitch of its own
+		if (!d.inRun) {
+			d.stitchSpent = false;
+		}
+		double seconds = Math.max(30, Config.SEAM_SECONDS) + Config.WOVEN_SEAM_SECONDS * TetherService.carriedTier(p, d)
 				+ (com.extremedimensions.relic.RelicService.has(d, com.extremedimensions.relic.Relic.SEAM_LANTERN) ? Math.max(0, Config.RELIC_SEAM_LANTERN_SECONDS) : 0)
 				+ Math.max(0, Config.ENCH_SILKBOUND_SECONDS) * TetherService.charm(p, d, com.extremedimensions.registry.ModEnchantments.SILKBOUND)
 				+ com.extremedimensions.tapestry.Tapestry.seamSeconds();
+		// the Veil Scale takes its share of all of it, never below a minute
+		d.seamMax = com.extremedimensions.relic.RelicService.seamTime(d, seconds);
 		d.seamLeft = d.seamMax;
 		d.seamPull = 0;
+		// A new thread, warned anew (3.55.0)
+		d.seamWarned = 0;
+		d.seamLastWarn = Integer.MAX_VALUE;
+		d.seamLastBeat = Integer.MAX_VALUE;
+		d.thinTold = false;
+		// The visit is counted from here, for its record (one of its own, also on a visit made from an expedition)
+		d.seamTally = com.extremedimensions.expedition.ExpeditionRecord.begin(d, Dims.SEAM, d.homeDim, d.seamMax, TetherService.carriedTier(p, d));
 		// A Rift Trial taken up at home begins with this visit
 		com.extremedimensions.trial.TrialService.begin(p, d, x, z);
 		d.hasRopeEnd = false;
@@ -424,7 +438,8 @@ public final class SeamService {
 				continue;
 			}
 			if (!inSeam(p)) {
-				// Left the Seam some other way (a command, a death): the thread is cut
+				// Left the Seam some other way (a command, a death): the thread is cut (a death has ended its record already)
+				com.extremedimensions.expedition.ExpeditionRecord.ended(p, d, true, com.extremedimensions.expedition.ExpeditionRecord.Outcome.LEFT);
 				d.inSeam = false;
 				RiftPortals.closeHome(p);
 				com.extremedimensions.trial.TrialService.fail(p, d);
@@ -445,10 +460,21 @@ public final class SeamService {
 			pull(p, d);
 			return;
 		}
-		if (!p.isCreative() && !(MendingService.active() && MendingService.inArena(p)) && !com.extremedimensions.elder.WeaverService.knotMotherNear(p)) {
-			// Time runs out faster in the Fray
-			d.seamLeft -= SeamDepth.drain(p.getY()) * com.extremedimensions.events.FrayedSeam.drain(p) / 20.0;
+		double drain = drain(p);
+		d.seamLeft -= drain / 20.0;
+		if (d.seamLeft > 0 && !p.isCreative()) {
+			// The expedition's warnings on the thread too (3.55.0): the bells, the beat, the words and the title
+			com.extremedimensions.expedition.TimeLeft.warn(p, d, d.seamLeft, com.extremedimensions.expedition.TimeLeft.walkBack(p, d), true);
 		}
+		if (tick % 20 == 0 && !d.thinTold && d.seamPull <= 0 && SeamFauna.thin(p)) {
+			// Once a visit, the moment the thread first runs thin: from now on the Thinned (and a Lurker watching) may hunt
+			d.thinTold = true;
+			WorldFx.soundSelf(p, "extremedimensions:thread.thin", 1.0f, 0.6f);
+			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.seam.thin")
+					.withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE), true);
+		}
+		// For the visit's record: how far from the rift home, and how fast the thread ran (the distance does not count here)
+		com.extremedimensions.expedition.ExpeditionRecord.tick(d.seamTally, riftDistance(p, d), 1.0, drain);
 		TetherService.lay(p, d);
 		SeamDepth.tick(p, d, tick);
 		String dim = SEAM_ID;
@@ -530,6 +556,7 @@ public final class SeamService {
 	}
 
 	private static void exit(ServerPlayer p, PlayerData d) {
+		com.extremedimensions.expedition.ExpeditionRecord.ended(p, d, true, com.extremedimensions.expedition.ExpeditionRecord.Outcome.RETURNED);
 		d.inSeam = false;
 		RiftPortals.closeHome(p);
 		com.extremedimensions.trial.TrialService.finish(p, d);
@@ -544,6 +571,10 @@ public final class SeamService {
 
 	/** Out of time, or fallen: the Seam drags the player back out over three seconds. */
 	private static void collapse(ServerPlayer p, PlayerData d) {
+		if (d.seamTally != null) {
+			// (thread left: they fell below the islands, which the record tells apart from the thread running out)
+			d.seamTally.fell = d.seamLeft > 0;
+		}
 		d.seamPull = PULL_TICKS;
 		WorldFx.fx(p, Fx.COLLAPSE, 0);
 		WorldFx.sound(p, "extremedimensions:collapse", 1.2f, 1.1f);
@@ -561,6 +592,10 @@ public final class SeamService {
 			com.extremedimensions.coop.FallenService.bleedOut(p);
 			return;
 		}
+		// Its record: what the Seam keeps and the curse it lays are its cost, and the player has its card once home
+		boolean fell = d.seamTally != null && d.seamTally.fell;
+		com.extremedimensions.expedition.ExpeditionRecord record = com.extremedimensions.expedition.ExpeditionRecord.end(p, d, true,
+				fell ? com.extremedimensions.expedition.ExpeditionRecord.Outcome.FELL : com.extremedimensions.expedition.ExpeditionRecord.Outcome.THROWN_HOME);
 		d.inSeam = false;
 		RiftPortals.closeHome(p);
 		d.collapses++;
@@ -571,10 +606,18 @@ public final class SeamService {
 		int silk = keep(p, com.extremedimensions.registry.ModItems.SEAM_SILK, Config.SEAM_COLLAPSE_TOLL);
 		int fragments = keep(p, com.extremedimensions.registry.ModItems.TETHER_FRAGMENT, Config.SEAM_COLLAPSE_TOLL);
 		WorldFx.tp(p, Dims.fullIdOf(d.homeDim), d.homeX, d.homeY, d.homeZ);
-		if (silk + fragments > 0) {
+		// (3.55.0: the card of the throw lists what the Seam kept, so the line comes only where no card will)
+		if (silk + fragments > 0 && (record == null || Config.COLLAPSE_RECAP <= 0)) {
 			p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.seam.toll", silk, fragments));
 		}
-		PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties());
+		com.extremedimensions.penalty.Penalty laid = PenaltyService.curse(p, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties(),
+				com.extremedimensions.penalty.CurseLog.Source.COLLAPSE);
+		if (record != null) {
+			record.silk = silk;
+			record.fragments = fragments;
+			record.laid(laid);
+		}
+		com.extremedimensions.expedition.ExpeditionRecord.settle(p, d, record);
 		DataStore.markDirty();
 	}
 
@@ -615,6 +658,11 @@ public final class SeamService {
 				// The first visit to a village may wake its Weaver
 				com.extremedimensions.elder.WeaverService.nearVillage(p, Integer.parseInt(xyz[0]), Integer.parseInt(xyz[1]), Integer.parseInt(xyz[2]));
 				return;
+			}
+			double warn = Config.WEAVER_WARN_RANGE;
+			if (warn > 0 && dx * dx + dz * dz < warn * warn) {
+				// Coming near, a village whose Weaver may still wake gives warning (3.38)
+				com.extremedimensions.elder.WeaverService.warnVillage(p, Integer.parseInt(xyz[0]), Integer.parseInt(xyz[1]), Integer.parseInt(xyz[2]));
 			}
 		}
 	}
@@ -1298,10 +1346,29 @@ public final class SeamService {
 	 * the Seam's music disc, now and then, by the config's chances.
 	 */
 	public static void fillLoot(ServerLevel level, BlockPos b, int richness) {
+		fillLoot(level, b, richness, Dims.SEAM.equals(Dims.of(level)));
+	}
+
+	/** As {@link #fillLoot(ServerLevel, BlockPos, int)}; once: only if this spot was never stocked (every barrel of the Seam). */
+	public static void fillLoot(ServerLevel level, BlockPos b, int richness, boolean once) {
 		if (!(level.getBlockEntity(b) instanceof Container c)) {
 			return;
 		}
-		Loot.fill(level, b, c, richness >= 4 ? Loot.FRAY_TANGLE : richness == 3 ? Loot.SEAM_RELIQUARY : richness == 2 ? Loot.SEAM_VILLAGE : Loot.SEAM_LOOM);
+		if (once) {
+			// Once a barrel, ever (3.27.3): an island built again after it was left half done (a restart, a crash, work
+			// put off far from everyone) runs its actions again, and must not stock what was already stocked and emptied
+			if (!DataStore.seamCells().add(stockedKey(b))) {
+				return;
+			}
+			DataStore.markDirty();
+		}
+		Loot.fill(level, b, c, richness >= 4 ? Loot.FRAY_TANGLE : richness == 3 ? Loot.SEAM_RELIQUARY : richness == 2 ? Loot.SEAM_VILLAGE
+				: richness == 1 ? Loot.SEAM_LOOM : Loot.SEAM_STOREROOM);
+		if (richness <= 0) {
+			// A storeroom: what a household put by, no relic or record among it, and no plunder for the trial to count
+			c.setChanged();
+			return;
+		}
 		if (ThreadLocalRandom.current().nextDouble() < Config.RELIC_SEAM_CHEST_CHANCE * (1 + richness)) {
 			// Sometimes a relic lies among the Weavers' leavings
 			for (int slot = 0; slot < c.getContainerSize(); slot++) {
@@ -1330,6 +1397,21 @@ public final class SeamService {
 		com.extremedimensions.trial.TrialService.stocked(b);
 	}
 
+	/** The world data's mark for a barrel of the Seam that was stocked once (forgotten only when the Seam is made anew). */
+	private static String stockedKey(BlockPos b) {
+		return "l@" + b.getX() + "," + b.getY() + "," + b.getZ();
+	}
+
+	/** Whether this barrel of the Seam was stocked already (an island built again neither refills nor puts it back). */
+	public static boolean stocked(ServerLevel level, BlockPos b) {
+		return Dims.SEAM.equals(Dims.of(level)) && stocked(b);
+	}
+
+	/** Whether a barrel at this spot was stocked once already (whatever world the spot is read in). */
+	public static boolean stocked(BlockPos b) {
+		return DataStore.seamCells().contains(stockedKey(b));
+	}
+
 	/** Operator command: straight into the Seam, as if through a rift at the player's feet. */
 	public static boolean summon(ServerPlayer p) {
 		if (inSeam(p)) {
@@ -1345,6 +1427,18 @@ public final class SeamService {
 	}
 
 	/** Rift distance for the HUD. */
+	/**
+	 * How fast a visitor's thread runs out where they stand now, in seconds a second: faster in the Fray and on a frayed
+	 * island, not at all in creative, in the Heart's fight or near the Knot Mother. One reckoning (3.55.0) for the thread
+	 * itself, the timer panel (which ran at x1.0 in the Fray before) and the boss bar.
+	 */
+	public static double drain(ServerPlayer p) {
+		if (p.isCreative() || (MendingService.active() && MendingService.inArena(p)) || com.extremedimensions.elder.WeaverService.knotMotherNear(p)) {
+			return 0;
+		}
+		return SeamDepth.drain(p.getY()) * com.extremedimensions.events.FrayedSeam.drain(p);
+	}
+
 	public static int riftDistance(ServerPlayer p, PlayerData d) {
 		double dx = p.getX() - d.riftX, dz = p.getZ() - d.riftZ;
 		return (int) Math.sqrt(dx * dx + dz * dz);

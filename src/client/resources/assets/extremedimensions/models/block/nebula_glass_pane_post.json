@@ -1,0 +1,7 @@
+{
+  "parent": "minecraft:block/template_glass_pane_post",
+  "textures": {
+    "pane": "extremedimensions:block/nebula_glass",
+    "edge": "extremedimensions:block/nebula_glass_pane_top"
+  }
+}

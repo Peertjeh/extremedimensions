@@ -11,8 +11,8 @@
             "type": "minecraft:set_count",
             "count": {
               "type": "minecraft:uniform",
-              "min": 2,
-              "max": 10
+              "min": 6,
+              "max": 14
             }
           }
         }
@@ -36,12 +36,20 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "extremedimensions:tether_fragment"
+          "name": "extremedimensions:tether_fragment",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 1,
+              "max": 3
+            }
+          }
         }
       ],
       "condition": {
         "type": "minecraft:random_chance",
-        "chance": 0.6
+        "chance": 0.75
       }
     },
     {
@@ -54,28 +62,20 @@
             "type": "minecraft:set_count",
             "count": {
               "type": "minecraft:uniform",
-              "min": 1,
-              "max": 3
+              "min": 2,
+              "max": 4
             }
           }
         }
       ]
     },
     {
-      "rolls": 1,
+      "rolls": {
+        "type": "minecraft:uniform",
+        "min": 3,
+        "max": 6
+      },
       "entries": [
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:echo_shard",
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": {
-              "type": "minecraft:uniform",
-              "min": 1,
-              "max": 3
-            }
-          }
-        },
         {
           "type": "minecraft:item",
           "name": "minecraft:amethyst_shard",
@@ -83,46 +83,24 @@
             "type": "minecraft:set_count",
             "count": {
               "type": "minecraft:uniform",
-              "min": 1,
-              "max": 3
+              "min": 3,
+              "max": 10
             }
-          }
+          },
+          "weight": 3
         },
         {
           "type": "minecraft:item",
-          "name": "minecraft:bone",
+          "name": "minecraft:experience_bottle",
           "modifier": {
             "type": "minecraft:set_count",
             "count": {
               "type": "minecraft:uniform",
-              "min": 1,
-              "max": 3
+              "min": 2,
+              "max": 6
             }
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:string",
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": {
-              "type": "minecraft:uniform",
-              "min": 1,
-              "max": 3
-            }
-          }
-        },
-        {
-          "type": "minecraft:item",
-          "name": "minecraft:soul_torch",
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": {
-              "type": "minecraft:uniform",
-              "min": 1,
-              "max": 3
-            }
-          }
+          },
+          "weight": 3
         },
         {
           "type": "minecraft:item",
@@ -131,12 +109,135 @@
             "type": "minecraft:set_count",
             "count": {
               "type": "minecraft:uniform",
+              "min": 2,
+              "max": 5
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:soul_torch",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 2,
+              "max": 6
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:glow_berries",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 3,
+              "max": 8
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:ender_pearl",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
               "min": 1,
               "max": 3
             }
-          }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:gold_ingot",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 2,
+              "max": 6
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:diamond",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 1,
+              "max": 3
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:golden_apple",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 1,
+              "max": 2
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:book",
+          "modifier": {
+            "type": "minecraft:enchant_with_levels",
+            "levels": {
+              "type": "minecraft:uniform",
+              "min": 20,
+              "max": 30
+            },
+            "options": "#minecraft:on_random_loot"
+          },
+          "weight": 3
+        },
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:tether_cord",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": 1
+          },
+          "weight": 1
         }
       ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:emerald",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 6,
+              "max": 16
+            }
+          }
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.9
+      }
     },
     {
       "rolls": 1,
@@ -167,7 +268,7 @@
       ],
       "condition": {
         "type": "minecraft:random_chance",
-        "chance": 0.02
+        "chance": 0.05
       }
     },
     {
@@ -180,7 +281,46 @@
       ],
       "condition": {
         "type": "minecraft:random_chance",
+        "chance": 0.2
+      }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:tetherite_scrap"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
         "chance": 0.1
+      }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:mending_cloth"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.03
+      }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:enchanted_golden_apple"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.02
       }
     },
     {

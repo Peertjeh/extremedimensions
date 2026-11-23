@@ -35,11 +35,12 @@ public class SculkLurker extends PathfinderMob implements LurkerBody {
 		TribeMoves.wary(this);
 		this.moveControl = new SteadyMoveControl(this, TURN);
 		this.xpReward = 8;
+		TribeHealth.apply(this);
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return PathfinderMob.createMobAttributes()
-				.add(Attributes.MAX_HEALTH, 14.0)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.SCULK_LURKER_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.3)
 				.add(Attributes.FOLLOW_RANGE, 48.0)
 				.add(Attributes.STEP_HEIGHT, 1.0);
@@ -118,26 +119,32 @@ public class SculkLurker extends PathfinderMob implements LurkerBody {
 
 	@Override
 	protected SoundEvent getAmbientSound() {
-		return ModSounds.LURKER_AMBIENT;
+		return ModSounds.SCULK_LURKER_CHIRP;
 	}
 
 	@Override
 	protected SoundEvent getHurtSound(DamageSource source) {
-		return ModSounds.HOLLOWLING_HURT;
+		return ModSounds.SCULK_LURKER_HURT;
 	}
 
 	@Override
 	protected SoundEvent getDeathSound() {
-		return ModSounds.LURKER_DEATH;
+		return ModSounds.SCULK_LURKER_DEATH;
 	}
 
 	@Override
 	protected void playStepSound(BlockPos pos, BlockState state) {
-		this.playSound(ModSounds.LURKER_STEP, 0.15F, 1.8F + this.random.nextFloat() * 0.2F);
+		this.playSound(ModSounds.SCULK_LURKER_STEP, 0.35F, 0.9F + this.random.nextFloat() * 0.2F);
 	}
 
 	@Override
 	public int getAmbientSoundInterval() {
 		return 400;
+	}
+
+	/** It swims with only its head out of the water (see {@link com.extremedimensions.lurker.TribeMoves#swimDepth}). */
+	@Override
+	public double getFluidJumpThreshold() {
+		return com.extremedimensions.lurker.TribeMoves.swimDepth(this);
 	}
 }

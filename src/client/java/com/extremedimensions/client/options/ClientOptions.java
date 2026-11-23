@@ -50,6 +50,65 @@ public final class ClientOptions {
 		}
 	}
 
+	/**
+	 * How much of the mod's own spectacle this computer draws (3.36): the sparks, rings and beams of the Elders' blows and
+	 * the air of the Seam, all of it or a share. (The mod's other particles follow Minecraft's own Particles option.)
+	 */
+	public enum Effects {
+		FULL(1.0), REDUCED(0.5), MINIMAL(0.2);
+
+		/** The share drawn. */
+		public final double factor;
+
+		Effects(double factor) {
+			this.factor = factor;
+		}
+	}
+
+	/**
+	 * How the Kindled Seam Lantern shines under a shader pack (3.51.1): a shader pack gives light and glow to the blocks it
+	 * knows, and knows none of the mod's; with Iris, the lantern is shown to it as one of these vanilla light sources, whose
+	 * glow and light colour it then takes (and which the pack's own settings may change). Off leaves it unknown to it.
+	 */
+	public enum ShaderLook {
+		CRYING_OBSIDIAN("crying_obsidian"), AMETHYST_CLUSTER("amethyst_cluster"), SOUL_LANTERN("soul_lantern"),
+		LANTERN("lantern"), OFF("");
+
+		/** The vanilla block it is shown as, by its id in the minecraft namespace ("" for none). */
+		public final String block;
+
+		ShaderLook(String block) {
+			this.block = block;
+		}
+	}
+
+	/**
+	 * How the camera is moved for the player in an Elder's fight (3.55.0): the screen shaking under its blows and the view
+	 * turned to it as it forms and dies. Gentle keeps a quarter of the shake and the jolt (what reduced flashing kept before
+	 * 3.55.0) and still turns the view; off keeps the camera wholly the player's.
+	 */
+	public enum Camera {
+		FULL(1.0F, true), GENTLE(0.25F, true), OFF(0F, false);
+
+		/** The share of the shake and the jolt kept, and whether the view is turned to an Elder for the player. */
+		public final float shake;
+		public final boolean turns;
+
+		Camera(float shake, boolean turns) {
+			this.shake = shake;
+			this.turns = turns;
+		}
+	}
+
+	/**
+	 * When the low-time warning comes in words on the action bar (3.55.0): at two minutes left, at one, or once walking back
+	 * would take most of what is left. The server says it (the bells and the title at half a minute come whatever is
+	 * chosen), so the choice is told to it; the order is the one it reads (see TimeLeft).
+	 */
+	public enum WarnAt {
+		TWO_MINUTES, ONE_MINUTE, WALK_BACK
+	}
+
 	/** What is stored. Every field has a safe default so a damaged or older file still loads. */
 	private static final class Values {
 		boolean reduceFlashing = false;
@@ -60,6 +119,13 @@ public final class ClientOptions {
 		boolean guidance = true;
 		boolean hints = true;
 		MenuStyle menu = MenuStyle.FULL;
+		Effects effects = Effects.FULL;
+		ShaderLook shaderLook = ShaderLook.CRYING_OBSIDIAN;
+		/** Whether the toast naming the mod's keys has been shown on this computer (3.55.0; once, on the first join). */
+		boolean keysTold = false;
+		/** None in a file from before 3.55.0: then it follows reduced flashing, which governed the shake before (see load). */
+		Camera camera = null;
+		WarnAt warnAt = WarnAt.ONE_MINUTE;
 	}
 
 	/** HUD sizes to cycle through, in percent. */
@@ -83,6 +149,18 @@ public final class ClientOptions {
 		}
 		if (values.menu == null) {
 			values.menu = MenuStyle.FULL;
+		}
+		if (values.effects == null) {
+			values.effects = Effects.FULL;
+		}
+		if (values.shaderLook == null) {
+			values.shaderLook = ShaderLook.CRYING_OBSIDIAN;
+		}
+		if (values.camera == null) {
+			values.camera = values.reduceFlashing ? Camera.GENTLE : Camera.FULL;
+		}
+		if (values.warnAt == null) {
+			values.warnAt = WarnAt.ONE_MINUTE;
 		}
 		boolean known = false;
 		for (int s : HUD_SCALES) {
@@ -137,6 +215,57 @@ public final class ClientOptions {
 		return values.menu;
 	}
 
+	public static Effects effects() {
+		return values.effects;
+	}
+
+	public static void setEffects(Effects e) {
+		values.effects = e;
+		save();
+	}
+
+	/** How the camera is moved in an Elder's fight (see {@link Camera}). */
+	public static Camera camera() {
+		Camera c = values.camera;
+		return c != null ? c : values.reduceFlashing ? Camera.GENTLE : Camera.FULL;
+	}
+
+	public static void setCamera(Camera c) {
+		values.camera = c;
+		save();
+	}
+
+	public static ShaderLook shaderLook() {
+		return values.shaderLook;
+	}
+
+	/** (Taken up the next time the shader pack is loaded.) */
+	public static void setShaderLook(ShaderLook look) {
+		values.shaderLook = look;
+		save();
+	}
+
+	/**
+	 * How many of something to draw at the effects level, from what full effects draw: the share, with the fraction
+	 * left over drawn by chance (so a third of one is one every third time).
+	 */
+	public static int scaled(int full, net.minecraft.util.RandomSource random) {
+		double want = full * values.effects.factor;
+		int whole = (int) Math.floor(want);
+		return whole + (random.nextDouble() < want - whole ? 1 : 0);
+	}
+
+	public static WarnAt warnAt() {
+		return values.warnAt;
+	}
+
+	/** (Told to the server at once, when the player is in a world of the mod's.) */
+	public static void setWarnAt(WarnAt w) {
+		values.warnAt = w;
+		save();
+		com.extremedimensions.client.state.ClientState.tellWarnAt();
+	}
+
 	public static void setMenu(MenuStyle m) {
 		values.menu = m;
 		save();
@@ -174,6 +303,16 @@ public final class ClientOptions {
 
 	public static void setGuidance(boolean on) {
 		values.guidance = on;
+		save();
+	}
+
+	/** Whether the keys of the Curses and the journal have been named once already (see ModKeys). */
+	public static boolean keysTold() {
+		return values.keysTold;
+	}
+
+	public static void setKeysTold() {
+		values.keysTold = true;
 		save();
 	}
 

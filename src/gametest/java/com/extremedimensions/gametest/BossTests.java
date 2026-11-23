@@ -15,8 +15,12 @@ import com.extremedimensions.elder.Ferryman;
 import com.extremedimensions.elder.FerrymanService;
 import com.extremedimensions.elder.WeaverService;
 import com.extremedimensions.hollow.HollowService;
+import com.extremedimensions.mending.Binding;
 import com.extremedimensions.mending.MendingService;
 import com.extremedimensions.mending.StarvedOne;
+import com.extremedimensions.registry.ModBlocks;
+import com.extremedimensions.registry.ModEntities;
+import com.extremedimensions.seam.SeamArchitect;
 import com.extremedimensions.penalty.Penalty;
 import com.extremedimensions.server.Dims;
 
@@ -25,10 +29,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 /**
@@ -37,19 +43,186 @@ import net.minecraft.world.phys.AABB;
  * they raise sink back).
  */
 public class BossTests {
+	/** 3.32: every boss takes its own health from its setting as it is made, half again its old by default. */
+	@GameTest
+	public void eachBossTakesItsHealthFromItsSetting(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		double was = Config.FERRYMAN_HEALTH;
+		try {
+			check(helper, Config.MATRIARCH_HEALTH == 960 && Config.FERRYMAN_HEALTH == 780 && Config.WEAVER_HEALTH == 720 && Config.KNOT_MOTHER_HEALTH == 840
+					&& Config.STARVED_HEALTH == 750, "the bosses' defaults are not half again their old health");
+			var m = ModEntities.MATRIARCH.create(level, EntitySpawnReason.EVENT);
+			var w = ModEntities.WEAVER.create(level, EntitySpawnReason.EVENT);
+			var k = ModEntities.KNOT_MOTHER.create(level, EntitySpawnReason.EVENT);
+			var so = ModEntities.STARVED_ONE.create(level, EntitySpawnReason.EVENT);
+			check(helper, m != null && m.getMaxHealth() == 960 && m.getHealth() == 960, "the Matriarch is made with %s health", m == null ? 0 : m.getMaxHealth());
+			check(helper, w != null && w.getMaxHealth() == 720, "the Last Weaver is made with %s health", w == null ? 0 : w.getMaxHealth());
+			check(helper, k != null && k.getMaxHealth() == 840, "the Knot Mother is made with %s health", k == null ? 0 : k.getMaxHealth());
+			check(helper, so != null && so.getMaxHealth() == 750, "the Starved One is made with %s health", so == null ? 0 : so.getMaxHealth());
+			Config.FERRYMAN_HEALTH = 900;
+			var f = ModEntities.FERRYMAN.create(level, EntitySpawnReason.EVENT);
+			check(helper, f != null && f.getMaxHealth() == 900, "a Ferryman made after his setting changed has %s health", f == null ? 0 : f.getMaxHealth());
+		} finally {
+			Config.FERRYMAN_HEALTH = was;
+		}
+		helper.succeed();
+	}
+
 	@GameTest
 	public void theStarvedOneGrowsWithItsFoes(GameTestHelper helper) {
 		double per = Config.STARVED_HEALTH_PER_PLAYER;
 		try {
 			Config.STARVED_HEALTH_PER_PLAYER = 0.5;
-			check(helper, MendingService.healthFor(1) == StarvedOne.BASE_HEALTH, "alone, it has %s health", MendingService.healthFor(1));
-			check(helper, MendingService.healthFor(3) == StarvedOne.BASE_HEALTH * 2, "against three, it has %s health", MendingService.healthFor(3));
+			check(helper, MendingService.healthFor(1) == StarvedOne.baseHealth(), "alone, it has %s health", MendingService.healthFor(1));
+			check(helper, MendingService.healthFor(3) == StarvedOne.baseHealth() * 2, "against three, it has %s health", MendingService.healthFor(3));
+			// 3.31: past the game's 1024 too, as every blow is divided rather than its health raised
+			check(helper, MendingService.healthFor(5) == StarvedOne.baseHealth() * 3 && MendingService.toughness(5) == 3,
+					"against five, it has %s health (each blow divided by %s)", MendingService.healthFor(5), MendingService.toughness(5));
 			Config.STARVED_HEALTH_PER_PLAYER = 0;
-			check(helper, MendingService.healthFor(4) == StarvedOne.BASE_HEALTH, "with no growth set, it still grew");
+			check(helper, MendingService.healthFor(4) == StarvedOne.baseHealth() && MendingService.toughness(4) == 1, "with no growth set, it still grew");
 		} finally {
 			Config.STARVED_HEALTH_PER_PLAYER = per;
 		}
 		helper.succeed();
+	}
+
+	/** 3.33: three pillars quenched stop its healing and all four stun it, for any party; the settings are held to the four pillars. */
+	@GameTest
+	public void thePillarsAskThreeToStopItsHealingAndFourToStunIt(GameTestHelper helper) {
+		int stun = Config.STARVED_SOCKETS, stop = Config.STARVED_HEAL_QUENCH;
+		try {
+			check(helper, Binding.healStopAt() == 3 && Binding.stunAt() == 4, "the pillars ask %s to stop its healing and %s to stun it, not 3 and 4",
+					Binding.healStopAt(), Binding.stunAt());
+			Config.STARVED_SOCKETS = 9;
+			Config.STARVED_HEAL_QUENCH = 0;
+			check(helper, Binding.stunAt() == 4 && Binding.healStopAt() == 1, "the settings were not held to the four pillars (%s, %s)", Binding.stunAt(),
+					Binding.healStopAt());
+		} finally {
+			Config.STARVED_SOCKETS = stun;
+			Config.STARVED_HEAL_QUENCH = stop;
+		}
+		// The four pillars stand where the crown builds its obelisks: on the diagonals, sixty-four out
+		for (int i = 0; i < Binding.PILLARS; i++) {
+			int[] c = Binding.pillar(i);
+			double r = Math.sqrt((double) (c[0] - MendingService.HX) * (c[0] - MendingService.HX) + (double) (c[1] - MendingService.HZ) * (c[1] - MendingService.HZ));
+			check(helper, Math.abs(r - Binding.RING) < 1.0 && Math.abs(Math.abs(c[0]) - Math.abs(c[1])) <= 1, "pillar %s stands at %s, %s", i, c[0], c[1]);
+			check(helper, r + 14 < MendingService.ARENA, "pillar %s's island reaches past the fight (%s)", i, r + 14);
+		}
+		helper.succeed();
+	}
+
+	/**
+	 * 3.33: a pillar's node is found atop the lowest piece of its shaft: up the shaft's heart from the plinth (found by
+	 * its top step at the corner facing the Heart) to where the shaft first breaks. A replica in the test's own space.
+	 */
+	@GameTest
+	public void aPillarsNodeIsFoundAtopItsLowestPiece(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		// In world space (the test's own space may be turned): the obelisk's centre in one corner of the test, its top
+		// step five out on both axes towards the test's middle, and the shaft's heart over the centre
+		BlockPos centre = helper.absolutePos(new BlockPos(1, 1, 1)), far = helper.absolutePos(new BlockPos(6, 1, 6));
+		int sx = Integer.signum(far.getX() - centre.getX()), sz = Integer.signum(far.getZ() - centre.getZ());
+		for (int y = 0; y <= 8; y++) {
+			level.setBlock(centre.offset(5 * sx, y, 5 * sz), Blocks.AIR.defaultBlockState(), 3);
+			level.setBlock(centre.offset(0, y, 0), Blocks.AIR.defaultBlockState(), 3);
+		}
+		level.setBlock(centre.offset(5 * sx, 1, 5 * sz), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
+		for (int y = 2; y <= 5; y++) {
+			level.setBlock(centre.offset(0, y, 0), Blocks.POLISHED_BLACKSTONE.defaultBlockState(), 3);
+		}
+		BlockPos node = Binding.nodeOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 5, centre.getY() - 1);
+		BlockPos want = centre.offset(0, 6, 0);
+		check(helper, want.equals(node), "the node was found at %s, not atop the shaft's lowest piece at %s", node, want);
+		// A node standing there already is found where it stands (not above it)
+		level.setBlock(want, Binding.FEEDING.defaultBlockState(), 3);
+		check(helper, want.equals(Binding.nodeOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 5, centre.getY() - 1)),
+				"a node already standing was not found where it stands");
+		// No shaft over the plinth: no node
+		for (int y = 2; y <= 6; y++) {
+			level.setBlock(centre.offset(0, y, 0), Blocks.AIR.defaultBlockState(), 3);
+		}
+		check(helper, Binding.nodeOf(level, centre.getX(), centre.getZ(), sx, sz, centre.getY() + 5, centre.getY() - 1) == null,
+				"a node was found with no shaft to hold it");
+		helper.succeed();
+	}
+
+	/**
+	 * A strand out to a pillar is walkable all the way: three wide, rising or falling at most half a block from one step
+	 * to the next (slabs between), with a wall along each side, from the Heart's floor to the island's.
+	 */
+	@GameTest
+	public void aStrandToAPillarIsWalkable(GameTestHelper helper) {
+		double ax = 0.5, az = 0.5, bx = 25.5, bz = 25.5;
+		SeamArchitect.Plan plan = Binding.strand(null, ax, az, 100, bx, bz, 93);
+		check(helper, plan.size() > 100, "the strand lays only %s blocks", plan.size());
+		double len = Math.sqrt((bx - ax) * (bx - ax) + (bz - az) * (bz - az)), ux = (bx - ax) / len, uz = (bz - az) / len;
+		double last = Double.NaN, first = Double.NaN;
+		for (double t = 0; t <= len; t += 0.5) {
+			double h = surface(plan, (int) Math.floor(ax + ux * t), (int) Math.floor(az + uz * t));
+			check(helper, !Double.isNaN(h), "no floor under the strand %s along", t);
+			if (!Double.isNaN(last)) {
+				check(helper, Math.abs(h - last) <= 0.5 + 1e-6, "the strand steps %s at %s along", h - last, t);
+			} else {
+				first = h;
+			}
+			last = h;
+		}
+		check(helper, Math.abs(first - 101) <= 0.5 && Math.abs(last - 94) <= 0.5, "the strand runs from %s to %s", first, last);
+		// three wide, walled both sides, halfway along
+		double mx = ax + ux * len / 2, mz = az + uz * len / 2;
+		for (int side = -1; side <= 1; side += 2) {
+			double fx = mx - uz * side * 1.0, fz = mz + ux * side * 1.0;
+			check(helper, !Double.isNaN(surface(plan, (int) Math.floor(fx), (int) Math.floor(fz))), "the strand is not three wide (side %s)", side);
+			boolean wall = false;
+			for (double off = 1.6; off <= 2.6; off += 0.2) {
+				int wx = (int) Math.floor(mx - uz * side * off), wz = (int) Math.floor(mz + ux * side * off);
+				for (int y = 90; y <= 104; y++) {
+					BlockState s = plan.at(wx, y, wz);
+					wall |= s != null && s.is(ModBlocks.HUSH_BRICK_WALL);
+				}
+			}
+			check(helper, wall, "no wall along side %s of the strand", side);
+		}
+		helper.succeed();
+	}
+
+	/** The height a player stands at on a strand's column (a slab counts half), or NaN with nothing there. */
+	private static double surface(SeamArchitect.Plan plan, int x, int z) {
+		for (int y = 106; y >= 86; y--) {
+			BlockState s = plan.at(x, y, z);
+			if (s == null || s.is(ModBlocks.HUSH_BRICK_WALL)) {
+				continue;
+			}
+			return y + (s.is(ModBlocks.HUSH_TILE_SLAB) ? 0.5 : 1.0);
+		}
+		return Double.NaN;
+	}
+
+	/**
+	 * The Starved One hangs in the air (it never falls), tells the client what it is doing and whether it is bound, and
+	 * outside the Heart's fight takes harm in full.
+	 */
+	@GameTest(maxTicks = 60)
+	public void theStarvedOneHangsInTheAir(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		BlockPos at = helper.absolutePos(new BlockPos(4, 6, 4));
+		StarvedOne so = ModEntities.STARVED_ONE.create(level, EntitySpawnReason.EVENT);
+		check(helper, so != null, "no Starved One could be made");
+		so.setPos(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		level.addFreshEntity(so);
+		double y0 = so.getY();
+		check(helper, so.isNoGravity() && so.getAction() == StarvedOne.IDLE && !so.isBound(), "it began falling, acting or bound");
+		int take = so.getTake();
+		so.act(StarvedOne.SWOOP);
+		check(helper, so.getAction() == StarvedOne.SWOOP && so.getTake() == take + 1, "its swoop was not told (%s, %s)", so.getAction(), so.getTake());
+		so.setBound(true);
+		check(helper, so.isBound(), "its binding was not told");
+		check(helper, MendingService.damageFactor(so) == 1.0F, "away from the Heart's fight it takes %s of the harm", MendingService.damageFactor(so));
+		helper.runAfterDelay(25, () -> {
+			check(helper, so.isAlive() && Math.abs(so.getY() - y0) < 0.05, "it fell from %s to %s", y0, so.getY());
+			so.discard();
+			helper.succeed();
+		});
 	}
 
 	@GameTest
@@ -74,6 +247,165 @@ public class BossTests {
 			d.matriarchSlain = false;
 		}
 		helper.succeed();
+	}
+
+	/**
+	 * 3.28: woken, the Matriarch first stirs beneath her nest (a bar counts down, nothing has risen yet, and one nest
+	 * stirs only once); with everyone who earned her gone far enough she sinks back to sleep, and does not come.
+	 */
+	@GameTest(environment = Alone.MATRIARCH_SETTLES, maxTicks = 140)
+	public void theMatriarchStirsAndSleepsAgainWhenTheyGo(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper);
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		Hoard h = new Hoard(Dims.of(helper.getLevel()), at.getX() + 1, at.getY(), at.getZ() + 1, "");
+		Runnable restore = stirred(p, 3);
+		try {
+			check(helper, HollowService.stir(h, p), "the Matriarch did not stir beneath her nest");
+			check(helper, HollowService.stirring(h.key()), "she is not stirring");
+			check(helper, !HollowService.stir(h, p), "she stirred twice beneath one nest");
+			check(helper, !com.extremedimensions.elder.MatriarchService.hunting(p), "she rose at once, with no time to make ready");
+		} catch (RuntimeException e) {
+			restore.run();
+			throw e;
+		}
+		// Both later steps are scheduled up front (a step scheduled from inside another upsets the test's list of steps)
+		helper.runAfterDelay(20, () -> {
+			try {
+				check(helper, HollowService.stirring(h.key()), "she sank back to sleep while they stood by her nest");
+				p.teleportTo(at.getX() + 40.5, at.getY(), at.getZ() + 0.5);
+			} catch (RuntimeException e) {
+				restore.run();
+				throw e;
+			}
+		});
+		helper.runAfterDelay(24, () -> {
+			try {
+				check(helper, !HollowService.stirring(h.key()), "she still stirs after everyone went far from her nest");
+			} catch (RuntimeException e) {
+				restore.run();
+				throw e;
+			}
+		});
+		helper.runAfterDelay(90, () -> {
+			try {
+				check(helper, !com.extremedimensions.elder.MatriarchService.hunting(p), "she rose although everyone had gone");
+			} finally {
+				restore.run();
+			}
+			helper.succeed();
+		});
+	}
+
+	/** 3.28: whoever earned her and stays near her nest while she stirs is the one she rises for once the time is up. */
+	@GameTest(environment = Alone.MATRIARCH_STIRS, maxTicks = 120)
+	public void theMatriarchRisesForWhoeverStays(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper);
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		forceAround(helper, 3);
+		Hoard h = new Hoard(Dims.of(helper.getLevel()), at.getX() + 1, at.getY(), at.getZ() + 1, "");
+		int arena = Config.ELDER_ARENA;
+		ServerLevel level = helper.getLevel();
+		net.minecraft.world.Difficulty was = level.getDifficulty();
+		// (on peaceful nothing would stay risen to fight)
+		level.getServer().setDifficulty(net.minecraft.world.Difficulty.NORMAL, true);
+		Config.ELDER_ARENA = 0;
+		Runnable undo = stirred(p, 2);
+		Runnable restore = () -> {
+			undo.run();
+			Config.ELDER_ARENA = arena;
+			level.getServer().setDifficulty(was, true);
+		};
+		try {
+			check(helper, HollowService.stir(h, p), "the Matriarch did not stir beneath her nest");
+		} catch (RuntimeException e) {
+			restore.run();
+			throw e;
+		}
+		helper.runAfterDelay(20, () -> {
+			try {
+				check(helper, HollowService.stirring(h.key()) && !com.extremedimensions.elder.MatriarchService.hunting(p),
+						"she rose before her time was up");
+			} catch (RuntimeException e) {
+				restore.run();
+				throw e;
+			}
+		});
+		helper.runAfterDelay(55, () -> {
+			java.util.List<com.extremedimensions.elder.Matriarch> found = helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Matriarch.class,
+					p.getBoundingBox().inflate(48));
+			boolean hunting = com.extremedimensions.elder.MatriarchService.hunting(p), stirring = HollowService.stirring(h.key());
+			found.forEach(com.extremedimensions.elder.MatriarchService::fade);
+			restore.run();
+			check(helper, !stirring, "she still stirs after her time was up");
+			check(helper, hunting && !found.isEmpty(), "she did not rise for the one who stayed (hunting %s, found %s)", hunting, found.size());
+			helper.succeed();
+		});
+	}
+
+	/** Gives the player the Matriarch (three Keepers slain) and a short wind-up; returns what puts it all back. */
+	private static Runnable stirred(ServerPlayer p, int seconds) {
+		PlayerData d = DataStore.get(p.getUUID());
+		int after = Config.MATRIARCH_AFTER_KEEPERS, wake = Config.MATRIARCH_WAKE_SECONDS, calm = Config.MATRIARCH_CALM_RANGE;
+		Config.MATRIARCH_AFTER_KEEPERS = 3;
+		Config.MATRIARCH_WAKE_SECONDS = seconds;
+		Config.MATRIARCH_CALM_RANGE = 16;
+		d.keepersSlain = 3;
+		d.matriarchSlain = false;
+		return () -> {
+			Config.MATRIARCH_AFTER_KEEPERS = after;
+			Config.MATRIARCH_WAKE_SECONDS = wake;
+			Config.MATRIARCH_CALM_RANGE = calm;
+			d.keepersSlain = 0;
+		};
+	}
+
+	/**
+	 * Her Requiem's sky (3.42): lanterns come down out of the vortex over her and hang there burning, and once it has
+	 * bloomed none is left (a player in creative: no curse falls, no blow lands).
+	 */
+	@GameTest(environment = Alone.MATRIARCH_REQUIEM, maxTicks = 300)
+	public void herRequiemHangsLanternsAndTakesThemAllDown(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.creative(helper, "test-requiem");
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		p.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		Runnable unforce = forceAround(helper, 3);
+		int[] hoards = {0};
+		java.util.List<com.extremedimensions.elder.Matriarch> found = new java.util.ArrayList<>();
+		int[] most = {0};
+		helper.runAfterDelay(5, () -> {
+			int arena = Config.ELDER_ARENA;
+			hoards[0] = DataStore.hoards().size();
+			Config.ELDER_ARENA = 0;
+			try {
+				HollowService.summonMatriarch(p);
+			} finally {
+				Config.ELDER_ARENA = arena;
+			}
+		});
+		helper.runAfterDelay(7, () -> {
+			found.addAll(helper.getLevel().getEntitiesOfClass(com.extremedimensions.elder.Matriarch.class, p.getBoundingBox().inflate(48)));
+			found.forEach(m -> com.extremedimensions.elder.MatriarchService.force(m, com.extremedimensions.elder.ElderBoss.ULTIMATE));
+		});
+		for (int t = 40; t <= 180; t += 20) {
+			helper.runAfterDelay(t, () -> found.forEach(m -> most[0] = Math.max(most[0], com.extremedimensions.elder.MatriarchService.lanterns(m))));
+		}
+		helper.runAfterDelay(240, () -> {
+			int left = 0;
+			for (com.extremedimensions.elder.Matriarch m : found) {
+				left += com.extremedimensions.elder.MatriarchService.lanterns(m);
+			}
+			found.forEach(com.extremedimensions.elder.MatriarchService::fade);
+			while (DataStore.hoards().size() > hoards[0]) {
+				DataStore.hoards().remove(DataStore.hoards().size() - 1);
+			}
+			unforce.run();
+			check(helper, !found.isEmpty(), "the Matriarch did not come");
+			check(helper, most[0] >= 6, "only %s lanterns hung in her sky", most[0]);
+			check(helper, left == 0, "%s lanterns were left in the air after her Requiem", left);
+			helper.succeed();
+		});
 	}
 
 	/** {@code /tether boss matriarch} brings her, even to an operator in creative mode (not only her nest). */
@@ -187,7 +519,36 @@ public class BossTests {
 		check(helper, f.getHealth() == health, "he was hurt while he formed");
 		FerrymanService.force(f, Ferryman.KNELL);
 		check(helper, f.getAction() == Ferryman.KNELL, "forcing a blow did not end his forming (action %s)", f.getAction());
+		// 3.37: formed, a mace's blow glances off him: of a blow of 40, only boss_mace_damage lands (before his own
+		// toughness divides it, as every blow's is); a blow without a mace is let through whole (aMaceGlancesOffTheBosses)
+		p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.MACE));
+		float beforeMace = f.getHealth();
+		f.hurtServer(helper.getLevel(), helper.getLevel().damageSources().playerAttack(p), 40f);
+		float byMace = beforeMace - f.getHealth();
+		float most = 40f * (float) (Config.BOSS_MACE_DAMAGE + 0.01) / Math.max(0.1F, f.toughness());
+		check(helper, byMace > 0 && byMace <= most, "a mace's blow of 40 took %s of his health (at most %s should land)", byMace, most);
 		FerrymanService.fade(f);
+		helper.succeed();
+	}
+
+	/** 3.37: the same guard holds for the Starved One, and a blow struck without a mace (or with a sword) is let through whole. */
+	@GameTest
+	public void aMaceGlancesOffTheBosses(GameTestHelper helper) {
+		ServerPlayer p = cursed(helper);
+		ServerLevel level = helper.getLevel();
+		StarvedOne so = ModEntities.STARVED_ONE.create(level, EntitySpawnReason.EVENT);
+		check(helper, so != null, "no Starved One could be made");
+		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
+		so.setPos(at.getX() + 0.5, at.getY(), at.getZ() + 0.5);
+		p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.MACE));
+		float mace = com.extremedimensions.elder.ElderPower.maceGuard(so, level, level.damageSources().playerAttack(p), 100f);
+		check(helper, Math.abs(mace - 100f * (float) Config.BOSS_MACE_DAMAGE) < 0.01f, "a mace's 100 came to %s on the Starved One", mace);
+		p.setItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND, new ItemStack(Items.NETHERITE_SWORD));
+		float sword = com.extremedimensions.elder.ElderPower.maceGuard(so, level, level.damageSources().playerAttack(p), 100f);
+		check(helper, sword == 100f, "a sword's 100 came to %s", sword);
+		check(helper, com.extremedimensions.elder.ElderPower.maceGuard(so, level, level.damageSources().generic(), 100f) == 100f,
+				"a blow from nowhere was held back");
+		so.discard();
 		helper.succeed();
 	}
 
@@ -374,7 +735,7 @@ public class BossTests {
 	 * no arena raised (the Knot is hers), one awake at a time, her ultimate's rings of light; slain, she rests, and those
 	 * near her are told the First Knot's page and earn her advancement.
 	 */
-	@GameTest(environment = Alone.KNOT_MOTHER, maxTicks = 200)
+	@GameTest(environment = Alone.KNOT_MOTHER, maxTicks = 1100)
 	public void theKnotMotherFightsOnTheWeaversLines(GameTestHelper helper) {
 		ServerPlayer p = cursed(helper);
 		BlockPos at = helper.absolutePos(new BlockPos(2, 2, 2));
@@ -393,8 +754,10 @@ public class BossTests {
 			}
 			com.extremedimensions.data.DataStore.seamCells().removeIf(k -> k.startsWith("km@"));
 			unforce.run();
+			KnotMotherSlot.release("weavers-lines");
 		};
-		helper.runAfterDelay(5, () -> {
+		KnotMotherSlot.Steps steps = new KnotMotherSlot.Steps();
+		steps.at(5, () -> {
 			Config.WEAVER_ULTIMATE_RINGS = 2;
 			Config.ELDER_ULTIMATE_SECONDS = 6;
 			int arenas = com.extremedimensions.elder.ElderArena.count();
@@ -411,13 +774,13 @@ public class BossTests {
 			WeaverService.force(mother[0], ElderBoss.ULTIMATE);
 		});
 		for (int t = 15; t <= 110; t += 2) {
-			helper.runAfterDelay(t, () -> {
+			steps.at(t, () -> {
 				if (mother[0] != null) {
 					most[0] = Math.max(most[0], com.extremedimensions.elder.ElderStrikes.beamsOf(mother[0]));
 				}
 			});
 		}
-		helper.runAfterDelay(115, () -> {
+		steps.at(115, () -> {
 			check(helper, most[0] == 2, "her ultimate swept at most %s beams at once, not two rings", most[0]);
 			// Slain: she rests, and those near her earn her advancement and the Knot's page
 			WeaverService.onDefeat(mother[0], p);
@@ -431,6 +794,7 @@ public class BossTests {
 			check(helper, !WeaverService.knotMotherAwake(), "the Knot Mother is still counted awake once slain");
 			helper.succeed();
 		});
+		steps.run(helper, "weavers-lines", 900, 120);
 	}
 
 	@GameTest

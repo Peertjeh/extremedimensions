@@ -12,8 +12,8 @@ import com.extremedimensions.data.PlayerData;
 
 /**
  * Curses: penalties chosen after a Dimensional Collapse or a death beyond the wound (and, when enabled, after a death in
- * the Overworld). They are permanent: every pick adds stacks, up to the curse's own maximum, and only atonement, Tether
- * Fragments or a Mending Cloth take a stack off again.
+ * the Overworld). They are permanent: every pick adds stacks, up to the curse's own maximum, and only atonement (which
+ * Tether Fragments and a Mending Cloth pay into) takes a stack off again.
  *
  * <p>Extreme curses are the fourth set: now and then one of the cards is one of them (never multiplied), and spilled
  * stacks can land on them too, more rarely than on others. Their cards and the Curses screen only ever hint at what
@@ -266,6 +266,36 @@ public enum Penalty {
 			}
 		}
 		return pool;
+	}
+
+	/**
+	 * One curse from the pool for a curse laid without a choice: those the player does not carry yet are
+	 * {@code curse_fresh_weight} times likelier than those they do, and the last one so laid never comes twice in a row
+	 * (while there is anything else). Null for an empty pool.
+	 */
+	public static Penalty pickVaried(PlayerData d, List<Penalty> pool, java.util.Random rnd) {
+		if (pool.isEmpty()) {
+			return null;
+		}
+		double fresh = Math.max(1, Config.CURSE_FRESH_WEIGHT);
+		double total = 0;
+		double[] w = new double[pool.size()];
+		for (int i = 0; i < pool.size(); i++) {
+			Penalty p = pool.get(i);
+			w[i] = pool.size() > 1 && p.id.equals(d.lastCurse) ? 0 : d.owned(p) > 0 ? 1 : fresh;
+			total += w[i];
+		}
+		if (total <= 0) {
+			return pool.get(rnd.nextInt(pool.size()));
+		}
+		double roll = rnd.nextDouble() * total;
+		for (int i = 0; i < pool.size(); i++) {
+			roll -= w[i];
+			if (roll < 0) {
+				return pool.get(i);
+			}
+		}
+		return pool.get(pool.size() - 1);
 	}
 
 	/**

@@ -1,6 +1,6 @@
 """Renders an Elder's model to a PNG without the game: textured boxes, a z-buffer, simple light and the glow layer.
 
-usage: python3 tools/elders/preview.py <name> <out.png> [front|side|three|top|bottom|over|under] [scale] [crop: x0,y0,x1,y1 in model pixels]
+usage: python3 tools/elders/preview.py <name> <out.png> [front|side|back|three|top|bottom|over|under] [scale] [crop: x0,y0,x1,y1 in model pixels]
 
 Reads the preview JSON written by build.py (python3 tools/elders/build.py <dir>, or tools/lurker/build.py) from the
 same directory as <out.png>, and the textures from the resource folder (the Elders' folder, else the entity folder). Model space is Minecraft's (pixels, Y down, the creature faces -Z); the
@@ -51,7 +51,7 @@ def render(name, out, view="front", scale=3.0, crop=None):
     base = np.asarray(Image.open(os.path.join(tex, name + ".png")).convert("RGBA"), dtype=np.float32) / 255
     glow = np.asarray(Image.open(os.path.join(tex, name + "_glow.png")).convert("RGBA"), dtype=np.float32) / 255
     th, tw = base.shape[:2]
-    yaw = {"front": 0.0, "side": math.pi / 2, "three": math.pi / 5, "top": 0.0, "bottom": 0.0, "over": math.pi / 5,
+    yaw = {"front": 0.0, "side": math.pi / 2, "back": math.pi, "three": math.pi / 5, "top": 0.0, "bottom": 0.0, "over": math.pi / 5,
            "under": math.pi / 5}[view]
     # over and under tilt the three-quarter view to look down on the creature or up at it
     pitch = {"over": -0.6, "under": 0.6}.get(view, 0.0)
@@ -69,6 +69,7 @@ def render(name, out, view="front", scale=3.0, crop=None):
         xr, zr = x * cy - z * sy, x * sy + z * cy
         return (-xr, y * cp - zr * sp, y * sp + zr * cp)
 
+    flip = view not in ("top", "bottom")
     quads = []
     for box in data["boxes"]:
         r, t = box["r"], box["t"]
@@ -97,6 +98,8 @@ def render(name, out, view="front", scale=3.0, crop=None):
         if nn < 1e-9:
             continue
         n /= nn
+        if flip:
+            n = -n  # the view mirrors the model (screen x = -model x), which turns the corners' winding round
         if n[2] > 1e-6:
             continue  # faces away from us
         S = np.stack([(P[:, 0] - x0) * scale, (P[:, 1] - y0) * scale], axis=1)

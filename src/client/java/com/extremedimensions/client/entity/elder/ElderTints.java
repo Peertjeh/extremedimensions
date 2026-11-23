@@ -1,7 +1,10 @@
 package com.extremedimensions.client.entity.elder;
 
+import com.extremedimensions.elder.ElderBoss;
 import com.extremedimensions.elder.Ferryman;
+import com.extremedimensions.elder.KnotMother;
 import com.extremedimensions.elder.Matriarch;
+import com.extremedimensions.elder.PaleMason;
 import com.extremedimensions.elder.Weaver;
 
 /**
@@ -21,6 +24,8 @@ final class ElderTints {
 		return switch (elder) {
 			case "matriarch" -> new String[] {"red", "green", "amber", "white"};
 			case "ferryman" -> new String[] {"red", "sea", "gold", "white", "soul"};
+			case "knot_mother" -> new String[] {"amber", "violet", "white"};
+			case "pale_mason" -> new String[] {"violet", "white", "gold"};
 			default -> new String[] {"blue", "crimson", "silver"};
 		};
 	}
@@ -36,22 +41,40 @@ final class ElderTints {
 				case Matriarch.WAIL -> 3;
 				default -> NONE;
 			};
-			// Red for his crossing, sea-green for the tide, gold for the knell, white for the pole, blue soul fire for
-			// his lanterns; his light goes out as the gaol closes
+			// Red for his crossing, sea-green for the tide and the undertow, gold for the knell and the bells, white for
+			// the pole and the oars that sweep the ground, blue soul fire for his lanterns; his light goes out as the gaol
+			// closes
 			case "ferryman" -> switch (action) {
 				case Ferryman.CROSSING -> 0;
-				case Ferryman.TIDE -> 1;
-				case Ferryman.KNELL -> 2;
-				case Ferryman.SLAM -> 3;
+				case Ferryman.TIDE, Ferryman.UNDERTOW -> 1;
+				case Ferryman.KNELL, Ferryman.BELLS -> 2;
+				case Ferryman.SLAM, Ferryman.OARS -> 3;
 				case Ferryman.LANTERN -> 4;
 				case Ferryman.GAOL -> DARK;
 				default -> NONE;
 			};
-			// Blue-white for the lance, crimson for the thousand needles, silver for needles; dark as it unravels
+			// The Knot Mother: amber as her Threadline is drawn, violet as her Snare closes, white as she lies exposed
+			case "knot_mother" -> switch (action) {
+				case KnotMother.THREADLINE -> 0;
+				case KnotMother.SNARE -> 1;
+				case KnotMother.EXPOSED -> 2;
+				default -> NONE;
+			};
+			// The Pale Mason: violet as he strikes out of the air, as his gaze falls, as his Bound Stones swing and as his
+			// Spiral winds; white as his blocks are lifted and hurled and as his Pillars tear up; gold as his walls rise,
+			// as he casts his rings and as the Last Door opens
+			case "pale_mason" -> switch (action) {
+				case PaleMason.STRIKE, PaleMason.GAZE, PaleMason.CHAINS, PaleMason.SPIRAL -> 0;
+				case PaleMason.LIFT, PaleMason.THROW, PaleMason.PILLARS -> 1;
+				case PaleMason.WALLS, PaleMason.RINGS, ElderBoss.ULTIMATE -> 2;
+				default -> NONE;
+			};
+			// Blue-white for the lance and for the lines of the warp and weft, crimson for the thousand needles and the loom
+			// coming down, silver for needles and the spindle storm's threads; dark as it unravels
 			default -> switch (action) {
-				case Weaver.LANCE -> 0;
-				case Weaver.THOUSAND -> 1;
-				case Weaver.NEEDLES -> 2;
+				case Weaver.LANCE, Weaver.WARP -> 0;
+				case Weaver.THOUSAND, Weaver.NEEDLEFALL -> 1;
+				case Weaver.NEEDLES, Weaver.SPINDLE -> 2;
 				case Weaver.UNRAVEL -> DARK;
 				default -> NONE;
 			};

@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/carpet",
+  "textures": {
+    "wool": "extremedimensions:block/seam_silk_block"
+  }
+}

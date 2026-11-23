@@ -377,6 +377,15 @@ public final class SeamArchitect {
 			return top;
 		}
 
+		/** How many storerooms the plan fills once it stands (its small actions; for the tests). */
+		public int storerooms() {
+			int n = 0;
+			for (Object[] a : after) {
+				n += minor(a) ? 1 : 0;
+			}
+			return n;
+		}
+
 		/** How many of the plan's blocks are of a block. */
 		public int count(net.minecraft.world.level.block.Block block) {
 			int n = 0;
@@ -408,6 +417,19 @@ public final class SeamArchitect {
 
 		public void then(int x, int y, int z, Consumer<ServerLevel> action) {
 			after.add(new Object[] {new BlockPos(x, y, z), action});
+		}
+
+		/**
+		 * A small action (filling a storeroom's barrel): unlike {@link #then}, a ruin keeps nothing standing for it; if
+		 * time takes the barrel, the action finds none and does nothing.
+		 */
+		public void thenMinor(int x, int y, int z, Consumer<ServerLevel> action) {
+			after.add(new Object[] {new BlockPos(x, y, z), action, Boolean.TRUE});
+		}
+
+		/** Whether an action is a small one (see {@link #thenMinor}). */
+		static boolean minor(Object[] a) {
+			return a.length > 2 && Boolean.TRUE.equals(a[2]);
 		}
 
 		private boolean connected;
@@ -1156,6 +1178,10 @@ public final class SeamArchitect {
 			p.then(wx(lx, lz), oy + ly, wz(lx, lz), a);
 		}
 
+		void thenMinor(int lx, int ly, int lz, Consumer<ServerLevel> a) {
+			p.thenMinor(wx(lx, lz), oy + ly, wz(lx, lz), a);
+		}
+
 		BlockPos pos(int lx, int ly, int lz) {
 			return new BlockPos(wx(lx, lz), oy + ly, wz(lx, lz));
 		}
@@ -1393,11 +1419,27 @@ public final class SeamArchitect {
 		}
 		p.set(cx, y - 1, cz, mc("soul_soil", stone()));
 		p.set(cx, y, cz, mc("soul_campfire", Blocks.SOUL_LANTERN.defaultBlockState()));
+		Furnish.cache(p, cx, y, cz);
 	}
 
-	/** Barrels of the Thinned hold silk, pages and old things. */
+	/** Fills the container laid at a spot (a storeroom's barrel or chest), if it still stands there. */
+	static Consumer<ServerLevel> stock(BlockPos pos, int richness) {
+		return level -> {
+			if (level.getBlockEntity(pos) instanceof net.minecraft.world.Container) {
+				SeamService.fillLoot(level, pos, richness);
+			}
+		};
+	}
+
+	/**
+	 * Barrels of the Thinned hold silk, pages and old things. One stocked once is left as it is when its island is built
+	 * again: not filled again, and not put back if it was broken (3.27.3).
+	 */
 	static Consumer<ServerLevel> loot(BlockPos pos, int richness) {
 		return level -> {
+			if (SeamService.stocked(level, pos)) {
+				return;
+			}
 			level.setBlock(pos, Blocks.BARREL.defaultBlockState().setValue(net.minecraft.world.level.block.BarrelBlock.FACING, Direction.UP), 3);
 			SeamService.fillLoot(level, pos, richness);
 		};
@@ -1506,6 +1548,7 @@ public final class SeamArchitect {
 		f.then(sx - 3, 0, -3, loot(f.pos(sx - 3, 0, -3), 1));
 		// and a loom the Thinned left, its half-woven tapestry still on it (the First Weaver's trail runs through here)
 		f.set(-(sx - 3), 0, -3, Blocks.LOOM.defaultBlockState());
+		Furnish.loom(f, sx);
 	}
 
 	// ------------------------------------------------------------------ villages
@@ -1778,6 +1821,7 @@ public final class SeamArchitect {
 		if (withLore) {
 			f.then(-w + 1, 0, d - 1, loot(f.pos(-w + 1, 0, d - 1), 2));
 		}
+		Furnish.house(f, w, d, h1, dz, withLore);
 	}
 
 	// ------------------------------------------------------------------ hanging towers, halos

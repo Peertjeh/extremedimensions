@@ -29,7 +29,7 @@ public class CaveLurker extends Lurker {
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, 30.0)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.CAVE_LURKER_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.3)
 				.add(Attributes.FOLLOW_RANGE, 48.0)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 0.5)
@@ -68,9 +68,25 @@ public class CaveLurker extends Lurker {
 
 	@Override
 	protected void playStepSound(BlockPos pos, BlockState state) {
-		// light, quick steps on all fours; louder when it runs
+		// claws ticking on stone, on all fours; louder when it runs
 		boolean running = getLurkerPose() == POSE_RUN;
-		this.playSound(ModSounds.LURKER_STEP, running ? 0.45F : 0.2F, 1.5F + this.random.nextFloat() * 0.2F);
+		this.playSound(ModSounds.CAVE_LURKER_STEP, running ? 0.6F : 0.3F, 0.9F + this.random.nextFloat() * 0.2F);
+	}
+
+	/** A wet rasp of breath in the dark (its clicks, as it listens, come from its service). */
+	@Override
+	protected net.minecraft.sounds.SoundEvent getAmbientSound() {
+		return ModSounds.CAVE_LURKER_BREATH;
+	}
+
+	@Override
+	protected net.minecraft.sounds.SoundEvent getHurtSound(DamageSource source) {
+		return ModSounds.CAVE_LURKER_HURT;
+	}
+
+	@Override
+	protected net.minecraft.sounds.SoundEvent getDeathSound() {
+		return ModSounds.CAVE_LURKER_DEATH;
 	}
 
 	@Override

@@ -29,6 +29,25 @@ public final class Toasts {
 		}
 	}
 
+	/**
+	 * A curse laid without a choice (a Lurker's touch, a swarm...): which, how many stacks, and where it came from. The
+	 * value packs the curse's ordinal, the stacks (shifted 10 bits) and the source's ordinal (shifted 16).
+	 */
+	public static void curse(int value) {
+		com.extremedimensions.penalty.Penalty[] curses = com.extremedimensions.penalty.Penalty.values();
+		com.extremedimensions.penalty.CurseLog.Source[] sources = com.extremedimensions.penalty.CurseLog.Source.values();
+		int ordinal = value & 1023, stacks = Math.max(1, value >> 10 & 63), source = value >> 16 & 255;
+		if (ordinal >= curses.length) {
+			return;
+		}
+		com.extremedimensions.penalty.CurseLog.Source from = source < sources.length ? sources[source] : com.extremedimensions.penalty.CurseLog.Source.UNKNOWN;
+		Component title = Component.translatable("gui.extremedimensions.toast.curse", Component.translatable(curses[ordinal].nameKey()), stacks)
+				.withStyle(net.minecraft.ChatFormatting.RED);
+		Component text = Component.translatable("gui.extremedimensions.toast.curse_from", Component.translatable(from.nameKey()));
+		Minecraft mc = Minecraft.getInstance();
+		SystemToast.add(mc.gui.toastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION, title, text);
+	}
+
 	/** A creature was written into the bestiary (by its ordinal). */
 	public static void bestiary(int ordinal) {
 		Bestiary.Beast[] beasts = Bestiary.Beast.values();
@@ -37,14 +56,24 @@ public final class Toasts {
 		}
 	}
 
-	/** The first time the player meets a part of the mod (by the hint's ordinal): a word on it, unless they turned hints off. */
+	/**
+	 * The first time the player meets a part of the mod (by the hint's ordinal): a word on it, unless they turned hints
+	 * off. Shown, the server is told so (3.55.0), and only then counts it told: one turned off here comes again later.
+	 */
 	public static void hint(int ordinal) {
 		Hints.Hint[] hints = Hints.Hint.values();
 		if (ordinal < 0 || ordinal >= hints.length || !com.extremedimensions.client.options.ClientOptions.hints()) {
 			return;
 		}
+		tell(Component.translatable(hints[ordinal].titleKey()), Component.translatable(hints[ordinal].textKey()));
+		if (net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.canSend(com.extremedimensions.network.ModPackets.HintShownPayload.TYPE)) {
+			net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking.send(new com.extremedimensions.network.ModPackets.HintShownPayload(ordinal));
+		}
+	}
+
+	/** A word of the mod's own (the keys after the first join, say), wrapped and kept as long as a hint (3.55.0). */
+	public static void tell(Component title, Component text) {
 		Minecraft mc = Minecraft.getInstance();
-		Component title = Component.translatable(hints[ordinal].titleKey()), text = Component.translatable(hints[ordinal].textKey());
 		SystemToast toast = multiline(mc, title, text);
 		if (toast != null) {
 			mc.gui.toastManager().addToast(toast);

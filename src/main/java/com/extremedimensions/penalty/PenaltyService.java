@@ -15,7 +15,6 @@ import com.extremedimensions.journal.JournalEntry;
 import com.extremedimensions.network.Fx;
 import com.extremedimensions.network.Sync;
 import com.extremedimensions.progression.Advancements;
-import com.extremedimensions.registry.ModItems;
 import com.extremedimensions.server.Dims;
 import com.extremedimensions.server.WorldFx;
 
@@ -43,8 +42,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 /**
- * Curses: owing them, the offer of cards (sometimes multiplied), and taking them off again through atonement, Tether
- * Fragments and Mending Cloth. Every stack taken off leaves a scar. What the curses do lives in {@link CurseEffects}.
+ * Curses: owing them, the offer of cards (sometimes multiplied), and taking them off again through atonement, which Tether
+ * Fragments and a Mending Cloth pay into. Every stack atoned off leaves a scar (one a cloth helped to lift only with
+ * {@code cloth_scars}). What the curses do lives in {@link CurseEffects}; the Fresh Wound a death leaves in {@link Wound}.
  */
 public final class PenaltyService {
 	private PenaltyService() {}
@@ -58,8 +58,42 @@ public final class PenaltyService {
 	public static void owe(PlayerData d, boolean overworld) {
 		d.pendingPenalties++;
 		d.owed.add(overworld ? OVERWORLD : BEYOND);
+		// (owed as an expedition ends, the card is that expedition's, for its record)
+		com.extremedimensions.expedition.ExpeditionRecord.owing(d);
 		if (d.pendingOffer.isEmpty()) {
+			// (nothing waiting: a new run of offers begins with this one)
+			d.offerSeries = 0;
 			nextOffer(d);
+		}
+	}
+
+	/**
+	 * The curse offer waiting, for the curse-choice screen (3.55.0): "secondsLeft:nth:of", or "" with none. secondsLeft
+	 * is how long before the Tether chooses for the player (-1 while no clock runs: before the cards are shown, on the
+	 * death screen, or with no time limit at all); nth and of say which of the offers owed in a row this one is.
+	 */
+	public static String offerState(ServerPlayer p, PlayerData d) {
+		if (d.pendingOffer.isEmpty()) {
+			return "";
+		}
+		int left = Config.OFFER_TIMEOUT_SECONDS <= 0 || d.offerDelay > 0 || !p.isAlive() ? -1
+				: Math.max(0, Config.OFFER_TIMEOUT_SECONDS - d.offerAge / 20);
+		int nth = d.offerSeries + 1;
+		return left + ":" + nth + ":" + Math.max(nth, d.offerSeries + d.owed.size());
+	}
+
+	/**
+	 * A death's curse (a Collapse's too): owed once, or as many times as a bound Debtor's Seal asks, each its own offer of
+	 * cards, chosen one after the other as after several deaths in a row.
+	 */
+	public static void oweDeath(PlayerData d, boolean overworld) {
+		oweDeath(d, overworld, false);
+	}
+
+	/** As {@link #oweDeath(PlayerData, boolean)}; a death in a boss fight is a boss's curse to the Debtor's Seal. */
+	public static void oweDeath(PlayerData d, boolean overworld, boolean boss) {
+		for (int i = 0, n = com.extremedimensions.relic.RelicService.curses(d, boss); i < n; i++) {
+			owe(d, overworld);
 		}
 	}
 
@@ -84,6 +118,8 @@ public final class PenaltyService {
 				d.owed.remove(0);
 				d.pendingPenalties = Math.max(0, d.pendingPenalties - 1);
 				d.xpForfeit = true;
+				// (the card is answered with nothing: the record of the expedition it was owed for says so)
+				com.extremedimensions.expedition.ExpeditionRecord.resolve(d, null, 0);
 				continue;
 			}
 			d.pendingOffer = ids;
@@ -129,6 +165,11 @@ public final class PenaltyService {
 
 	/** The player picked a card on the curse screen. */
 	public static void choose(ServerPlayer p, String id) {
+		choose(p, id, false);
+	}
+
+	/** A card was picked: by the player, or ({@code auto}) by the Tether, the offer having been left too long. */
+	public static void choose(ServerPlayer p, String id, boolean auto) {
 		PlayerData d = DataStore.get(p.getUUID());
 		Penalty pen = Penalty.byId(id);
 		int idx = d.pendingOffer.indexOf(id);
@@ -136,15 +177,20 @@ public final class PenaltyService {
 			return;
 		}
 		int mult = idx < d.pendingMult.size() ? Math.max(1, d.pendingMult.get(idx)) : 1;
+		List<String> offered = new ArrayList<>(d.pendingOffer);
 		d.pendingOffer.clear();
 		d.pendingMult.clear();
 		d.pendingPenalties = Math.max(0, d.pendingPenalties - 1);
-		if (!d.owed.isEmpty()) {
+		boolean owedOne = !d.owed.isEmpty();
+		if (owedOne) {
 			d.owed.remove(0);
 		}
 
-		int added = d.addStacks(pen, mult);
+		int added = CurseLog.add(d, pen, mult, CurseLog.Source.CARD);
 		Map<Penalty, Integer> spilled = spill(d, mult - added);
+		// The card goes to the record of the expedition it was owed for (if any), and the playtest log notes the choice
+		com.extremedimensions.expedition.ExpeditionRecord from = owedOne ? com.extremedimensions.expedition.ExpeditionRecord.resolve(d, pen, mult) : null;
+		com.extremedimensions.compat.PlaytestLog.curse(p, d, pen, mult, spilled, offered, auto, from);
 		CurseEffects.applyEffects(p, d);
 		WorldFx.fx(p, Fx.PENALTY, 0);
 		WorldFx.particles(p, "minecraft:soul", 1.0, 0.5, 0.05, 25 * mult);
@@ -173,8 +219,12 @@ public final class PenaltyService {
 		if (!d.pendingOffer.isEmpty()) {
 			d.offerDelay = 40;
 		}
+		// (one more of the run answered, or the run is over)
+		d.offerSeries = d.pendingOffer.isEmpty() ? 0 : d.offerSeries + 1;
 		Sync.state(p, d);
 		DataStore.markDirty();
+		// An expedition whose cards are all chosen now is told: its line in the playtest log, and a Collapse's card
+		com.extremedimensions.expedition.ExpeditionRecord.answered(p, d);
 	}
 
 	/**
@@ -207,7 +257,7 @@ public final class PenaltyService {
 			if (t == null) {
 				t = room.get(room.size() - 1);
 			}
-			if (d.addStacks(t, 1) > 0) {
+			if (CurseLog.add(d, t, 1, CurseLog.Source.SPILL) > 0) {
 				out.merge(t, 1, Integer::sum);
 			}
 		}
@@ -219,14 +269,45 @@ public final class PenaltyService {
 		return curse(p, overworld, 0);
 	}
 
+	/** As {@link #curse(ServerPlayer, boolean)}, with where it came from said (see CurseLog). */
+	public static Penalty curse(ServerPlayer p, boolean overworld, CurseLog.Source source) {
+		return curse(p, overworld, 0, source);
+	}
+
+	/**
+	 * As {@link #curse(ServerPlayer, boolean, double)}, with where it came from said (see CurseLog). A Lurker's curse (any
+	 * of its kind: the Cave Lurker, the Tidewalker, a swarm) comes again for each time a bound Debtor's Seal asks, each
+	 * drawn afresh; the first is returned.
+	 */
+	public static Penalty curse(ServerPlayer p, boolean overworld, double extremeChance, CurseLog.Source source) {
+		return CurseLog.from(source, () -> {
+			Penalty first = curse(p, overworld, extremeChance);
+			int times = byLurker(source) ? com.extremedimensions.relic.RelicService.curses(DataStore.get(p.getUUID()), false) : 1;
+			for (int i = 1; first != null && i < times; i++) {
+				curse(p, overworld, extremeChance);
+			}
+			return first;
+		});
+	}
+
+	/** Whether a curse came from a Lurker or one of its kind. */
+	private static boolean byLurker(CurseLog.Source source) {
+		return source == CurseLog.Source.LURKER || source == CurseLog.Source.CAVE_LURKER || source == CurseLog.Source.TIDEWALKER
+				|| source == CurseLog.Source.SWARM;
+	}
+
 	/** As {@link #curse(ServerPlayer, boolean)}, the curse being one of the Extreme set with this chance (if one can come). */
 	public static Penalty curse(ServerPlayer p, boolean overworld, double extremeChance) {
 		PlayerData d = DataStore.get(p.getUUID());
-		List<String> ids = Penalty.rollOffer(d, overworld, 1, extremeChance);
-		if (ids.isEmpty()) {
+		java.util.Random rnd = new java.util.Random(java.util.concurrent.ThreadLocalRandom.current().nextLong());
+		// From the world's set and the Everywhere set, varied (see Penalty.pickVaried); now and then an Extreme one
+		List<Penalty> extreme = Penalty.available(d, Penalty.Group.EXTREME);
+		Penalty pen = !extreme.isEmpty() && rnd.nextDouble() < extremeChance ? Penalty.pickVaried(d, extreme, rnd)
+				: Penalty.pickVaried(d, Penalty.pool(d, overworld), rnd);
+		if (pen == null) {
 			return null;
 		}
-		Penalty pen = Penalty.byId(ids.get(0));
+		d.lastCurse = pen.id;
 		d.addStacks(pen, 1);
 		CurseEffects.applyEffects(p, d);
 		WorldFx.fx(p, Fx.PENALTY, 0);
@@ -270,8 +351,16 @@ public final class PenaltyService {
 		return p.extreme ? (int) Math.ceil(base * Math.max(1, Config.EXTREME_ATONE_FACTOR)) : base;
 	}
 
-	/** Atonement earned in one world goes to the curse being atoned for in that set (or the heaviest one there). */
+	/**
+	 * Atonement earned in one world goes to the curse being atoned for in that set (or the heaviest one there). A bound
+	 * Debtor's Seal multiplies what is earned.
+	 */
 	public static void atone(ServerPlayer p, PlayerData d, boolean overworld, int points) {
+		restore(p, d, overworld, com.extremedimensions.relic.RelicService.atonement(d, points));
+	}
+
+	/** Atonement given back rather than earned (an echo returns what a death took): as {@link #atone}, but no relic adds to it. */
+	public static void restore(ServerPlayer p, PlayerData d, boolean overworld, int points) {
 		for (int guard = 0; points > 0 && guard < 16; guard++) {
 			Penalty t = target(d, overworld);
 			if (t == null) {
@@ -290,9 +379,9 @@ public final class PenaltyService {
 	}
 
 	/**
-	 * A death undoes part of the penance: every curse's atonement loses {@code atone_death_loss} (half by default), an
-	 * Abyssal curse's {@code abyssal_death_loss} (all of it by default), rounded against the player. Returns the points
-	 * lost.
+	 * A death undoes part of the penance: every curse's atonement loses {@code atone_death_loss} (three quarters by
+	 * default), an Abyssal curse's {@code abyssal_death_loss} (all of it by default), rounded against the player. A curse
+	 * left with none forgets that a Mending Cloth paid into it. Returns the points lost.
 	 */
 	public static int deathToll(PlayerData d) {
 		double keepAll = 1 - Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS));
@@ -307,6 +396,9 @@ public final class PenaltyService {
 			lost += have - kept;
 			if (kept <= 0) {
 				it.remove();
+				if (d.clothed != null) {
+					d.clothed.remove(e.getKey());
+				}
 			} else {
 				e.setValue(kept);
 			}
@@ -314,37 +406,107 @@ public final class PenaltyService {
 		return lost;
 	}
 
-	/** A Tether Fragment offered to an anchor: takes a stack off, at one fragment per stack the curse has. */
+	/**
+	 * Atonement one Tether Fragment offered now gives towards a curse's next stack: a share ({@code fragment_atone_share},
+	 * a tenth) of what that stack still asks, rounded up, at least 1. Much at first, little later.
+	 */
+	public static int fragmentGain(PlayerData d, Penalty t) {
+		int left = Math.max(0, cost(d, t) - d.atonement.getOrDefault(t.id, 0));
+		return Math.max(1, (int) Math.ceil(left * Math.max(0.01, Math.min(1, Config.FRAGMENT_ATONE_SHARE))));
+	}
+
+	/**
+	 * A Tether Fragment offered to an anchor (one each time): it atones for a tenth of what the next stack of the curse
+	 * being atoned for (or the heaviest) still asks. An anchor takes at most {@code fragment_max_per_stack} of them for
+	 * one stack of a curse; once that stack comes off (or another is laid on), it takes them afresh. Since 3.55.0 a
+	 * fragment the chosen curse's stack has no room for goes on to the next curse carried that has room (the heaviest
+	 * first), and the player is told which: it used to be refused until they chose another curse by hand. What each
+	 * fragment gives is the same as ever.
+	 */
 	public static InteractionResult mend(ServerPlayer p, PlayerData d, BlockPos pos, ItemStack stack) {
-		Penalty t = target(d, null);
-		if (t == null) {
+		Penalty first = target(d, null);
+		if (first == null) {
 			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.fragment_none"), true);
 			return InteractionResult.SUCCESS;
 		}
-		int cost = Math.max(1, Config.FRAGMENT_COST_PER_STACK * d.owned(t));
-		if (t.abyssal) {
-			cost = Math.max(1, Config.ABYSSAL_FRAGMENTS * d.owned(t));
-		} else if (t.extreme) {
-			cost = (int) Math.ceil(cost * Math.max(1, Config.EXTREME_ATONE_FACTOR));
+		int max = Math.max(1, Config.FRAGMENT_MAX_PER_STACK);
+		Penalty t = fragmentTarget(d, first, max);
+		if (t == null) {
+			// Every stack carried has had its fragments: atonement does the rest
+			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			p.sendSystemMessage(carriedCurses(d) > 1 ? Component.translatable("gui.extremedimensions.curses.fragments_all_spent", max)
+					: Component.translatable("gui.extremedimensions.curses.fragments_spent", Component.translatable(first.nameKey()), max), true);
+			return InteractionResult.SUCCESS;
 		}
+		int offered = d.fragmentsOffered(t);
+		// (what a fragment atones for is earned: a bound Debtor's Seal multiplies it)
+		int gain = com.extremedimensions.relic.RelicService.atonement(d, fragmentGain(d, t)), need = cost(d, t);
+		int have = d.atonement.getOrDefault(t.id, 0) + gain;
 		if (!p.isCreative()) {
-			if (count(p, stack) < cost) {
-				WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
-				p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.needs_fragments", cost,
-						Component.translatable(t.nameKey())), true);
-				return InteractionResult.SUCCESS;
-			}
-			take(p, stack, cost);
+			stack.shrink(1);
 		}
 		double ax = pos.getX() + 0.5, ay = pos.getY() + 1.0, az = pos.getZ() + 0.5;
-		WorldFx.particleAt("minecraft:soul_fire_flame", ax, ay, az, 0.3, 0.5, 0.3, 0.03, 30);
-		WorldFx.particleAt("minecraft:sculk_soul", ax, ay + 0.5, az, 0.5, 0.5, 0.5, 0.05, 20);
-		WorldFx.sound(p, "minecraft:block.sculk_catalyst.bloom", 1.0f, 0.8f);
-		lift(p, d, t, "gui.extremedimensions.curses.mended");
+		WorldFx.particleAt("minecraft:soul_fire_flame", ax, ay, az, 0.3, 0.5, 0.3, 0.03, 14);
+		WorldFx.particleAt("minecraft:sculk_soul", ax, ay + 0.5, az, 0.5, 0.5, 0.5, 0.05, 8);
+		if (have >= need) {
+			WorldFx.sound(p, "minecraft:block.sculk_catalyst.bloom", 1.0f, 0.8f);
+			lift(p, d, t, "gui.extremedimensions.curses.mended");
+			return InteractionResult.SUCCESS;
+		}
+		WorldFx.sound(p, "minecraft:block.respawn_anchor.charge", 0.6f, 1.3f);
+		d.offerFragment(t);
+		d.atonement.put(t.id, have);
+		p.sendSystemMessage(t == first
+				? Component.translatable("gui.extremedimensions.curses.fragment_atoned", gain, Component.translatable(t.nameKey()), offered + 1, max, need - have)
+				: Component.translatable("gui.extremedimensions.curses.fragment_moved_on", gain, Component.translatable(t.nameKey()), offered + 1, max,
+						need - have, Component.translatable(first.nameKey())), true);
+		Sync.curses(p, d, false);
+		DataStore.markDirty();
 		return InteractionResult.SUCCESS;
 	}
 
-	/** A Mending Cloth, pressed to the skin: one stack of the curse being atoned for (or the heaviest) comes off. */
+	/**
+	 * The curse a Tether Fragment goes to (3.55.0): {@code first} (the one being atoned for, or the heaviest) while its
+	 * stack still takes fragments, else the heaviest other curse carried whose stack does (in the order of the curses
+	 * for equal stacks). Null when every stack carried has had its {@code max}.
+	 */
+	public static Penalty fragmentTarget(PlayerData d, Penalty first, int max) {
+		if (first != null && d.owned(first) > 0 && d.fragmentsOffered(first) < max) {
+			return first;
+		}
+		Penalty best = null;
+		for (Penalty pen : Penalty.values()) {
+			if (pen != first && d.owned(pen) > 0 && d.fragmentsOffered(pen) < max && (best == null || d.owned(pen) > d.owned(best))) {
+				best = pen;
+			}
+		}
+		return best;
+	}
+
+	/** How many curses the player carries (at least a stack each). */
+	private static int carriedCurses(PlayerData d) {
+		int n = 0;
+		for (Penalty pen : Penalty.values()) {
+			n += d.owned(pen) > 0 ? 1 : 0;
+		}
+		return n;
+	}
+
+	/**
+	 * Atonement one Mending Cloth pays towards a curse's next stack: {@code cloth_share} of the whole of what that stack
+	 * asks (two fifths), rounded up, at least 1.
+	 */
+	public static int clothGain(PlayerData d, Penalty t) {
+		return Math.max(1, (int) Math.ceil(cost(d, t) * Math.max(0.01, Math.min(1, Config.CLOTH_SHARE)) - 1e-9));
+	}
+
+	/**
+	 * A Mending Cloth, pressed to the skin: it pays {@link #clothGain} into the atonement of the curse being atoned for (or
+	 * the heaviest), and only a stack it completes comes off. A player may use one every {@code cloth_cooldown_minutes} of
+	 * play; the Extreme set takes none unless {@code cloth_extreme} is on (an Abyssal curse follows its own rule). A cloth
+	 * refused is kept, and starts no wait.
+	 */
 	public static InteractionResult cloth(ServerPlayer p, ItemStack stack) {
 		PlayerData d = DataStore.get(p.getUUID());
 		Penalty t = target(d, null);
@@ -358,49 +520,54 @@ public final class PenaltyService {
 			p.sendSystemMessage(Component.translatable("gui.extremedimensions.abyssal.cloth", Component.translatable(t.nameKey())), true);
 			return InteractionResult.SUCCESS;
 		}
+		if (t.extreme && !t.abyssal && Config.CLOTH_EXTREME <= 0) {
+			// Nor does the Extreme set take one: it is atoned for, helped along by fragments
+			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.cloth_extreme", Component.translatable(t.nameKey())), true);
+			return InteractionResult.SUCCESS;
+		}
+		if (d.clothIn > 0) {
+			// One cloth in a while: the last one has not worn off yet
+			WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.cloth_wait", (d.clothIn + 59) / 60), true);
+			return InteractionResult.SUCCESS;
+		}
+		// (what a cloth pays is given, not earned: a bound Debtor's Seal does not multiply it)
+		int gain = clothGain(d, t), need = cost(d, t);
+		int have = d.atonement.getOrDefault(t.id, 0) + gain;
 		if (!p.isCreative()) {
 			stack.shrink(1);
 		}
+		d.clothIn = Math.max(0, Config.CLOTH_COOLDOWN_MINUTES) * 60;
+		if (d.clothed == null) {
+			d.clothed = new java.util.LinkedHashSet<>();
+		}
+		d.clothed.add(t.id);
 		WorldFx.sound(p, "minecraft:block.wool.place", 1.0f, 0.7f);
-		lift(p, d, t, "gui.extremedimensions.curses.mended");
+		if (have >= need) {
+			lift(p, d, t, "gui.extremedimensions.curses.mended");
+			return InteractionResult.SUCCESS;
+		}
+		WorldFx.particles(p, "minecraft:soul", 0.8, 0.4, 0.03, 10);
+		d.atonement.put(t.id, have);
+		p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.cloth_atoned", gain, Component.translatable(t.nameKey()), need - have), true);
+		Sync.curses(p, d, false);
+		DataStore.markDirty();
 		return InteractionResult.SUCCESS;
 	}
 
-	/** Fragments the player carries: the held stack and the rest of the inventory. */
-	private static int count(ServerPlayer p, ItemStack held) {
-		int n = 0;
-		var inv = p.getInventory();
-		for (int i = 0; i < inv.getContainerSize(); i++) {
-			if (inv.getItem(i).is(ModItems.TETHER_FRAGMENT)) {
-				n += inv.getItem(i).getCount();
-			}
-		}
-		return n;
-	}
-
-	/** Takes fragments, the held stack first. */
-	private static void take(ServerPlayer p, ItemStack held, int n) {
-		int fromHeld = Math.min(n, held.getCount());
-		held.shrink(fromHeld);
-		n -= fromHeld;
-		var inv = p.getInventory();
-		for (int i = 0; i < inv.getContainerSize() && n > 0; i++) {
-			ItemStack s = inv.getItem(i);
-			if (s.is(ModItems.TETHER_FRAGMENT)) {
-				int k = Math.min(n, s.getCount());
-				s.shrink(k);
-				n -= k;
-			}
-		}
-	}
-
-	/** One stack comes off a curse, and leaves a scar (up to five). */
+	/**
+	 * One stack comes off a curse, and leaves a scar (up to five). Scars are earned by atonement: a stack a Mending Cloth
+	 * helped to lift leaves none, unless {@code cloth_scars} is on.
+	 */
 	public static void lift(ServerPlayer p, PlayerData d, Penalty t, String messageKey) {
+		// (asked before the stack comes off, which forgets what a cloth paid into it)
+		boolean unscarred = d.clothed != null && d.clothed.contains(t.id) && Config.CLOTH_SCARS <= 0;
 		if (!d.removeStack(t)) {
 			return;
 		}
 		d.lifted++;
-		if (d.scars < 5) {
+		if (d.scars < 5 && !unscarred) {
 			d.scars++;
 			Journal.unlock(p, d, JournalEntry.WOVEN);
 		}
@@ -410,7 +577,8 @@ public final class PenaltyService {
 		WorldFx.sound(p, "minecraft:block.beacon.power_select", 0.7f, 1.4f);
 		WorldFx.soundSelf(p, "minecraft:block.amethyst_block.chime", 1.0f, 1.2f);
 		int left = d.owned(t);
-		p.sendSystemMessage(Component.translatable(messageKey, Component.translatable(t.nameKey()), left, t.max), true);
+		Component said = Component.translatable(messageKey, Component.translatable(t.nameKey()), left, t.max);
+		p.sendSystemMessage(unscarred ? Component.translatable("gui.extremedimensions.curses.unscarred", said) : said, true);
 		Journal.unlock(p, d, JournalEntry.MENDING);
 		Advancements.grant(p, Advancements.MENDED);
 		Sync.state(p, d);
@@ -440,6 +608,7 @@ public final class PenaltyService {
 		trackActivity(p, d);
 		CurseEffects.tick(p, d, beyond, ow);
 		if (d.tickCounter % 20 == 0) {
+			second(p, d);
 			if (d.xpForfeit) {
 				d.xpForfeit = false;
 				// No curse was left to lay: say so, also when the death already took every level
@@ -468,6 +637,18 @@ public final class PenaltyService {
 			}
 		}
 		return changed;
+	}
+
+	/**
+	 * A second of play in the mod's worlds (as the tribe counts the wait for a gift): the wait for the next Mending Cloth
+	 * and the Fresh Wound count down. Public for the tests, which drive play time through it.
+	 */
+	public static void second(ServerPlayer p, PlayerData d) {
+		if (d.clothIn > 0 && --d.clothIn % 60 == 0) {
+			// (written with the world's saves a minute at a time, so a restart loses little of the wait)
+			DataStore.markDirty();
+		}
+		Wound.second(p, d);
 	}
 
 	/** Beyond curses act in the Nether, the End and the Seam. */

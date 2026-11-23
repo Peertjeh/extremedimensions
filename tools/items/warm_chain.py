@@ -1,5 +1,7 @@
 # Draws the 2.34 item textures (Held's Chain, Loose Leaf) at 16x16.
-# Usage: python3 tools/items/warm_chain.py src/client/resources/assets/extremedimensions/textures/item
+# Retired: tools/items/after_vanilla.py draws both now, after vanilla's own textures. This script no longer writes them;
+# given a path it previews these old drawings there.
+# Usage: python3 tools/items/warm_chain.py [preview.png]
 from PIL import Image
 ART = {
  'helds_chain': ({'k':(18,16,20),'d':(52,50,58),'m':(92,90,100),'l':(148,146,158),'o':(232,128,52),'y':(255,214,128),'r':(150,60,30)}, [
@@ -48,7 +50,8 @@ def build(name, scale=1):
     return im
 if __name__ == '__main__':
     import sys
-    out = sys.argv[1] if len(sys.argv) > 1 else '.'
-    for n in ART:
-        build(n).save(f'{out}/{n}.png')
-    print('ok')
+    if len(sys.argv) > 1:
+        sheet = Image.new('RGBA', (len(ART) * 136 + 8, 144), (139, 139, 139, 255))
+        for i, n in enumerate(ART):
+            sheet.alpha_composite(build(n).resize((128, 128), Image.NEAREST), (8 + i * 136, 8))
+        sheet.save(sys.argv[1])

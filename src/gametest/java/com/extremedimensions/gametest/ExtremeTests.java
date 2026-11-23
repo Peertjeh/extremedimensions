@@ -349,7 +349,7 @@ public class ExtremeTests {
 	 * spawns there in the dark by itself or is lured in, and a trial spawner keeps its room the same. Away from it the
 	 * wild counts as before.
 	 */
-	@GameTest(environment = Alone.SPAWNER_ROOM, maxTicks = 220)
+	@GameTest(environment = Alone.SPAWNER_ROOM, maxTicks = 420)
 	public void aSpawnerRoomGivesNothing(GameTestHelper helper) {
 		AtonementGuard.clear();
 		ServerLevel level = helper.getLevel();
@@ -365,6 +365,9 @@ public class ExtremeTests {
 			}
 		}
 		BlockPos spawner = helper.absolutePos(new BlockPos(4, 2, 4));
+		// A spawner makes nothing while six of its kind stand within 4 blocks of it, and then waits 10 to 40 seconds before
+		// it looks again: no zombie an earlier test left near here may fill that count
+		level.getEntitiesOfClass(Mob.class, new AABB(spawner).inflate(12), e -> e.getType() == type("zombie")).forEach(Entity::discard);
 		level.setBlockAndUpdate(spawner, Blocks.SPAWNER.defaultBlockState());
 		if (!(level.getBlockEntity(spawner) instanceof SpawnerBlockEntity be)) {
 			level.getServer().setDifficulty(was, true);
@@ -374,15 +377,23 @@ public class ExtremeTests {
 		ServerPlayer p = cursed(helper);
 		place(helper, p, 2.5, 2, 2.5);
 		AABB room = new AABB(helper.absolutePos(new BlockPos(1, 2, 1))).expandTowards(6, 2, 6);
-		for (int t = 10; t <= 200; t += 10) {
-			boolean last = t == 200;
+		for (int t = 10; t <= 400; t += 10) {
+			boolean last = t == 400;
 			helper.runAfterDelay(t, () -> {
 				List<Mob> spawned = level.getEntitiesOfClass(Mob.class, room, e -> e.getType() == type("zombie") && !e.isNoAi());
 				if (spawned.isEmpty() && !last) {
 					return;
 				}
 				try {
-					check(helper, !spawned.isEmpty(), "the spawner spawned no zombie in %s ticks", 200);
+					if (spawned.isEmpty()) {
+						// Say what the spawner saw, so a failure tells why
+						int near = level.getEntitiesOfClass(Mob.class, new AABB(spawner).inflate(4), e -> e.getType() == type("zombie")).size();
+						throw helper.assertionException("the spawner spawned no zombie in %s ticks (zombies within its reach %s, player alive %s at %s blocks, "
+								+ "difficulty %s, light in the room %s, spawner still there %s)", 400, near, p.isAlive(),
+								Math.round(Math.sqrt(p.distanceToSqr(Vec3.atCenterOf(spawner)))), level.getDifficulty(),
+								level.getMaxLocalRawBrightness(helper.absolutePos(new BlockPos(2, 2, 4))),
+								level.getBlockEntity(spawner) instanceof SpawnerBlockEntity);
+					}
 					checkRoom(helper, p, spawned.get(0), spawner);
 				} finally {
 					level.setBlockAndUpdate(spawner, Blocks.AIR.defaultBlockState());

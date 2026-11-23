@@ -46,11 +46,16 @@ public class PlayerData {
 	/** First-meeting hints already given (see guide.Hints), and whether what they knew before hints existed was looked at. */
 	public Set<String> hints = new LinkedHashSet<>();
 	public boolean hintsChecked = false;
+	/**
+	 * Hints sent to the player's game since they joined but not shown there yet (3.55.0): a hint is told only once the
+	 * game says it showed it (a player with hints off is offered each once a visit, and told none).
+	 */
+	public transient Set<String> hintsOffered = new java.util.HashSet<>();
 	/** The relic bound to the Tether (its id), or null. */
 	public String relic = null;
 	public int collapses = 0;
 	public double longestRun = 0;
-	/** Curse id -> stacks. Curses are permanent: only atonement, fragments or a Mending Cloth take stacks off. */
+	/** Curse id -> stacks. Curses are permanent: only atonement (fragments and a Mending Cloth pay into it) takes stacks off. */
 	public Map<String, Integer> curses = new HashMap<>();
 	/**
 	 * Curses the player has carried or sworn at some time: where unknown curses show as runes (Config.CURSE_RUNES),
@@ -84,6 +89,8 @@ public class PlayerData {
 	public int keepersSlain = 0;
 	/** Villages of the Thinned visited first in a row without a Last Weaver waking (each one makes the next likelier). */
 	public int weaverMisses = 0;
+	/** The last curse laid without a choice (a Lurker's touch, a Collapse in the Seam): not laid twice in a row. */
+	public String lastCurse = null;
 	public boolean matriarchSlain = false;
 	/**
 	 * The Elders this player helped defeat, one bit each in the order of {@code StatsExport.Elder} (the Matriarch, the
@@ -93,6 +100,10 @@ public class PlayerData {
 	public int elders = -1;
 	/** Whether the Ferryman has had his chance on this expedition. */
 	public transient boolean ferrymanRolled = false;
+	/** Whether the Pale Mason has had his one chance at this expedition (3.40). */
+	public transient boolean masonRolled = false;
+	/** Told that the Ferryman sails the Nether now and may come on a long crossing (3.38; once, on the first one). */
+	public boolean ferrymanTold = false;
 	/** Rift Trials: taken up for the next visit to the Seam, the one under way, and the medals already paid this week. */
 	public boolean trialArmed = false;
 	public com.extremedimensions.trial.TrialRun trial = null;
@@ -102,8 +113,25 @@ public class PlayerData {
 	public int trialClaimThreads = 0;
 	/** Curse id -> atonement points gathered towards taking its next stack off. */
 	public Map<String, Integer> atonement = new HashMap<>();
+	/**
+	 * Tether Fragments offered at an anchor towards a curse's next stack: "id@stacks" -> fragments. A stack coming off
+	 * or laid on starts afresh.
+	 */
+	public Map<String, Integer> fragmentsOffered = new HashMap<>();
 	/** The curse the player chose to atone for (and to mend first); null = the heaviest one. */
 	public String atoning = null;
+	/** Seconds of play before this player may use another Mending Cloth. */
+	public int clothIn = 0;
+	/**
+	 * Curses whose next stack a Mending Cloth paid into: that stack leaves no scar when it comes off (unless cloth_scars).
+	 * A curse leaves it when the stack comes off, or when a death takes all the atonement gathered for it.
+	 */
+	public Set<String> clothed = new LinkedHashSet<>();
+	/**
+	 * The Fresh Wound a death in the mod's worlds leaves: seconds of play it lasts yet, and of those the seconds no Tether
+	 * binds to an anchor yet (see Wound).
+	 */
+	public int woundIn = 0, woundBindIn = 0;
 	/** Before 2.3 curses wore off: id -> remaining seconds per stack. Read once and turned into permanent stacks. */
 	public Map<String, List<Double>> penaltyTime = new HashMap<>();
 	/** Curse ids currently on the choice screen (empty = nothing to choose), and each card's multiplier. */
@@ -135,6 +163,17 @@ public class PlayerData {
 	public boolean heldSpent = false;
 	/** Ticks the Held's Chain still holds the player after the charge ran out. */
 	public transient int heldTicks = 0;
+	/** This expedition (or Seam visit), the Last Stitch already held a killing blow (kept, so leaving and coming back does not mend it). */
+	public boolean stitchSpent = false;
+	/** Ticks gliding without a break with the Unbound Pinion bound (its wear comes every second of them). */
+	public transient int pinionGlide = 0;
+	/** The Veil Scale caught this fall: the player drifts down slowly until they land. */
+	public transient boolean veilDrift = false;
+	/**
+	 * The Ferryman's Obol kept all the player carried at their last death, which comes back on respawn (kept, so leaving
+	 * the game before respawning loses nothing).
+	 */
+	public boolean obolKept = false;
 	/** The Homebound pieces the player carries, as last counted, and when (game time): counted once a second. */
 	public transient int homeboundPieces = 0;
 	public transient long homeboundCounted = Long.MIN_VALUE / 2;
@@ -154,6 +193,17 @@ public class PlayerData {
 	public int tetherTier = 0;
 	/** The bound Tether's enchantments (id to level): the item is tied into the anchor, its charms are kept here. */
 	public Map<String, Integer> tetherCharms = new HashMap<>();
+	/**
+	 * Tethers that came back to a full inventory, kept until there is room for them (each "tier;enchantment=level,...").
+	 * (Dropped where the player stood they could lie in the very portal they came home through and be carried back.)
+	 */
+	public List<String> tetherOwed = new ArrayList<>();
+	/** The newest curses gained, newest first: "id,stacks,epochMillis,source" (see CurseLog). */
+	public List<String> curseLog = new ArrayList<>();
+	/** When the player last opened the Curses screen (wall clock, ms): curses that came after are new there. */
+	public long cursesSeenAt;
+	/** Curses laid without a choice since the last tick, to be told as toasts. */
+	public transient List<com.extremedimensions.penalty.CurseLog.Entry> curseToasts = new ArrayList<>();
 	/** Homebound things taken up at a death beyond the wound, waiting for the respawn (each one an item stack as JSON). */
 	public List<String> homebound = new ArrayList<>();
 	/** Atonement an echo of this player's Collapse gave back while they were away (granted when they are next in). */
@@ -172,12 +222,38 @@ public class PlayerData {
 	public boolean companion = false;
 	/** Online seconds until the companion brings its next find. */
 	public int companionGiftIn = 0;
+	/**
+	 * The companion told to stay (3.27.5): the world it waits in (null while it follows), its entity, and where it stands.
+	 * It waits there, whoever comes and goes, until its player sneaks and uses it with an empty hand.
+	 */
+	public String companionStay = null;
+	public String companionStayId = null;
+	public double companionStayX, companionStayY, companionStayZ;
 	/** Anchor key the physical tether is bound to; null = not bound. */
 	public String tetherAnchor = null;
 	/** Arrival point beyond the wound (distance to the portal). */
 	public double arrivalX, arrivalZ;
+	/**
+	 * The height of the arrival point (3.55.0), for a map mod's waypoint of the way home; 0 in an expedition begun before
+	 * it was kept, where only the waypoint's height is off.
+	 */
+	public double arrivalY;
 	/** Furthest distance from the arrival portal ever reached (advancement). */
 	public double furthest = 0;
+	/**
+	 * What the expedition under way and the visit to the Seam under way have come to so far (null when there is none), and
+	 * the ended ones still waiting for what they cost to be chosen: kept, so a logout or a restart loses none of it (see
+	 * ExpeditionRecord). A visit to the Seam on an expedition is counted on its own, beside the expedition.
+	 */
+	public com.extremedimensions.expedition.ExpeditionRecord.Tally runTally = null, seamTally = null;
+	public List<com.extremedimensions.expedition.ExpeditionRecord> records = new ArrayList<>();
+	/**
+	 * The last Collapses (and throws out of the Seam), newest first, as their cards had them (see RecapText.write): the
+	 * journal's ledger keeps them on a page of their own, "The last falls" (3.55.0). Null in a save from before.
+	 */
+	public List<String> falls = new ArrayList<>();
+	/** Expeditions begun into each world (its short id), counted since 3.53.0: the playtest log's "nth". */
+	public Map<String, Integer> ventures = new HashMap<>();
 
 	// --- runtime only ---
 	public transient String dim = "overworld";
@@ -191,6 +267,11 @@ public class PlayerData {
 	public boolean collapseOwed = false;
 	/** Left while the wound was after them (what was: swarm, hunt, keeper, raid, elder, blow); the curse comes on joining. */
 	public String fled = null;
+	/**
+	 * What holds the player in danger right now (as {@link #fled}), noted every half second while they play: what a
+	 * leaving seen to late, or never, is a flight from (see FleeService).
+	 */
+	public String held = null;
 	/** When (Overworld game time) the player was bound into their clan: no leaving it for clan_lock_minutes after. */
 	public long clanSince = 0;
 	/** Cards Foresight adds to the next offer, kept when the Tether it was on is lost in the same death or Collapse. */
@@ -213,6 +294,11 @@ public class PlayerData {
 	public int reliefs = 0;
 	/** Ticks the current curse offer has stood unanswered (the Tether picks for the player after a while). */
 	public transient int offerAge = 0;
+	/**
+	 * Offers already answered of those owed in a row (several curses owed at once), so the screen can say "Curse 2 of 3"
+	 * (3.55.0). Back to 0 once nothing more is owed.
+	 */
+	public transient int offerSeries = 0;
 	public double runTime = 0;
 	public transient int grace = 0;
 	public transient int tickCounter = 0;
@@ -222,12 +308,25 @@ public class PlayerData {
 	/** Collapse timer: negative while the pull runs, then counts up to retry the death. */
 	public transient int collapseRetry = 0;
 	public transient int lastBeat = Integer.MAX_VALUE;
+	/**
+	 * The low-time warnings (3.55.0, see TimeLeft): when the player wants them in words (their client's "Warn at": 0 at
+	 * two minutes, 1 at one, 2 once the walk back needs most of what is left), what of them this expedition and this
+	 * visit to the Seam have had, the Seam's own bells and beats, and the last words and title sent (for the tests too).
+	 */
+	public transient int warnAt = 1;
+	public transient int runWarned = 0, seamWarned = 0;
+	public transient int seamLastWarn = Integer.MAX_VALUE, seamLastBeat = Integer.MAX_VALUE;
+	public transient String lastWarnWords = null, lastWarnTitle = null;
+	/** The Seam said this visit that the visitor's thread runs thin (once a visit, 3.55.0). */
+	public transient boolean thinTold = false;
 	/** Ticks until the penalty screen opens; -1 = nothing scheduled. */
 	public transient int offerDelay = -1;
 	/** Died beyond the wound (not from the timer): shows the "Expedition Ended" title on respawn. */
 	public transient String endedIn = null;
 	/** Atonement points the last death took away (told on respawn). */
 	public transient int atonementLost = 0;
+	/** The last death or Collapse broke a pact's reward (told on respawn, with the rest of what it cost; 3.55.0). */
+	public transient boolean pactBroke = false;
 
 	// Idle detection: atonement only grows while the player looks around and moves
 	public transient float lastYaw, lastPitch;
@@ -262,6 +361,8 @@ public class PlayerData {
 	public transient double leadValue = Double.NaN;
 	/** Weight of Iron's slowdown as last set (NaN: set it afresh). */
 	public transient double ironValue = Double.NaN;
+	/** Tetherite's weight as last set on the player's speed (NaN: set it afresh). */
+	public transient double tetheriteWeight = Double.NaN;
 	public transient double bloodValue = Double.NaN;
 	/** Unmapped: whether the client was last told to hide its coordinates. */
 	public transient boolean unmappedSent = false;
@@ -308,6 +409,7 @@ public class PlayerData {
 		if (add > 0) {
 			curses.put(p.id, have + add);
 			learn(p);
+			com.extremedimensions.penalty.CurseLog.record(this, p, add);
 		}
 		return add;
 	}
@@ -325,11 +427,32 @@ public class PlayerData {
 		knownCurses.add(p.id);
 	}
 
-	/** Takes one stack off; the curse's atonement starts over. Returns false if it had none. */
+	/** Tether Fragments offered at an anchor towards this curse's next stack, at the stacks it has now. */
+	public int fragmentsOffered(Penalty p) {
+		return fragmentsOffered == null ? 0 : fragmentsOffered.getOrDefault(p.id + "@" + owned(p), 0);
+	}
+
+	/** One more Tether Fragment offered towards this curse's next stack (and none kept for its other stack counts). */
+	public void offerFragment(Penalty p) {
+		if (fragmentsOffered == null) {
+			fragmentsOffered = new HashMap<>();
+		}
+		String key = p.id + "@" + owned(p);
+		fragmentsOffered.keySet().removeIf(k -> k.startsWith(p.id + "@") && !k.equals(key));
+		fragmentsOffered.merge(key, 1, Integer::sum);
+	}
+
+	/** Takes one stack off; the curse's atonement (and what a cloth paid into it) starts over. Returns false if it had none. */
 	public boolean removeStack(Penalty p) {
 		int have = owned(p);
 		if (have <= 0) {
 			return false;
+		}
+		if (fragmentsOffered != null) {
+			fragmentsOffered.keySet().removeIf(k -> k.startsWith(p.id + "@"));
+		}
+		if (clothed != null) {
+			clothed.remove(p.id);
 		}
 		if (have == 1) {
 			curses.remove(p.id);

@@ -27,8 +27,9 @@ Permanent, stacking curses in four sets (*Beyond the wound*, *Overworld*, *Every
 and beneath them **24 Abyssal curses**, each broken only by a deed: slay undead in daylight, offer a Nether Star, stay
 awake through three nights...
 
-Lift them through **atonement** earned in the wild, **Tether Fragments**, a **Mending Cloth**, or by **unweaving** a
-full set at the Weaver's Loom in a fight against its knots. Every stack lifted leaves a scar. No farm can do it for
+Lift them through **atonement** earned in the wild, helped by **Tether Fragments** and a **Mending Cloth** (two fifths
+of a stack, one an hour), or by **unweaving** a full set at the Weaver's Loom in a fight against its knots. Every stack
+atoned for leaves a scar. A death undoes most of your atonement and leaves a Fresh Wound for ten minutes. No farm can do it for
 you: spawner rooms and mob grinders earn nothing.
 
 On Hard and Extreme, curses you have never carried show only in the **Seam script**, an alphabet of the mod's own.
@@ -58,10 +59,14 @@ hunt.
 
 - **Tetherite**: a tier past netherite, with tools, a spear and armour that return from the void
 - **20 enchantments** that reach into the mod's own workings, and two new armour trims
-- **10 Relics** with a gift and a price, **Pacts** for willing risk, and weekly **Rift Trials** with medals
+- **26 Relics** with a gift and a price, **Pacts** for willing risk, and weekly **Rift Trials** with medals
 - **Co-op**: revive fallen friends, carry their curses, share anchors
 - **55 advancements**, a bestiary, a ledger and a guided first expedition
 - A **music disc** and its own title and loading screens with music
+- **Drawn as vanilla draws**: every item and block follows a vanilla texture pixel for pixel, in its own colours
+- **Less friction (3.55)**: the way home in the Nether and End, the drain and its cause, time left at this pace and to walk back, warnings in words, curse totals, default keys (K curses, H journal), a camera option and colour-blind HUD colours
+- **The Seam's furnishings for builders**: Seam Silk Blocks and Carpets, Nebula Glass and its panes, and the violet Veil Lamp
+- The **Kindled Seam Lantern**: a blue-violet lantern whose light reaches twice as far (violet under shader packs too, with Iris, as every glowing block of the mod now is)
 
 ## ⚙ Difficulty and settings
 
@@ -83,12 +88,17 @@ values from the same screen.
 - Play a normal **Survival** world, not Hardcore: Hardcore makes you a spectator on death, and the mod gives death its
   own consequences instead
 
-**Works with** Sodium, Iris, Mod Menu and Text Placeholder API, all tested in CI on every build.
+**Works with** Sodium, Iris, Mod Menu, Text Placeholder API, JEI, Jade (anchor charge, Lurker moods and more in its tooltip) JourneyMap and Xaero's Minimap (your anchors as waypoints), all tested in CI on every build, with a shader pack (Solas) switched on in the Seam.
 
 **Languages:** English and Dutch.
 
 ---
 
+**[Wiki](https://peertjeh.github.io/extremedimensions/)** ·
 [Source code](https://github.com/Peertjeh/extremedimensions) ·
 [Changelog](https://github.com/Peertjeh/extremedimensions/blob/main/CHANGELOG.md) ·
-[Report an issue](https://github.com/Peertjeh/extremedimensions/issues)
+[Report a problem or share an idea](https://github.com/Peertjeh/extremedimensions/issues/new/choose) ·
+[Discussions](https://github.com/Peertjeh/extremedimensions/discussions)
+
+Found a bug, or did something feel too hard, too easy or unclear? **Report a problem** at the top of the mod's
+settings screen opens a report with your versions and mods already filled in. Every report is read.

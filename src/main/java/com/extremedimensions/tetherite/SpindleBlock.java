@@ -11,12 +11,16 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
+import net.minecraft.world.level.redstone.Orientation;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
@@ -26,7 +30,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * The Spindle: where Tether Fragments are worked back into thread. Fragments and Seam Silk are loaded onto it with a
  * use; a use with an empty hand turns it, and every turn winds the frayed pieces tighter round the silk, the spool
  * turning and filling as it goes. When enough turns are done it gives up a Tether Cord, which Tetherite will not be
- * made without.
+ * made without. A redstone pulse turns it once as well (3.55.0), so a machine can work it: the same turns, the same cord.
  *
  * <p>Everything it holds is in its block state, so it keeps through a restart and drops with the spindle (its loot
  * table gives back what was loaded).
@@ -38,22 +42,55 @@ public class SpindleBlock extends Block {
 	public static final IntegerProperty FRAGMENTS = IntegerProperty.create("fragments", 0, MAX_FRAGMENTS);
 	public static final IntegerProperty SILK = IntegerProperty.create("silk", 0, MAX_SILK);
 	public static final IntegerProperty SPUN = IntegerProperty.create("spun", 0, MAX_TURNS);
+	/** Whether a redstone signal reaches it now: only a pulse's rising edge turns it, as a dispenser fires once (3.55.0). */
+	public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 
 	private static final VoxelShape SHAPE = Shapes.or(Block.box(2, 0, 2, 14, 3, 14), Block.box(5, 3, 5, 11, 15, 11), Block.box(7, 15, 7, 9, 16, 9));
 
 	public SpindleBlock(Properties props) {
 		super(props);
-		registerDefaultState(stateDefinition.any().setValue(FRAGMENTS, 0).setValue(SILK, 0).setValue(SPUN, 0));
+		registerDefaultState(stateDefinition.any().setValue(FRAGMENTS, 0).setValue(SILK, 0).setValue(SPUN, 0).setValue(POWERED, false));
 	}
 
 	@Override
 	protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-		builder.add(FRAGMENTS, SILK, SPUN);
+		builder.add(FRAGMENTS, SILK, SPUN, POWERED);
 	}
 
 	@Override
 	protected VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
 		return SHAPE;
+	}
+
+	/** Set down beside a signal already on, it waits for the next pulse rather than turning at once. */
+	@Override
+	public BlockState getStateForPlacement(BlockPlaceContext context) {
+		return defaultBlockState().setValue(POWERED, context.getLevel().hasNeighborSignal(context.getClickedPos()));
+	}
+
+	/**
+	 * A redstone pulse turns it once, as an empty hand does (3.55.0; {@code spindle_redstone}): on the signal's rising
+	 * edge only, so a signal held turns it no more. Nobody is told; it turns only when it holds what a cord takes.
+	 */
+	@Override
+	protected void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighbor, Orientation orientation, boolean moved) {
+		if (!(level instanceof ServerLevel server)) {
+			return;
+		}
+		boolean powered = level.hasNeighborSignal(pos);
+		if (powered == state.getValue(POWERED)) {
+			return;
+		}
+		BlockState now = state.setValue(POWERED, powered);
+		level.setBlock(pos, now, Block.UPDATE_CLIENTS);
+		if (powered && Config.SPINDLE_REDSTONE > 0 && ready(now)) {
+			spin(server, pos, now, null);
+		}
+	}
+
+	/** Whether it holds what a cord takes, so that it can be turned. */
+	public static boolean ready(BlockState state) {
+		return state.getValue(FRAGMENTS) >= fragmentsPerCord() && state.getValue(SILK) >= silkPerCord();
 	}
 
 	/** Fragments per cord (at most what the spindle holds). */
@@ -118,7 +155,7 @@ public class SpindleBlock extends Block {
 	@Override
 	protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 		int fragments = state.getValue(FRAGMENTS), silk = state.getValue(SILK);
-		if (fragments < fragmentsPerCord() || silk < silkPerCord()) {
+		if (!ready(state)) {
 			if (level instanceof ServerLevel) {
 				tell(player, Component.translatable("gui.extremedimensions.spindle.need", fragmentsPerCord(), silkPerCord(), fragments, silk));
 			}

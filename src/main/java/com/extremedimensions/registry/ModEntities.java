@@ -4,6 +4,11 @@ import com.extremedimensions.ExtremeDimensions;
 import com.extremedimensions.hollow.Hollowling;
 import com.extremedimensions.hollow.Keeper;
 import com.extremedimensions.lurker.CaveLurker;
+import com.extremedimensions.lurker.Gatebreaker;
+import com.extremedimensions.lurker.Lockwarden;
+import com.extremedimensions.lurker.Magpie;
+import com.extremedimensions.lurker.Tidewalker;
+import com.extremedimensions.lurker.Wick;
 import com.extremedimensions.lurker.Lurker;
 import com.extremedimensions.lurker.SculkLurker;
 import com.extremedimensions.mending.StarvedOne;
@@ -47,6 +52,106 @@ public final class ModEntities {
 					.clientTrackingRange(8)
 					.build(CAVE_LURKER_KEY));
 
+	private static final ResourceKey<EntityType<?>> MAGPIE_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("magpie"));
+
+	/** The tribe's lean thief, a little taller than a man, that robs chests; spawned only by {@code MagpieService}. */
+	public static final EntityType<Magpie> MAGPIE = Registry.register(BuiltInRegistries.ENTITY_TYPE, MAGPIE_KEY,
+			EntityType.Builder.<Magpie>of(Magpie::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.8f, 2.3f)
+					.eyeHeight(2.0f)
+					.clientTrackingRange(10)
+					.build(MAGPIE_KEY));
+
+	private static final ResourceKey<EntityType<?>> WICK_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("wick"));
+
+	/** A knee-high thing of tallow and soot that eats the light at night; spawned only by {@code WickService}. */
+	public static final EntityType<Wick> WICK = Registry.register(BuiltInRegistries.ENTITY_TYPE, WICK_KEY,
+			EntityType.Builder.<Wick>of(Wick::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.fireImmune()
+					.sized(0.45f, 0.6f)
+					.eyeHeight(0.45f)
+					.clientTrackingRange(8)
+					.build(WICK_KEY));
+
+	private static final ResourceKey<EntityType<?>> TIDEWALKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("tidewalker"));
+
+	/** The tribe's kin of the deep water, that capsizes boats and drags swimmers down; spawned only by {@code TidewalkerService}. */
+	public static final EntityType<Tidewalker> TIDEWALKER = Registry.register(BuiltInRegistries.ENTITY_TYPE, TIDEWALKER_KEY,
+			EntityType.Builder.<Tidewalker>of(Tidewalker::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.9f, 2.6f)
+					.eyeHeight(2.3f)
+					.clientTrackingRange(10)
+					.build(TIDEWALKER_KEY));
+
+	private static final ResourceKey<EntityType<?>> GATEBREAKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("gatebreaker"));
+
+	/** The giant the Wound Storms wake, that breaks through walls; spawned only by {@code GatebreakerService}. */
+	public static final EntityType<Gatebreaker> GATEBREAKER = Registry.register(BuiltInRegistries.ENTITY_TYPE, GATEBREAKER_KEY,
+			EntityType.Builder.<Gatebreaker>of(Gatebreaker::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(1.8f, 4.6f)
+					.eyeHeight(4.0f)
+					.clientTrackingRange(12)
+					.build(GATEBREAKER_KEY));
+
+	private static final ResourceKey<EntityType<?>> LOCKWARDEN_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("lockwarden"));
+
+	/** The tribe's keeper of the Dragon's lock, that roams the End after ender pearls; spawned only by {@code LockwardenService}. */
+	public static final EntityType<Lockwarden> LOCKWARDEN = Registry.register(BuiltInRegistries.ENTITY_TYPE, LOCKWARDEN_KEY,
+			EntityType.Builder.<Lockwarden>of(Lockwarden::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(1.0f, 3.6f)
+					.eyeHeight(3.2f)
+					.clientTrackingRange(10)
+					.build(LOCKWARDEN_KEY));
+
+	private static final ResourceKey<EntityType<?>> PALE_HAULER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("pale_hauler"));
+
+	/** One of the Endermen of the Pale Reach, that hauls the blocks laid out over the void (3.39); spawned only by {@code PaleHaulerService}. */
+	public static final EntityType<com.extremedimensions.lurker.PaleHauler> PALE_HAULER = Registry.register(BuiltInRegistries.ENTITY_TYPE, PALE_HAULER_KEY,
+			EntityType.Builder.<com.extremedimensions.lurker.PaleHauler>of(com.extremedimensions.lurker.PaleHauler::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.7f, 2.7f)
+					.eyeHeight(2.4f)
+					.clientTrackingRange(10)
+					.build(PALE_HAULER_KEY));
+
+	private static final ResourceKey<EntityType<?>> THREADBITER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("threadbiter"));
+
+	/** One of the Seam's own, small, in packs, that gnaws at a visitor's thread; spawned only by {@code ThreadbiterService}. */
+	public static final EntityType<com.extremedimensions.lurker.Threadbiter> THREADBITER = Registry.register(BuiltInRegistries.ENTITY_TYPE, THREADBITER_KEY,
+			EntityType.Builder.<com.extremedimensions.lurker.Threadbiter>of(com.extremedimensions.lurker.Threadbiter::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.5f, 0.7f)
+					.eyeHeight(0.55f)
+					.clientTrackingRange(8)
+					.build(THREADBITER_KEY));
+
+	private static final ResourceKey<EntityType<?>> EDGECRAWLER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("edgecrawler"));
+
+	/** One of the Seam's own, that climbs up over an island's rim and drags its prey over it; spawned only by {@code EdgecrawlerService}. */
+	public static final EntityType<com.extremedimensions.lurker.Edgecrawler> EDGECRAWLER = Registry.register(BuiltInRegistries.ENTITY_TYPE, EDGECRAWLER_KEY,
+			EntityType.Builder.<com.extremedimensions.lurker.Edgecrawler>of(com.extremedimensions.lurker.Edgecrawler::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(0.9f, 2.2f)
+					.eyeHeight(1.9f)
+					.clientTrackingRange(10)
+					.build(EDGECRAWLER_KEY));
+
+	private static final ResourceKey<EntityType<?>> CRAGBACK_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("cragback"));
+
+	/** The biggest of the Seam's own, asleep as a boulder until someone digs near; spawned only by {@code CragbackService}. */
+	public static final EntityType<com.extremedimensions.lurker.Cragback> CRAGBACK = Registry.register(BuiltInRegistries.ENTITY_TYPE, CRAGBACK_KEY,
+			EntityType.Builder.<com.extremedimensions.lurker.Cragback>of(com.extremedimensions.lurker.Cragback::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(2.4f, 4.0f)
+					.eyeHeight(3.3f)
+					.clientTrackingRange(12)
+					.build(CRAGBACK_KEY));
+
 	private static final ResourceKey<EntityType<?>> SCULK_LURKER_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("sculk_lurker"));
 
 	/** The Warden's small servant in the Deep Dark, the size of a Hollowling; spawned only by {@code SculkLurkerService}. */
@@ -83,8 +188,8 @@ public final class ModEntities {
 	/** The last boss, at the Heart of the Seam; spawned only by {@code MendingService}. It stays on peaceful, as the Ender Dragon does. */
 	public static final EntityType<StarvedOne> STARVED_ONE = Registry.register(BuiltInRegistries.ENTITY_TYPE, STARVED_KEY,
 			EntityType.Builder.<StarvedOne>of(StarvedOne::new, MobCategory.MONSTER)
-					.sized(2.0f, 5.6f)
-					.eyeHeight(5.0f)
+					.sized(2.4f, 6.4f)
+					.eyeHeight(5.4f)
 					.clientTrackingRange(12)
 					.build(STARVED_KEY));
 
@@ -154,6 +259,18 @@ public final class ModEntities {
 					.updateInterval(1)
 					.build(KNOT_MOTHER_KEY));
 
+	private static final ResourceKey<EntityType<?>> PALE_MASON_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("pale_mason"));
+
+	/** The Pale Mason (3.40), foreman of the Endermen of the Pale Reach; he comes for a visitor's Tether. */
+	public static final EntityType<com.extremedimensions.elder.PaleMason> PALE_MASON = Registry.register(BuiltInRegistries.ENTITY_TYPE, PALE_MASON_KEY,
+			EntityType.Builder.<com.extremedimensions.elder.PaleMason>of(com.extremedimensions.elder.PaleMason::new, MobCategory.MONSTER)
+					.notInPeaceful()
+					.sized(4.5f, 18.0f)
+					.eyeHeight(16.0f)
+					.clientTrackingRange(16)
+					.updateInterval(1)
+					.build(PALE_MASON_KEY));
+
 	private static final ResourceKey<EntityType<?>> RIFT_PORTAL_KEY = ResourceKey.create(Registries.ENTITY_TYPE, ExtremeDimensions.id("rift_portal"));
 
 	/** A rift as it is seen (a sight only, never saved); put where each rift stands by {@code SeamService}. */
@@ -168,11 +285,21 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(FERRYMAN, com.extremedimensions.elder.Ferryman.createAttributes());
 		FabricDefaultAttributeRegistry.register(WEAVER, com.extremedimensions.elder.Weaver.createAttributes());
 		FabricDefaultAttributeRegistry.register(KNOT_MOTHER, com.extremedimensions.elder.KnotMother.createAttributes());
+		FabricDefaultAttributeRegistry.register(PALE_MASON, com.extremedimensions.elder.PaleMason.createAttributes());
 		FabricDefaultAttributeRegistry.register(VEIL_RAY, VeilRay.createAttributes());
 		FabricDefaultAttributeRegistry.register(THINNED, Thinned.createAttributes());
 		FabricDefaultAttributeRegistry.register(LURKER, Lurker.createAttributes());
 		FabricDefaultAttributeRegistry.register(CAVE_LURKER, CaveLurker.createAttributes());
 		FabricDefaultAttributeRegistry.register(SCULK_LURKER, SculkLurker.createAttributes());
+		FabricDefaultAttributeRegistry.register(MAGPIE, Magpie.createAttributes());
+		FabricDefaultAttributeRegistry.register(WICK, Wick.createAttributes());
+		FabricDefaultAttributeRegistry.register(TIDEWALKER, Tidewalker.createAttributes());
+		FabricDefaultAttributeRegistry.register(GATEBREAKER, Gatebreaker.createAttributes());
+		FabricDefaultAttributeRegistry.register(LOCKWARDEN, Lockwarden.createAttributes());
+		FabricDefaultAttributeRegistry.register(THREADBITER, com.extremedimensions.lurker.Threadbiter.createAttributes());
+		FabricDefaultAttributeRegistry.register(PALE_HAULER, com.extremedimensions.lurker.PaleHauler.createAttributes());
+		FabricDefaultAttributeRegistry.register(EDGECRAWLER, com.extremedimensions.lurker.Edgecrawler.createAttributes());
+		FabricDefaultAttributeRegistry.register(CRAGBACK, com.extremedimensions.lurker.Cragback.createAttributes());
 		FabricDefaultAttributeRegistry.register(HOLLOWLING, Hollowling.createAttributes());
 		FabricDefaultAttributeRegistry.register(KEEPER, Keeper.createAttributes());
 		FabricDefaultAttributeRegistry.register(STARVED_ONE, StarvedOne.createAttributes());

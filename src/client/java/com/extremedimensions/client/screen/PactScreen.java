@@ -43,7 +43,14 @@ public class PactScreen extends Screen {
 	private final List<Socket> sockets = new ArrayList<>();
 	private Group tab = Group.BEYOND;
 	private Penalty selected;
-	private Button plus, minus, seal;
+	private Button plus, minus, seal, done;
+	/** The pact as it was sworn when the screen opened, to tell changes not sworn yet (3.55.0). */
+	private final Map<Penalty, Integer> before = new LinkedHashMap<>();
+	/** When leaving with changes not sworn was first asked for (0: not asked): a second time within a while leaves. */
+	private long leaveArmedAt;
+	private static final long ARMED_MS = 4000;
+	/** What the plus button's tooltip was last made for (rebuilt only when that changes). */
+	private String plusTipFor = "";
 
 	/** pact = "unlocked;away;id:n,id:n"; carried = curse -> {stacks, max, readable (0: shown in runes)}. */
 	public PactScreen(Screen parent, String pact, Map<Penalty, int[]> carried) {
@@ -66,6 +73,12 @@ public class PactScreen extends Screen {
 				}
 			}
 		}
+		before.putAll(sworn);
+	}
+
+	/** Whether the pact on the screen differs from the one sworn (changes that leaving would throw away). */
+	private boolean unsealed() {
+		return editable() && !sworn.equals(before);
 	}
 
 	private int x0() {
@@ -126,7 +139,7 @@ public class PactScreen extends Screen {
 			sworn.clear();
 			refresh();
 		}).pos(x0 + 130, y0 + PH - 22).size(90, 18).build());
-		this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).pos(x0 + PW - 14 - 100, y0 + PH - 22).size(100, 18).build());
+		done = this.addRenderableWidget(Button.builder(Component.translatable("gui.done"), b -> onClose()).pos(x0 + PW - 14 - 100, y0 + PH - 22).size(100, 18).build());
 		showTab();
 	}
 
@@ -172,6 +185,20 @@ public class PactScreen extends Screen {
 				&& heat() + (selected.extreme ? 2 : 1) <= Config.PACT_MAX_HEAT;
 		minus.active = can && swornOf(selected) > 0;
 		seal.active = editable();
+		// (3.55.0) a "+" that cannot be pressed says why: the heat is at its cap, or carried and sworn fill the curse
+		String why = !can || plus.active ? "" : swornOf(selected) >= max(selected) - own(selected) ? "full" : "heat";
+		String tipFor = why + heat();
+		if (!tipFor.equals(plusTipFor)) {
+			plusTipFor = tipFor;
+			plus.setTooltip(why.isEmpty() ? null : Tooltip.create("heat".equals(why)
+					? Component.translatable("gui.extremedimensions.pact.plus_heat", heat(), Config.PACT_MAX_HEAT, selected.extreme ? 2 : 1)
+					: Component.translatable("gui.extremedimensions.pact.plus_full")));
+		}
+		boolean armed = leaveArmedAt != 0 && System.currentTimeMillis() - leaveArmedAt <= ARMED_MS;
+		if (done != null) {
+			done.setMessage(Component.translatable(armed ? "gui.extremedimensions.pact.leave_confirm" : "gui.done"));
+			done.setTooltip(armed ? Tooltip.create(Component.translatable("gui.extremedimensions.pact.leave_confirm.desc")) : null);
+		}
 	}
 
 	private void send() {
@@ -183,11 +210,21 @@ public class PactScreen extends Screen {
 			out.append(e.getKey().id).append(':').append(e.getValue());
 		}
 		ClientPlayNetworking.send(new ModPackets.SwearPactPayload(out.toString()));
-		onClose();
+		Minecraft.getInstance().gui.setScreen(parent);
 	}
 
+	/**
+	 * Done or Escape. With changes not sworn yet (3.55.0), the first press only asks (the button says so, as the
+	 * settings do); a second within four seconds leaves without them.
+	 */
 	@Override
 	public void onClose() {
+		long now = System.currentTimeMillis();
+		if (unsealed() && (leaveArmedAt == 0 || now - leaveArmedAt > ARMED_MS)) {
+			leaveArmedAt = now;
+			refresh();
+			return;
+		}
 		Minecraft.getInstance().gui.setScreen(parent);
 	}
 
@@ -198,6 +235,11 @@ public class PactScreen extends Screen {
 	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float a) {
 		super.extractBackground(g, mouseX, mouseY, a);
+		if (leaveArmedAt != 0 && System.currentTimeMillis() - leaveArmedAt > ARMED_MS) {
+			// (the question to leave was not answered in time: Done is Done again)
+			leaveArmedAt = 0;
+			refresh();
+		}
 		double fade = Ui.ease((System.currentTimeMillis() - openAt) / 260.0);
 		int x0 = x0(), y0 = y0();
 		int accent = 0xE0A040;

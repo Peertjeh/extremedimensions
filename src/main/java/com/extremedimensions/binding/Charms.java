@@ -127,7 +127,7 @@ public final class Charms {
 		}
 		Vec3 v = dir.scale(Math.max(0, Config.ENCH_TETHERSHOT_PULL) / len);
 		entity.setDeltaMovement(v.x, Math.max(0.25, v.y + 0.2), v.z);
-		entity.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(entity);
 		WorldFx.particleIn(entity.level(), "minecraft:end_rod", entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(), 0.2, 0.2, 0.2, 0.02, 6);
 	}
 
@@ -194,7 +194,10 @@ public final class Charms {
 
 	// ------------------------------------------------------------------ Sated, the Curse of the Starved
 
-	/** How much of the exhaustion a player is caused they take: less with Sated, more for each piece of the Starved. */
+	/**
+	 * How much of the exhaustion a player is caused they take: less with Sated, more for each piece of the Starved and of
+	 * Tetherite, and more again with a hungry relic bound (the Pilgrim's Sandal, Hunger's Fang).
+	 */
 	public static float exhaustion(Player p) {
 		if (p.isCreative() || p.isSpectator()) {
 			return 1f;
@@ -204,6 +207,12 @@ public final class Charms {
 			if (on(p, slot, ModEnchantments.CURSE_OF_THE_STARVED) > 0) {
 				k += Config.ENCH_STARVED;
 			}
+		}
+		// Tetherite feeds on its bearer: a share more for every piece worn and every Tetherite tool in hand
+		k += com.extremedimensions.tetherite.Tetherite.drawback(Config.TETHERITE_HUNGER) * com.extremedimensions.tetherite.Tetherite.borne(p);
+		// The relic's hunger scales all of that: its share more of whatever the player would have hungered
+		if (p instanceof ServerPlayer sp) {
+			k *= com.extremedimensions.relic.RelicService.hunger(sp);
 		}
 		return (float) Math.max(0, k);
 	}

@@ -19,11 +19,22 @@ public final class ModPackets {
 	 * tetherDist: -1 = not bound, else blocks to the arrival portal (beyond) or to the anchor (Overworld).
 	 * guide: steps of the first-expedition guide done (Guide.STEPS = finished).
 	 * trial: the Rift Trial under way in the Seam, "kind;twist;score;bronze;silver;gold" (empty without one).
-	 * riftX/riftY/riftZ: where the rift home hangs in the Seam (its floor), for the column of light and the compass.
+	 * riftX/riftY/riftZ: where the way home lies: the rift home in the Seam (its floor), for the column of light and the
+	 * compass, and since 3.55.0 the arrival portal on an expedition in the Nether or the End; NaN where none is shown.
+	 * drainX100: what the charge (or the thread) runs out at now, x100, an expedition's leaking anchors counted (3.55.0).
+	 * drainCause, drainFactors (3.55.0): the drain's main cause (a language key, "" for none) and all its parts,
+	 * "key=1.30;key=0.85" (see DrainCauses).
+	 * walkBack (3.55.0): seconds of charge (or thread) the walk back to the way home would cost, -1 where there is none.
+	 * thinAt (3.55.0): in the Seam, the seconds left at which the thread runs thin (0 elsewhere).
+	 * nearFlags (3.55.0): what is wrong with the anchors nearby: 1 an Ember Anchor blocked, 2 one cracked, 4 a Void
+	 * Anchor blocked, 8 one cracked.
+	 * fuelX1000 (3.55.0): what anchor fuel is worth to this player, a thousand times its multiple (Debt, the Anchor Rivet).
+	 * offer (3.55.0): the curse offer waiting, "secondsLeft:nth:of" (secondsLeft -1: no clock runs), or "" without one.
 	 */
 	public record StatePayload(int nearNether, int nearEnd, int runCharge, int runMax, int dimCode, int drainX100,
 							int expeditions, int collapses, int longestRun, int runSecs, String penalties,
-							int scars, int tetherDist, int guide, String trial, float riftX, float riftY, float riftZ) implements CustomPacketPayload {
+							int scars, int tetherDist, int guide, String trial, float riftX, float riftY, float riftZ,
+							String drainCause, String drainFactors, int walkBack, int thinAt, int nearFlags, int fuelX1000, String offer) implements CustomPacketPayload {
 		public static final Type<StatePayload> TYPE = new Type<>(ExtremeDimensions.id("state"));
 		public static final StreamCodec<FriendlyByteBuf, StatePayload> CODEC = StreamCodec.ofMember(StatePayload::write, StatePayload::read);
 
@@ -46,12 +57,20 @@ public final class ModPackets {
 			buf.writeFloat(riftX);
 			buf.writeFloat(riftY);
 			buf.writeFloat(riftZ);
+			buf.writeUtf(drainCause);
+			buf.writeUtf(drainFactors);
+			buf.writeVarInt(walkBack);
+			buf.writeVarInt(thinAt);
+			buf.writeVarInt(nearFlags);
+			buf.writeVarInt(fuelX1000);
+			buf.writeUtf(offer);
 		}
 
 		private static StatePayload read(FriendlyByteBuf buf) {
 			return new StatePayload(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
 					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(),
-					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readFloat());
+					buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(), buf.readFloat(), buf.readFloat(), buf.readFloat(),
+					buf.readUtf(), buf.readUtf(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf());
 		}
 
 		@Override
@@ -120,10 +139,12 @@ public final class ModPackets {
 
 	/**
 	 * Server -> client: open the Tether Journal with these unlocked pages (comma separated), the bestiary
-	 * ("id:seen:slain;..."), the ledger ("page:key=value;..."), the margin notes found, the path, and the player's clan
-	 * (as {@code ClanService.journal} writes it).
+	 * ("id:seen:slain;..."), the ledger ("page:key=value;..."), the margin notes found, the path, the player's clan
+	 * (as {@code ClanService.journal} writes it), the anchors that keep charge for them (as {@code AnchorList.encode}
+	 * writes them) and the first-meeting hints they were told (keys, comma separated; 3.55.0).
 	 */
-	public record OpenJournalPayload(String ids, String beasts, String ledger, String notes, String path, String clan) implements CustomPacketPayload {
+	public record OpenJournalPayload(String ids, String beasts, String ledger, String notes, String path, String clan, String anchors,
+			String hints) implements CustomPacketPayload {
 		public static final Type<OpenJournalPayload> TYPE = new Type<>(ExtremeDimensions.id("open_journal"));
 		public static final StreamCodec<FriendlyByteBuf, OpenJournalPayload> CODEC = StreamCodec.ofMember(OpenJournalPayload::write, OpenJournalPayload::read);
 
@@ -134,10 +155,13 @@ public final class ModPackets {
 			buf.writeUtf(notes);
 			buf.writeUtf(path);
 			buf.writeUtf(clan);
+			buf.writeUtf(anchors);
+			buf.writeUtf(hints);
 		}
 
 		private static OpenJournalPayload read(FriendlyByteBuf buf) {
-			return new OpenJournalPayload(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf());
+			return new OpenJournalPayload(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(),
+					buf.readUtf());
 		}
 
 		@Override
@@ -156,6 +180,43 @@ public final class ModPackets {
 
 		private static RequestJournalPayload read(FriendlyByteBuf buf) {
 			return new RequestJournalPayload();
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: the player pressed the key of the anchor status screen (3.55.0), which the server opens as an anchor does. */
+	public record RequestStatusPayload() implements CustomPacketPayload {
+		public static final Type<RequestStatusPayload> TYPE = new Type<>(ExtremeDimensions.id("request_status"));
+		public static final StreamCodec<FriendlyByteBuf, RequestStatusPayload> CODEC = StreamCodec.ofMember(RequestStatusPayload::write, RequestStatusPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+		}
+
+		private static RequestStatusPayload read(FriendlyByteBuf buf) {
+			return new RequestStatusPayload();
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: a first-meeting hint (by its ordinal) was shown as a toast, so it counts as told (3.55.0). */
+	public record HintShownPayload(int hint) implements CustomPacketPayload {
+		public static final Type<HintShownPayload> TYPE = new Type<>(ExtremeDimensions.id("hint_shown"));
+		public static final StreamCodec<FriendlyByteBuf, HintShownPayload> CODEC = StreamCodec.ofMember(HintShownPayload::write, HintShownPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(hint);
+		}
+
+		private static HintShownPayload read(FriendlyByteBuf buf) {
+			return new HintShownPayload(buf.readVarInt());
 		}
 
 		@Override
@@ -379,6 +440,73 @@ public final class ModPackets {
 		}
 	}
 
+	/** Server -> client: the operators' Players screen (see AdminService.data, JSON); opens the screen or refreshes it. */
+	public record AdminPayload(String data, boolean open) implements CustomPacketPayload {
+		public static final Type<AdminPayload> TYPE = new Type<>(ExtremeDimensions.id("admin"));
+		public static final StreamCodec<FriendlyByteBuf, AdminPayload> CODEC = StreamCodec.ofMember(AdminPayload::write, AdminPayload::read);
+		/** The longest data sent: hundreds of players and every curse of one fit well inside it. */
+		public static final int MAX = 1 << 19;
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(data, MAX);
+			buf.writeBoolean(open);
+		}
+
+		private static AdminPayload read(FriendlyByteBuf buf) {
+			return new AdminPayload(buf.readUtf(MAX), buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/** Client -> server: send the Players screen's data, with this player picked (a UUID, or empty for the asker). */
+	public record RequestAdminPayload(String selected, boolean open) implements CustomPacketPayload {
+		public static final Type<RequestAdminPayload> TYPE = new Type<>(ExtremeDimensions.id("request_admin"));
+		public static final StreamCodec<FriendlyByteBuf, RequestAdminPayload> CODEC = StreamCodec.ofMember(RequestAdminPayload::write, RequestAdminPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(selected, 64);
+			buf.writeBoolean(open);
+		}
+
+		private static RequestAdminPayload read(FriendlyByteBuf buf) {
+			return new RequestAdminPayload(buf.readUtf(64), buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Client -> server: an operator lays a stack on a player ("add"), lifts one off ("lift") or lifts every curse
+	 * ("clear"); silent: the player is not told (3.27.2).
+	 */
+	public record AdminActionPayload(String target, String action, String curse, boolean silent) implements CustomPacketPayload {
+		public static final Type<AdminActionPayload> TYPE = new Type<>(ExtremeDimensions.id("admin_action"));
+		public static final StreamCodec<FriendlyByteBuf, AdminActionPayload> CODEC = StreamCodec.ofMember(AdminActionPayload::write, AdminActionPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(target, 64);
+			buf.writeUtf(action, 16);
+			buf.writeUtf(curse, 64);
+			buf.writeBoolean(silent);
+		}
+
+		private static AdminActionPayload read(FriendlyByteBuf buf) {
+			return new AdminActionPayload(buf.readUtf(64), buf.readUtf(16), buf.readUtf(64), buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
 	/** Client -> server: take up the week's trial for the next visit to the Seam (or let it go). */
 	public record ArmTrialPayload(boolean arm) implements CustomPacketPayload {
 		public static final Type<ArmTrialPayload> TYPE = new Type<>(ExtremeDimensions.id("arm_trial"));
@@ -390,6 +518,159 @@ public final class ModPackets {
 
 		private static ArmTrialPayload read(FriendlyByteBuf buf) {
 			return new ArmTrialPayload(buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Server -> client: whether the wound is after the player right now, so that leaving would cost them curses (see
+	 * FleeService): {@code why} "swarm", "hunt", "keeper", "raid", "elder" or "blow" ("" when it is not), {@code seconds}
+	 * how long a blow keeps them in danger yet (-1 while what hunts them lasts), {@code curses} what leaving would cost.
+	 */
+	public record DangerPayload(String why, int seconds, int curses) implements CustomPacketPayload {
+		public static final Type<DangerPayload> TYPE = new Type<>(ExtremeDimensions.id("danger"));
+		public static final StreamCodec<FriendlyByteBuf, DangerPayload> CODEC = StreamCodec.ofMember(DangerPayload::write, DangerPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(why, 16);
+			buf.writeVarInt(seconds + 1);
+			buf.writeVarInt(curses);
+		}
+
+		private static DangerPayload read(FriendlyByteBuf buf) {
+			return new DangerPayload(buf.readUtf(16), buf.readVarInt() - 1, buf.readVarInt());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Server -> client: what an expedition that ended in a Collapse (or a throw out of the Seam) came to, for the card the
+	 * player is shown once home (see ExpeditionRecord): {@code realm} the world's short id, {@code outcome} the playtest
+	 * log's word for how it ended, {@code seconds} how long it lasted and {@code charge} the charge (or thread) it began
+	 * with, {@code farthest} in blocks from the portal (or the rift home); {@code distanceX100} and {@code drainX100} a
+	 * hundred times how fast the timer ran on average against its base rate, from the distance alone (0 where the distance
+	 * does not count) and all told; what it cost: {@code curses} as "id:stacks,...", the Seam Silk and Tether Fragments the
+	 * Seam kept, and the atonement the death undid.
+	 */
+	public record RecapPayload(String realm, String outcome, int seconds, int charge, int farthest, int distanceX100, int drainX100,
+			String curses, int silk, int fragments, int atonement) implements CustomPacketPayload {
+		public static final Type<RecapPayload> TYPE = new Type<>(ExtremeDimensions.id("recap"));
+		public static final StreamCodec<FriendlyByteBuf, RecapPayload> CODEC = StreamCodec.ofMember(RecapPayload::write, RecapPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeUtf(realm, 64);
+			buf.writeUtf(outcome, 32);
+			buf.writeVarInt(seconds);
+			buf.writeVarInt(charge);
+			buf.writeVarInt(farthest);
+			buf.writeVarInt(distanceX100);
+			buf.writeVarInt(drainX100);
+			buf.writeUtf(curses, 4096);
+			buf.writeVarInt(silk);
+			buf.writeVarInt(fragments);
+			buf.writeVarInt(atonement);
+		}
+
+		private static RecapPayload read(FriendlyByteBuf buf) {
+			return new RecapPayload(buf.readUtf(64), buf.readUtf(32), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt(),
+					buf.readVarInt(), buf.readUtf(4096), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Server -> client: one tick of a Pale Squall's gust on the player, added to their own motion where it is made, on
+	 * their client ({@code x}, {@code z}: blocks a tick). The server cannot push a player itself: the client moves them.
+	 */
+	public record SquallPayload(float x, float z) implements CustomPacketPayload {
+		public static final Type<SquallPayload> TYPE = new Type<>(ExtremeDimensions.id("squall"));
+		public static final StreamCodec<FriendlyByteBuf, SquallPayload> CODEC = StreamCodec.ofMember(SquallPayload::write, SquallPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeFloat(x);
+			buf.writeFloat(z);
+		}
+
+		private static SquallPayload read(FriendlyByteBuf buf) {
+			return new SquallPayload(buf.readFloat(), buf.readFloat());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Server -> client: the player's motion as the server just set it (a shove, a pull, a drag), to be taken on by their
+	 * client, which moves them: a motion set on the server alone never reaches the player it was set on (3.39.2).
+	 */
+	public record MotionPayload(double x, double y, double z) implements CustomPacketPayload {
+		public static final Type<MotionPayload> TYPE = new Type<>(ExtremeDimensions.id("motion"));
+		public static final StreamCodec<FriendlyByteBuf, MotionPayload> CODEC = StreamCodec.ofMember(MotionPayload::write, MotionPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeDouble(x);
+			buf.writeDouble(y);
+			buf.writeDouble(z);
+		}
+
+		private static MotionPayload read(FriendlyByteBuf buf) {
+			return new MotionPayload(buf.readDouble(), buf.readDouble(), buf.readDouble());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Server -> client: the chance of the Tetherite binding waiting at the smithing table the player has open, in
+	 * permille, with the shares that make it ({@code permille} -1: no binding waits there), and where it would have to be
+	 * done ({@code where}: 0 here, 1 in the Seam, 2 down in the Fray).
+	 */
+	public record BindingPayload(int permille, java.util.List<com.extremedimensions.tetherite.TetheriteBinding.Part> parts, boolean capped, int where)
+			implements CustomPacketPayload {
+		public static final Type<BindingPayload> TYPE = new Type<>(ExtremeDimensions.id("binding"));
+		public static final StreamCodec<FriendlyByteBuf, BindingPayload> CODEC = StreamCodec.ofMember(BindingPayload::write, BindingPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(permille + 1);
+			buf.writeBoolean(capped);
+			buf.writeVarInt(where);
+			buf.writeVarInt(Math.min(parts.size(), 32));
+			for (int i = 0; i < Math.min(parts.size(), 32); i++) {
+				var part = parts.get(i);
+				buf.writeUtf(part.kind(), 16);
+				buf.writeUtf(part.label(), 256);
+				buf.writeInt(part.level());
+				buf.writeDouble(part.share());
+			}
+		}
+
+		private static BindingPayload read(FriendlyByteBuf buf) {
+			int permille = buf.readVarInt() - 1;
+			boolean capped = buf.readBoolean();
+			int where = buf.readVarInt();
+			int n = Math.min(buf.readVarInt(), 32);
+			java.util.List<com.extremedimensions.tetherite.TetheriteBinding.Part> parts = new java.util.ArrayList<>();
+			for (int i = 0; i < n; i++) {
+				parts.add(new com.extremedimensions.tetherite.TetheriteBinding.Part(buf.readUtf(16), buf.readUtf(256), buf.readInt(), buf.readDouble()));
+			}
+			return new BindingPayload(permille, parts, capped, where);
 		}
 
 		@Override
@@ -439,6 +720,11 @@ public final class ModPackets {
 		public static final int DEATH = 6;
 		/** An Elder forming: the bars close in, and with a positive strength (its length in ticks) the view is held on entity {@code value}. */
 		public static final int SPAWN = 7;
+		/**
+		 * A blow landing with weight, near this player: the view jolts down, and the striker (entity {@code value}) holds
+		 * still for an instant, an impact frame. {@code strength} 0..1.
+		 */
+		public static final int PUNCH = 8;
 		public static final Type<BossFxPayload> TYPE = new Type<>(ExtremeDimensions.id("boss_fx"));
 		public static final StreamCodec<FriendlyByteBuf, BossFxPayload> CODEC = StreamCodec.ofMember(BossFxPayload::write, BossFxPayload::read);
 
@@ -521,6 +807,28 @@ public final class ModPackets {
 
 		private static ShareAnchorsPayload read(FriendlyByteBuf buf) {
 			return new ShareAnchorsPayload(buf.readBoolean());
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Client -> server (3.55.0): when the player wants the low-time warnings in words, from their own "Warn at" option: 0
+	 * at two minutes left, 1 at one minute, 2 once the walk back needs most of what is left (see TimeLeft).
+	 */
+	public record WarnAtPayload(int mode) implements CustomPacketPayload {
+		public static final Type<WarnAtPayload> TYPE = new Type<>(ExtremeDimensions.id("warn_at"));
+		public static final StreamCodec<FriendlyByteBuf, WarnAtPayload> CODEC = StreamCodec.ofMember(WarnAtPayload::write, WarnAtPayload::read);
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(mode);
+		}
+
+		private static WarnAtPayload read(FriendlyByteBuf buf) {
+			return new WarnAtPayload(buf.readVarInt());
 		}
 
 		@Override
@@ -728,6 +1036,42 @@ public final class ModPackets {
 
 		private static UnweaveRequestPayload read(FriendlyByteBuf buf) {
 			return new UnweaveRequestPayload(buf.readUtf(32));
+		}
+
+		@Override
+		public Type<? extends CustomPacketPayload> type() {
+			return TYPE;
+		}
+	}
+
+	/**
+	 * Server -> client: the anchors that keep some of the player's own charge, for the map mods' waypoints (see
+	 * AnchorSync): where each stands and which kind it is, nothing of what it holds.
+	 */
+	public record AnchorsPayload(java.util.List<Spot> anchors) implements CustomPacketPayload {
+		public static final Type<AnchorsPayload> TYPE = new Type<>(ExtremeDimensions.id("anchors"));
+		public static final StreamCodec<FriendlyByteBuf, AnchorsPayload> CODEC = StreamCodec.ofMember(AnchorsPayload::write, AnchorsPayload::read);
+
+		/** One anchor: where it stands in the Overworld, and whether it is an Ember Anchor (else a Void Anchor). */
+		public record Spot(int x, int y, int z, boolean ember) {}
+
+		private void write(FriendlyByteBuf buf) {
+			buf.writeVarInt(anchors.size());
+			for (Spot s : anchors) {
+				buf.writeInt(s.x());
+				buf.writeInt(s.y());
+				buf.writeInt(s.z());
+				buf.writeBoolean(s.ember());
+			}
+		}
+
+		private static AnchorsPayload read(FriendlyByteBuf buf) {
+			int n = buf.readVarInt();
+			java.util.List<Spot> anchors = new java.util.ArrayList<>(Math.min(n, 1024));
+			for (int i = 0; i < n; i++) {
+				anchors.add(new Spot(buf.readInt(), buf.readInt(), buf.readInt(), buf.readBoolean()));
+			}
+			return new AnchorsPayload(anchors);
 		}
 
 		@Override

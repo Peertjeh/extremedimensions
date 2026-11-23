@@ -24,7 +24,7 @@ import net.minecraft.world.BossEvent;
 /**
  * The expedition timer as Minecraft shows such things: a boss bar at the top of the screen, stacked with any other
  * (an Elder's, a raid's) as the game stacks them. Its name says where the player is, the time left, the way home
- * (in the Seam, an arrow and the distance to the rift; elsewhere, the stretch of the Tether) and a drain above one;
+ * (an arrow and the distance: to the rift in the Seam, to the arrival portal elsewhere) and the drain with its cause;
  * it empties as the time runs out and turns red in the last minute. A Rift Trial under way gets a bar of its own
  * under it, filling towards the next medal, as a raid's does.
  */
@@ -103,23 +103,44 @@ public final class ExpeditionBar {
 		}
 	}
 
-	/** The timer's name: where, how long, the way home, and the drain when it runs faster. */
+	/**
+	 * The timer's name: where, how long (amber once the walk back needs most of it, and how long by the clock at this
+	 * drain), the way home and what walking it costs, and the drain with its main cause when it is not one. Kept short
+	 * (3.55.0): "Nether  4:12 (≈1:42)  ↗ Tether 37m · ≈0:55 back  Drain ×2.4 · Echo near".
+	 */
 	private static Component name(ServerPlayer p, PlayerData d, boolean seam, boolean nether, double left) {
 		String where = seam ? "dimension.extremedimensions.seam" : nether ? "dimension.extremedimensions.nether" : "dimension.extremedimensions.end";
-		int s = (int) Math.ceil(Math.max(0, left));
+		DrainCauses.Breakdown why = DrainCauses.of(p, d);
+		double back = TimeLeft.walkBack(p, d);
+		boolean tight = TimeLeft.tight(left, back);
 		MutableComponent out = Component.translatable(where).append("  ")
-				.append(Component.literal(String.format("%d:%02d", s / 60, s % 60)).withStyle(left <= 30 ? ChatFormatting.RED : ChatFormatting.WHITE));
+				.append(Component.literal(TimeLeft.clock(left)).withStyle(left <= 30 ? ChatFormatting.RED : tight ? ChatFormatting.GOLD : ChatFormatting.WHITE));
+		double pace = TimeLeft.pace(left, why.drain());
+		if (why.shown() && pace >= 0) {
+			// (only where the drain makes the clock's time differ from the timer's)
+			out.append(" ").append(Component.translatable("hud.extremedimensions.pace.short", TimeLeft.clock(pace)).withStyle(ChatFormatting.GRAY));
+		}
 		if (seam && Config.SEAM_RIFT_COMPASS > 0) {
 			int dist = SeamService.riftDistance(p, d);
 			out.append("  ").append(Component.literal(dist < 2 ? "◆ " : arrow(p, d) + " ").withStyle(ChatFormatting.GOLD))
 					.append(Component.translatable("hud.extremedimensions.rift_distance", dist));
 		} else if (!seam && TetherService.distance(p, d) >= 0) {
-			out.append("  ").append(Component.translatable("hud.extremedimensions.tether_distance", TetherService.distance(p, d)));
+			int dist = TetherService.distance(p, d);
+			out.append("  ");
+			if (com.extremedimensions.network.Sync.arrivalShown(d)) {
+				// The way back to the arrival portal, as the Seam's compass points to its rift (3.55.0)
+				out.append(Component.literal(dist < 2 ? "◆ " : arrow(p.getYRot(), d.arrivalX - p.getX(), d.arrivalZ - p.getZ()) + " ")
+						.withStyle(ChatFormatting.GOLD));
+			}
+			out.append(Component.translatable("hud.extremedimensions.tether_distance", dist));
 		}
-		double drain = seam ? com.extremedimensions.seam.SeamDepth.drain(p.getY()) : d.currentDrain;
-		if (drain > 1.0) {
-			out.append("  ").append(Component.translatable("hud.extremedimensions.drain", String.format(java.util.Locale.ROOT, "%.1f", drain))
-					.withStyle(drain >= 3 ? ChatFormatting.RED : drain >= 1.8 ? ChatFormatting.YELLOW : ChatFormatting.GRAY));
+		if (back >= 1) {
+			out.append(" · ").append(Component.translatable("hud.extremedimensions.walk_back.short", TimeLeft.clock(back))
+					.withStyle(tight ? ChatFormatting.GOLD : ChatFormatting.GRAY));
+		}
+		// The drain whenever it is not one (below it in green), with its main cause after it (3.55.0)
+		if (why.shown()) {
+			out.append("  ").append(why.label());
 		}
 		return out;
 	}

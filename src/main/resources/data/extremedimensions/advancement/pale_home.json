@@ -1,0 +1,23 @@
+{
+  "parent": "extremedimensions:pale_mason_slain",
+  "display": {
+    "icon": {
+      "id": "extremedimensions:homeward_keystone"
+    },
+    "title": {
+      "translate": "advancements.extremedimensions.pale_home.title"
+    },
+    "description": {
+      "translate": "advancements.extremedimensions.pale_home.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": true
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

@@ -104,6 +104,8 @@ public final class HollowService {
 		int wander;
 		/** Called by the Keeper or the Matriarch: not one of the hoard's own young. */
 		boolean brood;
+		/** A companion: when (its ticks) it last chittered a warning aloud. */
+		int warnedAt = -1_000_000;
 		/** Out of a raided hoard: being watched does not stop it, and it steals from anyone. */
 		boolean bold;
 		/** The player it barters with. */
@@ -115,6 +117,10 @@ public final class HollowService {
 		int until;
 		int windup;
 		int pause;
+		/** Shared by the young of one swarm: the curses their bites have left. */
+		int[] swarmCurses;
+		/** A companion told to stay (3.27.5): it waits where it stands instead of following. */
+		boolean staying;
 	}
 
 	static final class Guard {
@@ -128,24 +134,61 @@ public final class HollowService {
 		int windup;
 	}
 
+	/** The Matriarch stirring beneath a nest before she rises (3.28): who woke her, and the time left. */
+	static final class Stir {
+		Hoard hoard;
+		UUID waker;
+		ServerLevel level;
+		int total;
+		int left;
+		ServerBossEvent bar;
+	}
+
 	private static final Map<UUID, Little> LITTLES = new HashMap<>();
 	private static final Map<UUID, Guard> KEEPERS = new HashMap<>();
+	/** The nests the Matriarch stirs beneath, by the hoard's key. */
+	private static final Map<String, Stir> STIRS = new HashMap<>();
+	/** When each player was last warned that the Matriarch sleeps beneath a nest (server tick), and which nest. */
+	private static final Map<UUID, Long> WARNED_AT = new HashMap<>();
+	private static final Map<UUID, String> WARNED_FOR = new HashMap<>();
 	private static final Map<UUID, ServerLevel> LEVELS = new HashMap<>();
 	/** Owner UUID to companion entity UUID. */
 	private static final Map<UUID, UUID> COMPANIONS = new HashMap<>();
+	/** The companions told to stay, by their entity's UUID (from the players' data, built on first use). */
+	private static java.util.Set<String> staying;
 
 	public static boolean isDriven(Entity e) {
-		return LITTLES.containsKey(e.getUUID()) || KEEPERS.containsKey(e.getUUID());
+		// (a companion told to stay is kept even before its player comes back to take it up again)
+		return LITTLES.containsKey(e.getUUID()) || KEEPERS.containsKey(e.getUUID()) || stayingIds().contains(e.getUUID().toString());
+	}
+
+	private static java.util.Set<String> stayingIds() {
+		if (staying == null) {
+			staying = new java.util.HashSet<>();
+			for (PlayerData d : DataStore.players()) {
+				if (d.companionStay != null && d.companionStayId != null) {
+					staying.add(d.companionStayId);
+				}
+			}
+		}
+		return staying;
 	}
 
 	public static void clear() {
 		for (Guard g : KEEPERS.values()) {
 			g.bar.removeAllPlayers();
 		}
+		for (Stir st : STIRS.values()) {
+			st.bar.removeAllPlayers();
+		}
+		STIRS.clear();
+		WARNED_AT.clear();
+		WARNED_FOR.clear();
 		LITTLES.clear();
 		KEEPERS.clear();
 		LEVELS.clear();
 		COMPANIONS.clear();
+		staying = null;
 	}
 
 	// ------------------------------------------------------------------ hoards
@@ -453,6 +496,7 @@ public final class HollowService {
 	public static void tick(MinecraftServer s) {
 		driveLittles();
 		driveKeepers();
+		driveStirs(s);
 		if (++slow < 20) {
 			return;
 		}
@@ -482,6 +526,9 @@ public final class HollowService {
 				if (d2 < 96 * 96) {
 					ambience(h, d2);
 					unhook(h);
+				}
+				if (Config.MATRIARCH_WARN_RANGE > 0 && d2 < (double) Config.MATRIARCH_WARN_RANGE * Config.MATRIARCH_WARN_RANGE && watched(h, p, d)) {
+					warn(s, h, p);
 				}
 				if (d2 < 44 * 44) {
 					populate(h);
@@ -736,8 +783,23 @@ public final class HollowService {
 	}
 
 	private static void giggle(Entity e) {
+		giggle(e, 0.9f);
+	}
+
+	private static void giggle(Entity e, float volume) {
 		WorldFx.soundIn(e.level().dimension().identifier().toString(), "extremedimensions:hollowling_giggle", "neutral", e.getX(), e.getY() + 0.8, e.getZ(),
-				0.9f, (float) (0.9 + ThreadLocalRandom.current().nextDouble() * 0.3));
+				volume, (float) (0.9 + ThreadLocalRandom.current().nextDouble() * 0.3));
+	}
+
+	/** Whether this is someone's companion Hollowling (on the server; on a client, never). */
+	public static boolean companion(Entity e) {
+		Little st = LITTLES.get(e.getUUID());
+		return st != null && st.mode == Mode.COMPANION;
+	}
+
+	/** How loud a companion is: quiet company (see {@code companion_sound_volume}). */
+	private static float companionVolume() {
+		return (float) Math.max(0, Math.min(1, Config.COMPANION_SOUND_VOLUME));
 	}
 
 	/** A wild Hollowling: plays near the hoard, freezes when watched, sneaks up and steals when you look away. */
@@ -947,6 +1009,17 @@ public final class HollowService {
 	public static void onHollowlingDeath(Hollowling h, Entity killer) {
 		Little st = LITTLES.remove(h.getUUID());
 		LEVELS.remove(h.getUUID());
+		if (stayingIds().remove(h.getUUID().toString())) {
+			// A companion that waited for its player is lost (whether or not its player had come back to it)
+			for (PlayerData d : DataStore.players()) {
+				if (h.getUUID().toString().equals(d.companionStayId)) {
+					d.companionStay = null;
+					d.companionStayId = null;
+					d.companion = false;
+					DataStore.markDirty();
+				}
+			}
+		}
 		if (st == null) {
 			return;
 		}
@@ -978,6 +1051,10 @@ public final class HollowService {
 		Little st = LITTLES.get(h.getUUID());
 		if (st == null) {
 			return InteractionResult.PASS;
+		}
+		if (st.mode == Mode.COMPANION && p.getUUID().equals(st.owner) && stack.isEmpty() && p.isSecondaryUseActive()) {
+			// Sneaking, an empty hand on one's own companion: stay here, or come along again
+			return stay(p, h, st, !st.staying);
 		}
 		if (Config.TRIBE_ENABLED > 0 && stack.isEmpty()) {
 			return barter(p, h, st);
@@ -1045,6 +1122,61 @@ public final class HollowService {
 		DataStore.markDirty();
 	}
 
+	/**
+	 * Tells a companion to stay where it stands (it waits there, whoever comes and goes, until told again) or to come
+	 * along again (3.27.5).
+	 */
+	public static InteractionResult stay(ServerPlayer p, Hollowling h, boolean stay) {
+		Little st = LITTLES.get(h.getUUID());
+		return st == null || st.mode != Mode.COMPANION || !p.getUUID().equals(st.owner) ? InteractionResult.PASS : stay(p, h, st, stay);
+	}
+
+	private static InteractionResult stay(ServerPlayer p, Hollowling h, Little st, boolean stay) {
+		PlayerData d = DataStore.get(p.getUUID());
+		String dim = h.level().dimension().identifier().toString();
+		st.staying = stay;
+		if (d.companionStayId != null) {
+			stayingIds().remove(d.companionStayId);
+		}
+		if (stay) {
+			d.companionStay = dim;
+			d.companionStayId = h.getUUID().toString();
+			d.companionStayX = h.getX();
+			d.companionStayY = h.getY();
+			d.companionStayZ = h.getZ();
+			stayingIds().add(d.companionStayId);
+			h.getNavigation().stop();
+			h.setLurkerPose(Lurker.POSE_STALK);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.companion.stay", h.getBlockX(), h.getBlockY(), h.getBlockZ()));
+		} else {
+			d.companionStay = null;
+			d.companionStayId = null;
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.companion.follow"), true);
+		}
+		WorldFx.soundIn(dim, "extremedimensions:hollowling_ambient", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), companionVolume(), stay ? 0.85f : 1.3f);
+		DataStore.markDirty();
+		return InteractionResult.SUCCESS;
+	}
+
+	/** Makes a Hollowling this player's companion at once, at a spot (for tests; in play a bond is earned). */
+	public static Hollowling befriend(ServerPlayer p, BlockPos at) {
+		Little st = new Little();
+		st.mode = Mode.COMPANION;
+		st.owner = p.getUUID();
+		Hollowling h = spawnLittle((ServerLevel) p.level(), at, st);
+		if (h != null) {
+			toughen(h);
+			COMPANIONS.put(p.getUUID(), h.getUUID());
+			DataStore.get(p.getUUID()).companion = true;
+		}
+		return h;
+	}
+
+	/** Whether this player's companion was told to stay (and waits somewhere instead of following). */
+	public static boolean waiting(PlayerData d) {
+		return d.companion && d.companionStay != null;
+	}
+
 	/** An empty hand: the Hollowling barters, if the tribe tolerates the player; otherwise it giggles and runs. */
 	private static InteractionResult barter(ServerPlayer p, Hollowling h, Little st) {
 		if (st.bold || st.mode == Mode.FLEE || st.mode == Mode.CARRY) {
@@ -1090,6 +1222,10 @@ public final class HollowService {
 		if (!d.companion || p.tickCount < 60) {
 			return;
 		}
+		if (d.companionStay != null) {
+			waitingCompanion(p, d);
+			return;
+		}
 		UUID id = COMPANIONS.get(p.getUUID());
 		Entity e = null;
 		if (id != null) {
@@ -1120,17 +1256,90 @@ public final class HollowService {
 		}
 	}
 
+	/**
+	 * A companion told to stay: taken up again when its player is in its world and it stands loaded there; made again at
+	 * its spot only if it is gone from there while its player stands by (it was not slain: that ends the bond).
+	 */
+	private static void waitingCompanion(ServerPlayer p, PlayerData d) {
+		ServerLevel level = (ServerLevel) p.level();
+		if (!level.dimension().identifier().toString().equals(d.companionStay)) {
+			return;
+		}
+		UUID id;
+		try {
+			id = UUID.fromString(d.companionStayId);
+		} catch (IllegalArgumentException | NullPointerException e) {
+			d.companionStay = null;
+			d.companionStayId = null;
+			DataStore.markDirty();
+			return;
+		}
+		Entity e = level.getEntity(id);
+		if (e instanceof Hollowling h && h.isAlive()) {
+			if (!LITTLES.containsKey(id)) {
+				Little st = new Little();
+				st.mode = Mode.COMPANION;
+				st.owner = p.getUUID();
+				st.staying = true;
+				LITTLES.put(id, st);
+				LEVELS.put(id, level);
+				COMPANIONS.put(p.getUUID(), id);
+			}
+			return;
+		}
+		BlockPos spot = BlockPos.containing(d.companionStayX, d.companionStayY, d.companionStayZ);
+		if (p.distanceToSqr(d.companionStayX, d.companionStayY, d.companionStayZ) < 12 * 12 && level.isPositionEntityTicking(spot)) {
+			Little st = new Little();
+			st.mode = Mode.COMPANION;
+			st.owner = p.getUUID();
+			st.staying = true;
+			Hollowling h2 = spawnLittle(level, spot, st);
+			if (h2 != null) {
+				toughen(h2);
+				COMPANIONS.put(p.getUUID(), h2.getUUID());
+				stayingIds().remove(d.companionStayId);
+				d.companionStayId = h2.getUUID().toString();
+				stayingIds().add(d.companionStayId);
+				DataStore.markDirty();
+			}
+		}
+	}
+
 	private static void gift(ServerPlayer p, Hollowling h) {
 		ServerLevel level = (ServerLevel) h.level();
 		for (ItemStack s : Loot.roll(level, Loot.HOLLOWLING_GIFT, h.position())) {
 			h.spawnAtLocation(level, s);
 		}
-		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_bond", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 0.7f, 1.3f);
+		WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_bond", "neutral", h.getX(), h.getY() + 0.8, h.getZ(),
+				companionVolume(), 1.3f);
 	}
 
-	/** Follows its friend, and chitters towards danger they have not seen. */
+	/**
+	 * Follows its friend, and warns of danger they have not seen: it looks at it and a mote hangs over it, and it chitters
+	 * aloud now and then (no more than every {@code companion_warn_seconds}).
+	 */
 	private static void companion(Hollowling h, Little st, List<Runnable> later) {
 		ServerPlayer owner = WorldFx.server().getPlayerList().getPlayer(st.owner);
+		if (st.staying) {
+			// Told to stay: it crouches where it was left and waits (its player away, gone home, or offline), and keeps
+			// its spot written down should something push it
+			h.getNavigation().stop();
+			h.setLurkerPose(Lurker.POSE_STALK);
+			if (owner != null && owner.level() == h.level() && h.distanceToSqr(owner) < 8 * 8) {
+				h.getLookControl().setLookAt(owner, 20, 20);
+			}
+			if (st.ticks % 100 == 0) {
+				PlayerData d = DataStore.get(st.owner);
+				if (h.getUUID().toString().equals(d.companionStayId)
+						&& h.distanceToSqr(d.companionStayX, d.companionStayY, d.companionStayZ) > 1) {
+					d.companionStayX = h.getX();
+					d.companionStayY = h.getY();
+					d.companionStayZ = h.getZ();
+					DataStore.markDirty();
+				}
+			}
+			return;
+		}
 		if (owner == null || owner.level() != h.level()) {
 			later.add(() -> {
 				LITTLES.remove(h.getUUID());
@@ -1158,7 +1367,12 @@ public final class HollowService {
 			for (Monster m : h.level().getEntitiesOfClass(Monster.class, box, m -> m.isAlive() && !(m instanceof Lurker))) {
 				if (!seen(owner, m, 0.6)) {
 					h.getLookControl().setLookAt(m, 30, 30);
-					WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_ambient", "neutral", h.getX(), h.getY() + 0.8, h.getZ(), 1f, 1.4f);
+					int every = Math.max(0, Config.COMPANION_WARN_SECONDS) * 20;
+					if (every > 0 && st.ticks - st.warnedAt >= every) {
+						st.warnedAt = st.ticks;
+						WorldFx.soundIn(h.level().dimension().identifier().toString(), "extremedimensions:hollowling_ambient", "neutral", h.getX(), h.getY() + 0.8,
+								h.getZ(), companionVolume(), 1.4f);
+					}
 					WorldFx.particleIn(h.level().dimension().identifier().toString(), "extremedimensions:soul_mote",
 							m.getX(), m.getY() + m.getBbHeight() + 0.3, m.getZ(), 0.1, 0.1, 0.1, 0.0, 3);
 					break;
@@ -1174,8 +1388,9 @@ public final class HollowService {
 			return false;
 		}
 		Entity e = p.level() instanceof ServerLevel sl ? sl.getEntity(id) : null;
-		if (e instanceof Hollowling h && h.distanceToSqr(p) < 16 * 16) {
-			giggle(h);
+		Little st = e == null ? null : LITTLES.get(e.getUUID());
+		if (e instanceof Hollowling h && (st == null || !st.staying) && h.distanceToSqr(p) < 16 * 16) {
+			giggle(h, companionVolume());
 			TribeMoves.follow(h, p, 1.5);
 			return true;
 		}
@@ -1216,6 +1431,17 @@ public final class HollowService {
 				return false;
 			}
 		}
+		if (STIRS.containsKey(h.key())) {
+			// She already stirs beneath it
+			return false;
+		}
+		if (forceMatriarch) {
+			return com.extremedimensions.elder.MatriarchService.summon(p, h.key(), new BlockPos(h.x, h.y, h.z));
+		}
+		if (matriarchFor(DataStore.get(p.getUUID()))) {
+			// The mother of the hollows comes instead of a Keeper: first she stirs, and whoever is near is told
+			return stir(h, p);
+		}
 		ServerLevel level = (ServerLevel) p.level();
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		double behind = Math.toRadians(p.getYRot()) + Math.PI / 2;
@@ -1231,12 +1457,163 @@ public final class HollowService {
 		if (spot == null) {
 			spot = p.blockPosition().offset(6, 0, 6);
 		}
-		if (forceMatriarch || matriarchFor(DataStore.get(p.getUUID()))) {
-			// The mother of the hollows comes instead of a Keeper
-			return com.extremedimensions.elder.MatriarchService.summon(p, h.key(), new BlockPos(h.x, h.y, h.z));
-		}
 		spawnKeeper(p, level, spot, h.key());
 		return true;
+	}
+
+	// ------------------------------------------------------------------ the Matriarch stirs (3.28)
+
+	/**
+	 * The Matriarch stirs beneath a nest: for {@link Config#MATRIARCH_WAKE_SECONDS} a bar counts down and everyone near
+	 * is told. Whoever has earned her and is still within {@link Config#MATRIARCH_CALM_RANGE} of the nest when it runs out
+	 * is the one she rises for (the one who woke her first of all); with all of them gone that far, she sinks back to
+	 * sleep, and the next nest they wake calls her again. With no wind-up she rises at once. Returns whether she stirs
+	 * (or rose).
+	 */
+	public static boolean stir(Hoard h, ServerPlayer p) {
+		if (STIRS.containsKey(h.key()) || com.extremedimensions.elder.MatriarchService.hunting(p)) {
+			return false;
+		}
+		BlockPos home = new BlockPos(h.x, h.y, h.z);
+		if (Config.MATRIARCH_WAKE_SECONDS <= 0) {
+			return com.extremedimensions.elder.MatriarchService.summon(p, h.key(), home);
+		}
+		ServerLevel level = (ServerLevel) p.level();
+		Stir st = new Stir();
+		st.hoard = h;
+		st.waker = p.getUUID();
+		st.level = level;
+		st.total = Config.MATRIARCH_WAKE_SECONDS * 20;
+		st.left = st.total;
+		st.bar = new ServerBossEvent(UUID.randomUUID(), Component.translatable("gui.extremedimensions.matriarch.stirs"), BossEvent.BossBarColor.PURPLE,
+				BossEvent.BossBarOverlay.PROGRESS);
+		STIRS.put(h.key(), st);
+		String dim = level.dimension().identifier().toString();
+		double cx = h.x + 0.5, cz = h.z + 0.5;
+		WorldFx.soundIn(dim, "extremedimensions:elder.matriarch.roar", "hostile", cx, h.y, cz, 2.5f, 0.55f);
+		WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", cx, h.y, cz, 3f, 0.4f);
+		WorldFx.particleIn(dim, "minecraft:witch", cx, h.y + 1, cz, 1.2, 0.6, 1.2, 0.05, 40);
+		for (ServerPlayer q : level.players()) {
+			if (!q.isSpectator() && h.distSq(q.getX(), q.getY(), q.getZ()) < 64 * 64) {
+				q.sendSystemMessage(Component.translatable("gui.extremedimensions.matriarch.stirs_chat", Config.MATRIARCH_WAKE_SECONDS,
+						Config.MATRIARCH_CALM_RANGE).withStyle(net.minecraft.ChatFormatting.DARK_PURPLE));
+				st.bar.addPlayer(q);
+			}
+		}
+		return true;
+	}
+
+	/** Whether the Matriarch stirs beneath this nest (her wind-up is running). */
+	public static boolean stirring(String hoard) {
+		return STIRS.containsKey(hoard);
+	}
+
+	/** Who the stirring Matriarch rises for: the one who woke her if still near, else the nearest near who earned her. */
+	private static ServerPlayer stirTarget(Stir st) {
+		Hoard h = st.hoard;
+		double calm = (double) Config.MATRIARCH_CALM_RANGE * Config.MATRIARCH_CALM_RANGE, best = Double.MAX_VALUE;
+		ServerPlayer found = null;
+		for (ServerPlayer q : st.level.players()) {
+			if (q.isSpectator() || q.isCreative() || !q.isAlive()) {
+				continue;
+			}
+			double d2 = h.distSq(q.getX(), q.getY(), q.getZ());
+			if (d2 >= calm || !matriarchFor(DataStore.get(q.getUUID()))) {
+				continue;
+			}
+			if (q.getUUID().equals(st.waker)) {
+				return q;
+			}
+			if (d2 < best) {
+				best = d2;
+				found = q;
+			}
+		}
+		return found;
+	}
+
+	/** Counts each stir down: the bar, the countdown, the rumbling; she rises at the end, or settles with nobody near. */
+	private static void driveStirs(MinecraftServer s) {
+		if (STIRS.isEmpty()) {
+			return;
+		}
+		for (Iterator<Map.Entry<String, Stir>> it = STIRS.entrySet().iterator(); it.hasNext();) {
+			Stir st = it.next().getValue();
+			Hoard h = st.hoard;
+			st.left--;
+			ServerPlayer target = stirTarget(st);
+			String dim = st.level.dimension().identifier().toString();
+			double cx = h.x + 0.5, cz = h.z + 0.5;
+			if (target == null) {
+				// Everyone who earned her went far enough: the ground falls still
+				it.remove();
+				for (ServerPlayer q : st.bar.getPlayers()) {
+					q.sendSystemMessage(Component.translatable("gui.extremedimensions.matriarch.settles").withStyle(net.minecraft.ChatFormatting.GRAY));
+				}
+				st.bar.removeAllPlayers();
+				WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.place", "hostile", cx, h.y, cz, 1.5f, 0.5f);
+				continue;
+			}
+			if (st.left <= 0) {
+				it.remove();
+				st.bar.removeAllPlayers();
+				com.extremedimensions.elder.MatriarchService.summon(target, h.key(), new BlockPos(h.x, h.y, h.z));
+				continue;
+			}
+			st.bar.setProgress(Math.max(0f, st.left / (float) st.total));
+			if (st.left % 20 == 0) {
+				int secs = (st.left + 19) / 20;
+				double calm = (double) Config.MATRIARCH_CALM_RANGE * Config.MATRIARCH_CALM_RANGE;
+				for (ServerPlayer q : st.level.players()) {
+					double d2 = h.distSq(q.getX(), q.getY(), q.getZ());
+					boolean near = !q.isSpectator() && d2 < 64 * 64;
+					if (near && !st.bar.getPlayers().contains(q)) {
+						st.bar.addPlayer(q);
+					} else if (!near && st.bar.getPlayers().contains(q)) {
+						st.bar.removePlayer(q);
+					}
+					if (near && d2 < calm) {
+						q.sendSystemMessage(Component.translatable("gui.extremedimensions.matriarch.stirs_bar", secs, Config.MATRIARCH_CALM_RANGE)
+								.withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE), true);
+					}
+				}
+				WorldFx.particleIn(dim, "minecraft:witch", cx, h.y + 1, cz, 1.5, 0.5, 1.5, 0.05, 24);
+				WorldFx.particleIn(dim, "extremedimensions:lurker_wisp", cx, h.y + 1.6, cz, 0.6, 1.4, 0.6, 0.0, 6);
+			}
+			if (st.left % 40 == 0) {
+				// The ground groans, louder as she nears the surface
+				float louder = 1f + 2f * (1f - st.left / (float) st.total);
+				WorldFx.soundIn(dim, "minecraft:block.rooted_dirt.break", "hostile", cx, h.y, cz, louder, 0.4f);
+				WorldFx.soundIn(dim, "minecraft:entity.warden.heartbeat", "hostile", cx, h.y, cz, louder, 0.6f);
+			}
+		}
+	}
+
+	/** Whether this player is warned of the Matriarch beneath this nest: they earned her and waking it would call her. */
+	private static boolean watched(Hoard h, ServerPlayer p, PlayerData d) {
+		if (h.keeperSlain || Config.KEEPER_ENABLED == 0 || p.isCreative() || !matriarchFor(d) || STIRS.containsKey(h.key()) || keeperAwake(h.key())
+				|| Rules.peaceful(p.level())) {
+			return false;
+		}
+		// The tribe's own nest for a trusted friend is given back, not guarded
+		return !(p.getStringUUID().equals(h.owner) && Standing.atLeast(p, Standing.Level.TRUSTED));
+	}
+
+	/** Purple smoke over the nest, and (on coming near a new one, and about once a minute) a word of what sleeps there. */
+	private static void warn(MinecraftServer s, Hoard h, ServerPlayer p) {
+		WorldFx.particleIn(Dims.fullIdOf(h.dim), "minecraft:witch", h.x + 0.5, h.y + 1.2, h.z + 0.5, 0.35, 0.6, 0.35, 0.02, 6);
+		long now = s.getTickCount();
+		Long at = WARNED_AT.get(p.getUUID());
+		boolean fresh = !h.key().equals(WARNED_FOR.get(p.getUUID()));
+		if (fresh || at == null || now - at >= 1200 || now < at) {
+			WARNED_AT.put(p.getUUID(), now);
+			WARNED_FOR.put(p.getUUID(), h.key());
+			Component c = Component.translatable("gui.extremedimensions.matriarch.watched").withStyle(net.minecraft.ChatFormatting.LIGHT_PURPLE);
+			if (fresh) {
+				p.sendSystemMessage(c);
+			}
+			p.sendSystemMessage(c, true);
+		}
 	}
 
 	/** Whether the Keeper of this hoard is awake and hunting. */
@@ -1482,6 +1859,7 @@ public final class HollowService {
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
 		String dim = level.dimension().identifier().toString();
 		double base = rnd.nextDouble() * Math.PI * 2;
+		int[] curses = {0};
 		for (int i = 0; i < count; i++) {
 			BlockPos spot = null;
 			for (int t = 0; t < 6 && spot == null; t++) {
@@ -1502,6 +1880,7 @@ public final class HollowService {
 			st.prey = p.getUUID();
 			st.until = Math.max(5, seconds) * 20;
 			st.pause = 20 + rnd.nextInt(20);
+			st.swarmCurses = curses;
 			Hollowling h = spawnLittle(level, spot, st);
 			if (h != null) {
 				h.setLurkerMood(LurkerBody.MOOD_HUNTER);
@@ -1510,6 +1889,23 @@ public final class HollowService {
 			}
 		}
 		return out;
+	}
+
+	/**
+	 * A bite of a swarm's young may leave a curse as well (as many as one swarm may leave): from the Extreme set by the
+	 * Lurkers' chance.
+	 */
+	private static void swarmCurse(Hollowling h, Little st, ServerPlayer p) {
+		if (st.swarmCurses == null || st.swarmCurses[0] >= Math.max(0, Config.HOLLOWLING_SWARM_CURSES_MAX)
+				|| ThreadLocalRandom.current().nextDouble() >= Config.HOLLOWLING_SWARM_CURSE_CHANCE) {
+			return;
+		}
+		boolean overworld = Dims.OVERWORLD.equals(Dims.of(p)) && DataStore.overworldPenalties();
+		if (com.extremedimensions.penalty.PenaltyService.curse(p, overworld, Config.LURKER_CURSE_EXTREME_CHANCE, com.extremedimensions.penalty.CurseLog.Source.SWARM) != null) {
+			st.swarmCurses[0]++;
+			WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.06, 20);
+			WorldFx.soundFor(p, "extremedimensions:hollowling_giggle", "hostile", h.getX(), h.getY() + 0.8, h.getZ(), 1.0f, 0.45f);
+		}
 	}
 
 	/** One of a swarm: it runs at its prey and bites, a short wind-up (a crouch, a hiss) before each bite, until the swarm is over. */
@@ -1529,6 +1925,7 @@ public final class HollowService {
 				if (d2 < 2.4 * 2.4 && h.hasLineOfSight(p) && h.level() instanceof ServerLevel level
 						&& p.hurtServer(level, h.damageSources().mobAttack(h), (float) Math.max(0, Config.LURKER_SWARM_BITE))) {
 					WorldFx.soundIn(dim, "minecraft:entity.fox.bite", "hostile", p.getX(), p.getY() + 1, p.getZ(), 0.9f, 0.7f);
+					swarmCurse(h, st, p);
 				}
 				st.pause = 22;
 				h.setLurkerPose(Lurker.POSE_RUN);
@@ -1589,7 +1986,7 @@ public final class HollowService {
 		String dim = level.dimension().identifier().toString();
 		for (int i = 0; i < count; i++) {
 			BlockPos spot = null;
-			for (int t = 0; t < 12 && spot == null; t++) {
+			for (int t = 0; t < 32 && spot == null; t++) {
 				BlockPos c = from.offset(rnd.nextInt(-3, 4), rnd.nextInt(-1, 2), rnd.nextInt(-3, 4));
 				if (Loaded.ready(level, c) && TribeMoves.roomFor(level, c, 0.6, 1.1)) {
 					spot = c;
@@ -1664,6 +2061,23 @@ public final class HollowService {
 			n += (st.mode == Mode.FETCH || st.mode == Mode.ATTACK) && prey.equals(st.prey) && st.owner != null ? 1 : 0;
 		}
 		return n;
+	}
+
+	/** For the tests: the curses the bites of a swarm's young on this prey have left (the most of any swarm on them). */
+	public static int swarmCurses(UUID prey) {
+		int n = 0;
+		for (Little st : LITTLES.values()) {
+			if (st.swarmCurses != null && prey.equals(st.prey)) {
+				n = Math.max(n, st.swarmCurses[0]);
+			}
+		}
+		return n;
+	}
+
+	/** For the tests: whether this young one is biting at this prey (one of a swarm, or sent to bite). */
+	public static boolean bitingAt(Hollowling h, UUID prey) {
+		Little st = LITTLES.get(h.getUUID());
+		return st != null && st.mode == Mode.ATTACK && prey.equals(st.prey);
 	}
 
 	/** For the tests: how many young of the tribe are biting at a swarm's prey right now. */
@@ -1757,6 +2171,11 @@ public final class HollowService {
 			if (p.distanceToSqr(k) < 48 * 48) {
 				PlayerData d = DataStore.get(p.getUUID());
 				d.keepersSlain++;
+				if (Config.MATRIARCH_AFTER_KEEPERS > 0 && !d.matriarchSlain && d.keepersSlain == Config.MATRIARCH_AFTER_KEEPERS) {
+					// Told plainly, so the next nest is woken where they choose (3.28)
+					p.sendSystemMessage(Component.translatable("gui.extremedimensions.matriarch.earned", Config.MATRIARCH_AFTER_KEEPERS)
+							.withStyle(net.minecraft.ChatFormatting.DARK_PURPLE));
+				}
 				Advancements.grant(p, Advancements.KEEPER_SLAIN);
 				Journal.unlock(p, d, JournalEntry.KEEPER);
 			}

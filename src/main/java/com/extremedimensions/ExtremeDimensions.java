@@ -86,6 +86,22 @@ public class ExtremeDimensions implements ModInitializer {
 						Journal.open(context.player(), DataStore.get(context.player().getUUID()));
 					}
 				});
+		// A first-meeting hint shown on the player's screen: only now is it told (3.55.0)
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.HintShownPayload.TYPE, ModPackets.HintShownPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.HintShownPayload.TYPE,
+				(payload, context) -> {
+					if (Requests.allow(context.player(), "hint_shown", 8)) {
+						com.extremedimensions.guide.Hints.shown(context.player(), payload.hint());
+					}
+				});
+		// The anchor status screen on a key of its own (3.55.0), as a sneak and an empty hand on an anchor open it
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestStatusPayload.TYPE, ModPackets.RequestStatusPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestStatusPayload.TYPE,
+				(payload, context) -> {
+					if (Requests.allow(context.player(), "status", 4)) {
+						com.extremedimensions.anchor.AnchorService.status(context.player());
+					}
+				});
 
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.SettingsPayload.TYPE, ModPackets.SettingsPayload.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestSettingsPayload.TYPE, ModPackets.RequestSettingsPayload.CODEC);
@@ -134,6 +150,12 @@ public class ExtremeDimensions implements ModInitializer {
 		});
 
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossMusicPayload.TYPE, ModPackets.BossMusicPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.DangerPayload.TYPE, ModPackets.DangerPayload.CODEC);
+		// What a Collapse came to, for the card shown once the player is home
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.RecapPayload.TYPE, ModPackets.RecapPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.SquallPayload.TYPE, ModPackets.SquallPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.MotionPayload.TYPE, ModPackets.MotionPayload.CODEC);
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BindingPayload.TYPE, ModPackets.BindingPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.BossFxPayload.TYPE, ModPackets.BossFxPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.AttackFxPayload.TYPE, ModPackets.AttackFxPayload.CODEC);
 		// Co-op: an ally's curses to carry one of, the offer to carry it, and anchors opened to allies
@@ -148,6 +170,13 @@ public class ExtremeDimensions implements ModInitializer {
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.ShareAnchorsPayload.TYPE, (payload, context) -> {
 			if (Requests.allow(context.player(), "share", 4)) {
 				com.extremedimensions.coop.Allies.share(context.player(), payload.on());
+			}
+		});
+		// When a player wants the low-time warnings in words (3.55.0): their own option, told by their client
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.WarnAtPayload.TYPE, ModPackets.WarnAtPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.WarnAtPayload.TYPE, (payload, context) -> {
+			if (Requests.allow(context.player(), "warn_at", 4)) {
+				DataStore.get(context.player().getUUID()).warnAt = Math.max(0, Math.min(2, payload.mode()));
 			}
 		});
 		// Clans: a Blood Cord held out from the Curses screen to a player standing near
@@ -166,11 +195,27 @@ public class ExtremeDimensions implements ModInitializer {
 				com.extremedimensions.tribe.BarterService.onTrade(context.player(), payload.young(), payload.ware());
 			}
 		});
+		// Where the player's anchors stand, for the map mods' waypoints
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.AnchorsPayload.TYPE, ModPackets.AnchorsPayload.CODEC);
 		PayloadTypeRegistry.clientboundPlay().register(ModPackets.TrialsPayload.TYPE, ModPackets.TrialsPayload.CODEC);
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestTrialsPayload.TYPE, ModPackets.RequestTrialsPayload.CODEC);
 		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestTrialsPayload.TYPE, (payload, context) -> {
 			if (Requests.allow(context.player(), "trials", 4)) {
 				ServerPlayNetworking.send(context.player(), new ModPackets.TrialsPayload(com.extremedimensions.trial.TrialService.data(context.player())));
+			}
+		});
+		// The operators' Players screen (3.27): every player, their curses laid on or lifted off
+		PayloadTypeRegistry.clientboundPlay().register(ModPackets.AdminPayload.TYPE, ModPackets.AdminPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.RequestAdminPayload.TYPE, ModPackets.RequestAdminPayload.CODEC);
+		PayloadTypeRegistry.serverboundPlay().register(ModPackets.AdminActionPayload.TYPE, ModPackets.AdminActionPayload.CODEC);
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.RequestAdminPayload.TYPE, (payload, context) -> {
+			if (Requests.allow(context.player(), "admin", 8)) {
+				com.extremedimensions.admin.AdminService.send(context.player(), payload.selected(), payload.open());
+			}
+		});
+		ServerPlayNetworking.registerGlobalReceiver(ModPackets.AdminActionPayload.TYPE, (payload, context) -> {
+			if (Requests.allow(context.player(), "admin_action", 12)) {
+				com.extremedimensions.admin.AdminService.act(context.player(), payload.target(), payload.action(), payload.curse(), payload.silent());
 			}
 		});
 		PayloadTypeRegistry.serverboundPlay().register(ModPackets.ArmTrialPayload.TYPE, ModPackets.ArmTrialPayload.CODEC);

@@ -40,11 +40,16 @@ public final class AttackFx {
 
 	// The server's kinds (see the server's AttackFx and ElderStrikes)
 	private static final int K_SIGIL = 1, K_IMPACT = 2, K_WAVE = 3, K_LINE = 4, K_WISP = 5, K_BURST = 6, K_RING = 7;
-	private static final int S_LANTERN = 1, S_ROOTS = 2, S_SLAM = 3, S_NEEDLE = 4, S_SPEAR = 5, S_SOULFALL = 6;
+	private static final int S_LANTERN = 1, S_ROOTS = 2, S_SLAM = 3, S_NEEDLE = 4, S_SPEAR = 5, S_SOULFALL = 6, S_SNARE = 7;
 	private static final int I_WISP = 20, I_BOMB = 21, I_SCORCH = 22, I_CUT = 23, I_BLAST = 24, I_CHARGE = 25;
 
-	/** Each Elder's light: the Matriarch violet, the Ferryman teal, the Last Weaver gold-white. */
-	private static final float[][] GLOW = {{0.82F, 0.52F, 1.0F}, {0.38F, 1.0F, 0.88F}, {1.0F, 0.88F, 0.62F}};
+	/**
+	 * Each Elder's light: the Matriarch violet, the Ferryman teal, the Last Weaver gold-white, the Pale Mason a deep void
+	 * violet; and the Starved One's soul fire, a paler blue (its matter is the Ferryman's soul fire and ash, with no obols).
+	 */
+	private static final float[][] GLOW = {{0.82F, 0.52F, 1.0F}, {0.38F, 1.0F, 0.88F}, {1.0F, 0.88F, 0.62F}, {0.66F, 0.36F, 1.0F}, {0.5F, 0.85F, 1.0F}};
+	/** The Starved One, in the server's effects. */
+	private static final int STARVED = 4;
 
 	private static final Map<Integer, AttackFxParticle> WISPS = new HashMap<>();
 	private static float detail = 1;
@@ -67,9 +72,10 @@ public final class AttackFx {
 		if (level == null || SPRITES[0] == null) {
 			return;
 		}
-		detail = payload.detail();
+		// the server's detail, and this computer's own share of it (Display: Effects)
+		detail = payload.detail() * (float) com.extremedimensions.client.options.ClientOptions.effects().factor;
 		for (Fx f : payload.fx()) {
-			int e = Mth.clamp(f.elder(), 0, 2);
+			int e = Mth.clamp(f.elder(), 0, GLOW.length - 1);
 			switch (f.kind()) {
 				case K_SIGIL -> sigil(level, e, f);
 				case K_IMPACT -> impact(level, e, f.variant(), f.x(), f.y(), f.z(), f.size());
@@ -107,6 +113,11 @@ public final class AttackFx {
 
 	private static int n(int base) {
 		return Math.max(1, Math.round(base * detail));
+	}
+
+	/** Which of the sigil and wave sprites an Elder's are: the Pale Mason's (3) are the Last Weaver's runes, in his own violet. */
+	private static int frame(int elder) {
+		return Math.min(elder, 2);
 	}
 
 	private static void tint(AttackFxParticle p, int elder, float k) {
@@ -246,6 +257,10 @@ public final class AttackFx {
 				ash(level, x, y, z, spread, count);
 				coins(level, x, y, z, spread, Math.max(1, count / 3));
 			}
+			case STARVED -> {
+				flames(level, 1, x, y, z, spread, count, 0.45F);
+				ash(level, x, y, z, spread, count);
+			}
 			default -> {
 				shards(level, 2, x, y, z, spread, count);
 				glints(level, 2, x, y, z, spread, count);
@@ -285,7 +300,7 @@ public final class AttackFx {
 		float radius = Math.max(0.8F, f.size());
 		int ticks = Math.max(4, f.ticks());
 		double x = f.x(), y = f.y(), z = f.z();
-		AttackFxParticle s = decal(level, SIGIL, elder, x, y, z, radius * 1.35F, ticks + 5);
+		AttackFxParticle s = decal(level, SIGIL, frame(elder), x, y, z, radius * 1.35F, ticks + 5);
 		s.size1 = radius * 0.95F;
 		s.growTicks = ticks;
 		s.growPower = 0.7F;
@@ -300,7 +315,7 @@ public final class AttackFx {
 			};
 		}
 		add(s);
-		AttackFxParticle edge = decal(level, WAVE, elder, x, y + 0.01, z, radius / 0.9F, ticks + 2);
+		AttackFxParticle edge = decal(level, WAVE, frame(elder), x, y + 0.01, z, radius / 0.9F, ticks + 2);
 		edge.spin = -s.spin * 0.5F;
 		edge.fadeIn = 6;
 		edge.fadeOut = 3;
@@ -312,7 +327,7 @@ public final class AttackFx {
 				double mx = x + Math.cos(a) * radius, mz = z + Math.sin(a) * radius;
 				switch (elder) {
 					case 0 -> flames(level, 0, mx, y, mz, 0.3F, 1, 0.22F);
-					case 1 -> flames(level, 1, mx, y, mz, 0.3F, 1, 0.28F);
+					case 1, STARVED -> flames(level, 1, mx, y, mz, 0.3F, 1, 0.28F);
 					default -> glints(level, 2, mx, y, mz, 0.3F, 1);
 				}
 			}
@@ -427,6 +442,13 @@ public final class AttackFx {
 				glints(level, 2, x, y, z, r * 1.3F, n(12));
 				wave(level, 2, true, x, y, z, 0.5F, 0.9F, r * 2.2F);
 			}
+			case S_SNARE -> {
+				// a knot of light pulled tight on the floor
+				flash(level, 2, x, y + 0.4, z, r * 0.6F);
+				crack(level, 2, x, y, z, r, 90);
+				glints(level, 2, x, y, z, r, n(10));
+				shards(level, 2, x, y, z, r * 0.6F, n(3));
+			}
 			case S_SOULFALL -> {
 				flash(level, 1, x, y + 0.8, z, r);
 				crack(level, 1, x, y, z, r, 80);
@@ -478,7 +500,7 @@ public final class AttackFx {
 		float sp = Math.max(0.05F, speed);
 		int life = Math.max(2, Mth.ceil((max - start) / sp));
 		// the band of the ring sprite sits at nine tenths of its size
-		AttackFxParticle p = decal(level, WAVE, elder, x, y + (faint ? 0.02 : 0.05), z, Math.max(0.05F, start / 0.9F), life + 1);
+		AttackFxParticle p = decal(level, WAVE, frame(elder), x, y + (faint ? 0.02 : 0.05), z, Math.max(0.05F, start / 0.9F), life + 1);
 		p.size1 = (max + sp) / 0.9F;
 		p.growTicks = life + 1;
 		p.fadeIn = 1;
@@ -502,7 +524,7 @@ public final class AttackFx {
 								leaves(level, mx, y, mz, 0.6F, 1);
 							}
 						}
-						case 1 -> flames(level, 1, mx, y, mz, 0.6F, 1, 0.45F);
+						case 1, STARVED -> flames(level, 1, mx, y, mz, 0.6F, 1, 0.45F);
 						default -> glints(level, 2, mx, y, mz, 0.6F, 1);
 					}
 				}
@@ -590,13 +612,13 @@ public final class AttackFx {
 
 	/** A path of small sigils on the ground along a line, kindling one after another from its start. */
 	private static void path(ClientLevel level, Fx f, double len) {
-		int e = Mth.clamp(f.elder(), 0, 2);
+		int e = Mth.clamp(f.elder(), 0, GLOW.length - 1);
 		float step = 2.6F;
 		int count = Math.min(40, Mth.ceil(len / step));
 		int life = Math.max(4, f.ticks());
 		for (int i = 0; i < count; i++) {
 			double k = Math.min(1, (i * step + step / 2) / len);
-			AttackFxParticle p = decal(level, SIGIL, e, f.x() + (f.x2() - f.x()) * k, f.y() + (f.y2() - f.y()) * k + 0.01 * (i % 3),
+			AttackFxParticle p = decal(level, SIGIL, frame(e), f.x() + (f.x2() - f.x()) * k, f.y() + (f.y2() - f.y()) * k + 0.01 * (i % 3),
 					f.z() + (f.z2() - f.z()) * k, 1.15F, life + 2);
 			p.fadeIn = 1 + i / 2;
 			p.fadeOut = 3;
@@ -650,7 +672,7 @@ public final class AttackFx {
 
 	/** A ring of the Elder's sigil laid round a place a while (a cage of chains, a circle of thorns). */
 	private static void ring(ClientLevel level, int elder, double x, double y, double z, float radius, int ticks) {
-		AttackFxParticle p = decal(level, WAVE, elder, x, y + 0.03, z, radius / 0.9F, ticks);
+		AttackFxParticle p = decal(level, WAVE, frame(elder), x, y + 0.03, z, radius / 0.9F, ticks);
 		p.spin = elder == 1 ? -0.02F : 0.02F;
 		p.fadeIn = 6;
 		p.fadeOut = 8;
@@ -661,13 +683,13 @@ public final class AttackFx {
 				double mx = x + Math.cos(a) * radius, mz = z + Math.sin(a) * radius;
 				switch (elder) {
 					case 0 -> flames(level, 0, mx, y, mz, 0.3F, 1, 0.3F);
-					case 1 -> flames(level, 1, mx, y, mz, 0.3F, 1, 0.4F);
+					case 1, STARVED -> flames(level, 1, mx, y, mz, 0.3F, 1, 0.4F);
 					default -> glints(level, 2, mx, y, mz, 0.3F, 1);
 				}
 			}
 		};
 		add(p);
-		AttackFxParticle inner = decal(level, SIGIL, elder, x, y + 0.02, z, radius * 0.7F, ticks);
+		AttackFxParticle inner = decal(level, SIGIL, frame(elder), x, y + 0.02, z, radius * 0.7F, ticks);
 		inner.spin = -p.spin;
 		inner.fadeIn = 8;
 		inner.fadeOut = 8;

@@ -21,6 +21,7 @@ import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
@@ -52,6 +53,10 @@ public final class TetherService {
 		if (d.inRun || key.equals(d.tetherAnchor)) {
 			return InteractionResult.SUCCESS;
 		}
+		if (com.extremedimensions.penalty.Wound.refusesBinding(p, d)) {
+			// A wound too fresh: no Tether holds to an anchor yet (and the one in hand stays there)
+			return InteractionResult.SUCCESS;
+		}
 		// Already bound elsewhere? That tether comes back.
 		clear(p, d, d.tetherAnchor != null);
 		d.tetherTier = stack.is(ModItems.SEAM_WOVEN_TETHER) ? 2 : stack.is(ModItems.SOUL_WOVEN_TETHER) ? 1 : 0;
@@ -79,9 +84,24 @@ public final class TetherService {
 
 	/** Empty hand on your own anchor: untie and get the Tether back. */
 	public static void untie(ServerPlayer p, PlayerData d) {
-		clear(p, d, true);
+		comeBack(p, d, "untied");
 		WorldFx.sound(p, "minecraft:entity.leash_knot.break", 1.0f, 0.8f);
 		Sync.state(p, d);
+	}
+
+	/**
+	 * The Tether comes off its anchor and back to the player, and the action bar says so (3.55.0): why ({@code why}:
+	 * untied, walked too far, or the anchor gone), and that it is back in the pack. It used to come back with only a
+	 * sound. With a full pack the chat already says it waits for room (see {@link #owe}): then the action bar only says
+	 * why it came off, and nothing at all for a Tether untied by hand.
+	 */
+	private static void comeBack(ServerPlayer p, PlayerData d, String why) {
+		int owed = d.tetherOwed == null ? 0 : d.tetherOwed.size();
+		clear(p, d, true);
+		boolean kept = d.tetherOwed != null && d.tetherOwed.size() > owed;
+		if (!kept || !"untied".equals(why)) {
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.tether." + why + (kept ? "_full" : "")), true);
+		}
 	}
 
 	/** Per-tick update: snapping in the Overworld and laying new segments. Returns true if the HUD must sync. */
@@ -94,7 +114,7 @@ public final class TetherService {
 			Anchor anchor = DataStore.anchors().get(d.tetherAnchor);
 			if (anchor == null || tooFar(p, anchor)) {
 				WorldFx.particles(p, "minecraft:crit", 0.6, 0.3, 0.3, 14);
-				clear(p, d, true);
+				comeBack(p, d, anchor == null ? "anchor_gone" : "slipped");
 				WorldFx.sound(p, "minecraft:entity.leash_knot.break", 1.0f, 0.9f);
 				WorldFx.sound(p, "minecraft:block.chain.break", 1.0f, 0.7f);
 				return true;
@@ -143,7 +163,11 @@ public final class TetherService {
 			ItemStack back = new ItemStack(tierItem(d.tetherTier));
 			// it comes back with the enchantments it was tied with
 			enchant(back, d.tetherCharms, p.level().registryAccess());
-			WorldFx.give(p, back);
+			if (!p.getInventory().add(back)) {
+				// A full pack: it is kept for them until there is room, never dropped (where they stand, home through a
+				// portal, it would lie in the portal and be carried back beyond)
+				owe(p, d, d.tetherTier, d.tetherCharms);
+			}
 		}
 		d.tetherAnchor = null;
 		d.hasRopeEnd = false;
@@ -151,6 +175,53 @@ public final class TetherService {
 			d.tetherCharms.clear();
 		}
 		DataStore.markDirty();
+	}
+
+	/** A Tether kept for a player whose pack is full: it is handed over as soon as there is room (see {@link #settle}). */
+	static void owe(ServerPlayer p, PlayerData d, int tier, java.util.Map<String, Integer> charms) {
+		StringBuilder entry = new StringBuilder().append(tier).append(';');
+		if (charms != null) {
+			charms.forEach((id, level) -> entry.append(id).append('=').append(level).append(','));
+		}
+		if (d.tetherOwed == null) {
+			d.tetherOwed = new java.util.ArrayList<>();
+		}
+		d.tetherOwed.add(entry.toString());
+		DataStore.markDirty();
+		p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.tether.owed")
+				.withStyle(net.minecraft.ChatFormatting.GOLD));
+	}
+
+	/** Every second: a Tether kept for this player is handed over once there is a free slot in their pack. */
+	public static void settle(ServerPlayer p, PlayerData d) {
+		if (d.tetherOwed == null || d.tetherOwed.isEmpty() || p.getInventory().getFreeSlot() < 0 || !p.isAlive()) {
+			return;
+		}
+		String entry = d.tetherOwed.remove(0);
+		int cut = entry.indexOf(';');
+		int tier = 0;
+		java.util.Map<String, Integer> charms = new java.util.HashMap<>();
+		try {
+			tier = Integer.parseInt(entry.substring(0, Math.max(0, cut)));
+			for (String c : entry.substring(cut + 1).split(",")) {
+				int eq = c.lastIndexOf('=');
+				if (eq > 0) {
+					charms.put(c.substring(0, eq), Integer.parseInt(c.substring(eq + 1)));
+				}
+			}
+		} catch (RuntimeException e) {
+			// a damaged entry still gives back a plain Tether of its tier
+		}
+		ItemStack back = new ItemStack(tierItem(tier));
+		enchant(back, charms, p.level().registryAccess());
+		if (!p.getInventory().add(back)) {
+			d.tetherOwed.add(0, entry);
+			return;
+		}
+		DataStore.markDirty();
+		p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.tether.returned")
+				.withStyle(net.minecraft.ChatFormatting.GOLD));
+		WorldFx.sound(p, "minecraft:block.chain.place", 0.8f, 1.1f);
 	}
 
 	/** A Tether item's enchantments, by id. */

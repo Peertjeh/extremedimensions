@@ -1,5 +1,1655 @@
 # Changelog
 
+## 3.56.0: Out in the Open
+
+Nothing in the game's balance changes: this version is about reaching players, and hearing back from them.
+
+- **Report a problem** at the top of the settings screen: your versions and mod list go to the clipboard, and a new
+  bug report opens on GitHub with them already filled in (the game asks before it opens the browser). New report forms
+  there for bugs, ideas, and for telling how a part of the game felt: too hard, too easy, unclear or tedious.
+- **Wiki** beside it opens the wiki, now at a fixed public address: https://peertjeh.github.io/extremedimensions/
+- Each new version now also goes up on Modrinth and CurseForge by itself, with the same notes as here.
+- Screenshots for the store pages and the trailer at 1920x1080.
+
+## 3.55.0: Less Friction
+
+A quality-of-life overhaul: nothing in the balance changes, the game tells you more and asks less of you.
+
+### On an expedition
+- **The way home in the Nether and the End**: an arrow and the distance to your arrival portal on the timer, as the
+  Seam has to its rift, and an *Arrival portal* waypoint in JourneyMap and Xaero's Minimap (`arrival_compass`; the
+  Unmapped curse hides it, as it spins a compass).
+- **The drain explained**: always shown (green below ×1.0) with its main cause, as *Drain ×2.4 · Echo near*; the status
+  screen lists every part of it.
+- **Time as the clock runs**: *≈1:42 at this pace* and *≈0:55 to walk back*, and the timer turns amber when the walk
+  back would take most of what is left.
+- **Warnings in words**: *Your Tether runs low: … left, ≈… to walk back*, at the time you choose (Settings → Display →
+  *Warn at*: 2:00, 1:00 or when the walk back needs most of it), and *Turn back* at half a minute. The Seam's thread
+  warns the same way, and says once when it runs thin and the hunt begins. The warning sounds are the mod's own now,
+  with subtitles that say what they mean.
+- Charge a Leaky Tank or the Held's Chain takes at the portal is told; anchors that are **blocked** (and leak) or
+  **cracked** tell their owners, and show it in the journal, in Jade and WTHIT and on the HUD; a **Wound Storm** shows
+  how long it has left.
+
+### Curses and the Collapse
+- **Curse totals**: *Now: 75% (3 × 25%)* in the Curses screen, *After: …* on the cards; compounding and capped curses
+  as the game reckons them. The Curses screen can show only what you carry, sorted by stacks, with every curse's
+  effect on hover and all you carry (the pact and the Fresh Wound too) in one place.
+- **The choice of a curse**: *Curse 1 of 3 · The Tether chooses for you in 1:45* with a bar, full texts on hover, a
+  *Your curses* button, and it waits for an open chest to close.
+- **Tether Fragments move on** to the next curse with room once one has had its five, and say where they went.
+- After a death, **one line** in chat instead of four; the Fray's line moves to the action bar after the first visits;
+  a Rift Trial ends in one line with its details on hover; the last five Collapses are kept in the ledger's *The Last
+  Falls*, and a *[Recap]* line in chat holds the card.
+- A Lurker's theft says **what it took and which way it ran**; an Ember or Void Tether asks before most of it would
+  be wasted on a full anchor; the Tether says when it slips loose or is untied; fuel tooltips show the stack's worth
+  and your own rate; the portal's refusal names an empty bound anchor rightly; the Pact screen asks before leaving
+  unsworn changes and says why "+" is greyed.
+
+### Controls, screens and the rest
+- **Keys**: Curses on **K** and the Tether Journal on **H** by default (a note on the first join names them); keys of
+  their own for anchor status, the Pact and putting a card away. Every screen of the mod closes on its own key; the
+  journal turns its pages with the arrows and the wheel, Tab goes through its parts, and it opens where you left it.
+  The guides have a contents page, and hints you were given can be read again there.
+- **Camera in fights**: full, gentle or off (forced turns and screen shake), and vanilla's Distortion Effects is
+  honoured. **Colour-blind mode** reaches the HUD and the barter screen.
+- Cards on screen (the Seam's briefing, the recap) can be put away, or go once you move, and keep clear of the
+  crosshair. Barter keeps its page. A **redstone pulse turns the Spindle** (`spindle_redstone`). The journal's
+  Anchors part has the sharing switch; leaving while it would cost curses asks first; a fallen ally's message says how
+  far and which way.
+
+### Fixed
+- In the Fray, the mod's own timer panel ran at ×1.0 and showed no drain: it runs at the Fray's.
+
+## 3.54.0: Marked On Every Map
+
+### Added
+- **Xaero's Minimap** shows your anchors as waypoints now too (Ember gold, Void purple), and in the Seam the Return
+  Gate (yellow), as JourneyMap has since 3.53.0. They are handed over the way Xaero's Minimap takes its own Waystones
+  waypoints in: under an origin of the mod's, kept up to date as anchors are made, drained or broken, and never kept
+  on disk (they are the server's to give, and come again with every join).
+- CI's second compatibility run checks that an anchor made reaches Xaero's Minimap as a waypoint.
+
+## 3.53.0: For The Road Home
+
+### Added
+- **Guides in the Tether Journal**: a new part with twenty short how-to guides in story order, from your first
+  expedition to setting up a server, each one page: at most five short steps. The wiki has the long versions.
+- **Anchors in the Tether Journal**: every anchor that keeps charge for you, your own and your allies' opened to you:
+  Ember or Void, where it stands, what it holds for you, whether it is cracked (and when it breaks), and who it is
+  shared with. Seven parts now; where they do not fit one row of tabs, they take two.
+- **A recap after a Collapse**: once you are home and have chosen what it cost, a short card says how long you were
+  away, how far out you went, why the charge ran out faster and what it cost (a throw out of the Seam gets one too).
+  Server switch `collapse_recap` (on).
+- **The playtest log**, for judging the balance on real play: with `playtest_log` on (off as it comes), the server
+  adds a line to `extremedimensions/playtest.csv` for every expedition that ends (and every visit to the Seam), every
+  relic bound and every curse chosen: where, how long, how far out, how fast it drained, how it ended, what it cost,
+  the relic, the Tether and the pact. Written off the server thread; one spreadsheet-ready file.
+- **The Seam's furnishings, for builders**, each drawn after a vanilla block:
+  - **Seam Silk Block** (4 Seam Silk) and **Seam Silk Carpet** (2 blocks → 3), after white wool and carpet. They
+    burn as wool does, and are never wool to a vanilla recipe.
+  - **Nebula Glass** (8 glass round a Seam Silk → 8), after tinted glass with faint stars, and **Nebula Glass Panes**
+    (6 → 16). Only Silk Touch brings them back, as glass.
+  - **Veil Lamp** (4 Seam Silk round glowstone), after the lit redstone lamp: a violet lamp of light 15, lighting
+    only its own block.
+  - Under a shader pack the Veil Lamp glows violet, and the glass and the silk are drawn as their purple vanilla kin.
+- **Jade and WTHIT**: looking at an anchor shows the charge it holds for you, whether it is cracked and whose it
+  is; at a Lurker (or any of its kin), whether it came to steal or to hurt; at a Spindle, what is loaded in it; at a
+  Curse Knot, its set. Each can be switched off in Jade's or WTHIT's own settings.
+- **JourneyMap**: your anchors on the map as waypoints (Ember orange, Void violet), and in the Seam the Return Gate,
+  kept up to date as anchors are made, drained or broken.
+
+### Fixed
+- **A single hush slab dropped two.** The eight hush slabs' loot tables still had the count's condition in an older
+  form, which 26.3 passes over: now in vanilla's own, one slab drops one and a double slab two.
+- The silk cloth burns as wool does, but is no furnace fuel (silk is too dear to burn).
+
+### Tests
+- A hush slab drops one of itself and a double slab two, as vanilla's stone slab (side by side): the test that found
+  the slabs' double drop.
+- The journal's anchors, the builders' blocks (recipes, light, drops, panes joining), the playtest log and the recap.
+- A second compatibility run has Jade, JourneyMap and Xaero's Minimap installed too, and checks each plugin was taken
+  up (the anchor's waypoint reaches JourneyMap). It is no gate for a release: Fabric's client test harness sometimes
+  deadlocks closing its test world with them beside it, after every check has passed (its three threads waiting on
+  each other; a stuck game is printed thread by thread). That is the harness's, not the game's, and is being looked
+  into. WTHIT 21 needs a newer Fabric API than the mod is built with: its plugin is compiled against it, and the run
+  leaves it out until the build moves on.
+
+## 3.52.0: Every Light Shown
+
+### Added
+- **Every glowing block of the mod glows under a shader pack** (with Iris), as the Kindled Seam Lantern has since
+  3.51.1: each is shown to the pack as the vanilla light nearest it in colour and shape, and takes that light's glow
+  and colour.
+  - The **Ember Anchor** as a magma block (ember orange); the **Void Anchor**, the **Seam Vein** and **silked hush
+    bricks** as crying obsidian (violet); **Tetherite Ore** as the ancient debris it is drawn after.
+  - The **Curse Knots** each in their set's colour: beyond as a torch, Overworld as a soul torch, everywhere as an
+    amethyst cluster, Extreme as a redstone torch.
+  - The Weaver's Loom and the Spindle, workplaces with a faint glow, are left as they are.
+- Settings → Display → *Kindled lantern under shaders*: **Off** now leaves all of the mod's blocks unknown to the pack.
+- CI sets the glowing blocks in a row in the Seam under Solas, checks each is in the pack's list as its vanilla light,
+  and takes a picture.
+
+### Known
+- Under a shader pack the Seam wears the pack's own End sky: Iris runs the pack's End programme there, and a pack such
+  as Solas paints its own nebulae and disc there. The mod cannot change that without fighting the pack; the
+  Seam's own violet sky shows without one.
+
+### Release
+- The release job says plainly when its branch moved on while it ran (CI may not tag an older commit), and a release's
+  notes take in every version since the last one published. 3.51.1 was never published on its own: its changes go out
+  with this version.
+
+## 3.51.1: Under A Shader Pack
+
+### Fixed
+- **No more white-outs in the Seam under a shader pack.** The Seam shares the End's sky, and Iris runs a shader pack's
+  End programme there, End flashes and all: a pack that draws them itself (Solas, with its white-out and beam) did so
+  every few seconds. The Seam now has no End flashes at all (nor their sound); the End keeps its own.
+
+### Added
+- **The Kindled Seam Lantern glows and gives violet light under a shader pack** (with Iris). A shader pack gives glow
+  and coloured light only to the blocks its own list names, and names none of the mod's; the mod now adds its lanterns
+  to that list as Iris hands it over, under a vanilla light's number: the Kindled Seam Lantern as **crying obsidian**
+  (the most violet of them), the Veil Lantern as a **soul lantern**. Where a pack names one of them itself, its own
+  choice is kept.
+- **Its whole reach is lit violet too.** The unseen lights it carries out round it are now a light block of the mod's
+  own (Kindled Light, vanilla's light block under its own name) rather than vanilla's: a pack that lights the world from
+  light blocks (Solas does) gave vanilla's its own neutral light, and now gives the lantern's the lantern's colour. A
+  lantern already set swaps its old lights for the new ones on its own, in time; broken, it takes both kinds back.
+- **Settings → Display → Kindled lantern under shaders**: crying obsidian, amethyst cluster, soul lantern, lantern or
+  off. Taken up the next time the shader pack is loaded (reload it, or pick it again).
+- CI turns a shader pack on in the Seam (the newest Solas) and checks the lanterns are in its list and no End flash shows.
+
+## 3.51.0: Built As Vanilla Builds
+
+### Changed
+- **Every block of the mod is drawn after a vanilla block**, as its items have been since 3.50.0, pixel for pixel in
+  its own colours:
+  - **The hush stone family** after vanilla's stone family, kind for kind: hush stone after stone, polished after
+    polished deepslate, cobbled after cobbled deepslate, the bricks (cracked, mossy, chiseled, silked) after stone
+    bricks', pale bricks after deepslate bricks, polished pale stone after polished tuff, tiles after deepslate tiles,
+    the pillar after the quartz pillar, the Seam Vein after nether quartz ore.
+  - **The Ember and Void Lodestones** after the lodestone, **Tetherite Ore** after ancient debris.
+  - **The Weaver's Loom** after the loom, its cloth woven in the six deeds' threads.
+  - **The Spindle**, the four **Curse Knots** (after the cobweb, each in its set's colour) and the **Veil Lantern**
+    (after the soul lantern, its flame now flickering as a lantern's does).
+- **The Kindled Seam Lantern shines brighter**: its flame is brighter, and it is drawn at full brightness, so it
+  glows at night even under a shader pack that does not know it. (Coloured light is the shader pack's to give: one
+  that knows the soul lantern can be taught this lantern too, in its `block.properties`.)
+
+## 3.50.0: Drawn As Vanilla Draws
+
+### Added
+- **The Kindled Seam Lantern**: the Seam Lantern relic lit from a lantern's flame and a soul lantern's (the three
+  together at a crafting table; the recipe is learnt once you hold a Seam Lantern).
+  - It stands or hangs as the lantern and the soul lantern do, its flame burning blue and violet.
+  - Its light reaches twice as far as a lantern's: it carries it 14 blocks out in eight directions round it, as unseen
+    lights where there is open air, and takes them back when it is broken (`kindled_lantern_spread`,
+    `kindled_lantern_light`). Now and then it lays again any that were built over.
+  - The light itself is the game's own white light; with shaders, its colour is up to the shader pack.
+
+### Changed
+- **Every item of the mod is drawn after a vanilla item**, as the Tetherite gear has been since 3.49.3. Each keeps its
+  vanilla model's silhouette, outline and shading pixel for pixel, in its own colours and with a mark of its own:
+  - **Tethers and cords** after the lead (the Ember and Void Tethers after the end crystal).
+  - **Threads and silk** after the string, and the six Threads of the tapestry after the brush.
+  - **Relics** after the vanilla item nearest each one's shape: the Keeper's Eye after the eye of ender, the Tithe and
+    Muffled Bells after the bell, the Seam Lantern after the lantern, the Hollow Whistle after the goat horn, the
+    Debtor's Seal after the compass, the Unbound Pinion after the elytra, and so on.
+  - **The Tether Journal** after the written book, the pages after paper, the Homing Pearl after the ender pearl, the
+    Severing Shears after the shears, the Wound Lens after the spyglass.
+  - **The Tether Fragment** after the amethyst shard, the Veil Wing after the phantom membrane, the Mending Cloth after
+    the cushion.
+  - **The Tetherite ingot and scrap and the three smithing templates** after netherite's and the trim templates.
+  - **The five music discs and their fragments** after vanilla's discs, each in its own label colours.
+- The Pale Lock, the Hollow Crown, the Hungering Hand and the Plumb Line keep their drawings: no vanilla item has
+  their shape, and drawn after the nearest one they no longer read as themselves.
+
+## 3.49.5: The Whole Set After Netherite
+
+### Changed
+- **The Tetherite helmet, chestplate and boots follow vanilla's netherite ones**, in the inventory and worn, as the
+  leggings and the tools have since 3.49.4, in Tetherite's grey-violet tones. Each has a stud of the Tether's teal:
+  at the brow, over the heart, and on each boot's strap.
+- The Weaver and Fray trims on them stay on the armor and never float over bare skin (the face, the neck).
+
+## 3.49.4: Tetherite After Netherite
+
+### Changed
+- **The Tetherite sword, pickaxe, axe, shovel and hoe are drawn after vanilla's netherite ones**, pixel for pixel, as
+  the spear was in 3.49.3, in Tetherite's tones:
+  - the metal in its grey-violet ramp, edged in violet on its lit side where netherite's is edged in wine;
+  - the haft in the dark violet;
+  - one bead of the Tether's teal where the head meets the haft (on the sword, where the guard crosses the blade).
+- **The Tetherite Leggings follow vanilla's netherite leggings** in the inventory and worn, with a teal buckle at the
+  front of the belt. The Weaver and Fray trims on them stay on the leggings and never float over a bare leg.
+
+## 3.49.3: The Spear Held Right
+
+### Fixed
+- **The Tetherite Spear is held pointing ahead**, as vanilla's spears are, instead of across the body. Its drawing
+  for the hand leaned the other way from vanilla's, so the game's spear pose turned it a quarter round.
+
+### Changed
+- **The Tetherite Spear is drawn after vanilla's netherite spear**, pixel for pixel, in Tetherite's tones: the
+  leaf-shaped head in the metal's grey-violet with a violet edge, the dark violet haft, the grip in the metal's darker
+  tones and a bead of the Tether's teal where the head meets the haft. The one held in the hand is drawn at 32 pixels,
+  as vanilla's is, with a teal end to its haft.
+
+## 3.49.2: No Slipping Out of a Fight
+
+### Fixed
+- **Logging out during an Elder fight now always counts as fleeing.** It could cost nothing:
+  - Only the player an Elder came for was held by its fight. Anyone fighting beside them could log out freely, and
+    the Pale Mason, the Knot Mother and the Starved One held no one at all.
+  - Whether a player fled was only looked at the moment their leaving was handled. If the Elder had already let go of
+    them by then (the Ferryman sails off as his passenger vanishes), or a single-player world was closed before it
+    was handled, the flight was lost.
+
+### Changed
+- An Elder fight holds everyone within 64 blocks of a living Elder or the Starved One, whoever it came for
+  (`flee_elder_range`; 0 holds only the one it is after). Leaving then costs the flight's curse (`flee_curses`) when
+  you come back, as it does with a swarm or a hunting Lurker.
+- What holds a player is noted every half second, so a leaving handled a moment late still counts. A single-player
+  world closed during a fight counts as a flight when you come back. A dedicated server that shuts down or crashes
+  is still no one's flight.
+
+## 3.49.1: The Pale Hauler, Remade
+
+### Changed
+- **The Pale Hauler has a body of its own**, after its concept sheet, instead of the tribe's hunched one.
+  - A tall, thin End walker under a peaked pale hood and a shaggy mantle of ragged strips, with a face of shadow and
+    two narrow violet eyes; violet cracks run through the mantle and its strips end in violet.
+  - Long dark arms reach to its knees and end in four long claws.
+  - It moves as it acts: it walks with its mantle swaying, crouches with both hands on the block it hauls out of your
+    bridge, holds what it took up over its head, and crouches before it leaps at you.
+  - Its light still tells what it came for: violet at rest, blue while it hauls a block, red when it is about to leap.
+- Its size, its hitbox and everything it does are unchanged.
+
+## 3.49.0: Wounds That Stay
+
+### Changed
+- **A Mending Cloth no longer lifts a curse by itself.** It was far too easy a way out.
+  - It pays two fifths of what the curse's next stack costs into its atonement (`cloth_share`, 0.4), as Tether
+    Fragments do; only when that completes the stack does it come off.
+  - One cloth an hour of play (`cloth_cooldown_minutes`, 60); used sooner it is refused and kept, and you are told how
+    long is left (the Curses screen shows it too).
+  - It does not work on the Extreme set (`cloth_extreme`), as it never did on the Abyssal.
+  - A stack a cloth helped to lift leaves no scar (`cloth_scars`): scars are earned by atonement.
+  - It is dearer to make: 4 Seam Silk, 2 Tether Fragments, 2 Veil Wings and an Echo Shard.
+  - With `cloth_share` 1, `cloth_cooldown_minutes` 0 and both switches on it works as it used to.
+- **A death costs more.**
+  - **Fresh Wound:** every death in the mod's worlds leaves you wounded for 10 minutes of play: two hearts less, your
+    Tether drains a quarter faster beyond the wound, and for the first 3 minutes no Tether can be bound to an anchor
+    (`death_wound_minutes`, `_health`, `_drain`, `_bind_minutes`). A second death starts it over. The Curses screen shows
+    how long it lasts.
+  - A death undoes three quarters of your atonement instead of half (`atone_death_loss`).
+  - Curses take longer to atone for: 160 for the first stack and 80 more for each one after (were 120 and 60).
+  - The curses a death offers are multiplied more often (`multiplier_chance` 0.25, was 0.15).
+  - The difficulties follow: Easy 80/35, a quarter undone, a 5-minute wound; Hard 200/100, 85%, 15 minutes; Extreme
+    260/130, 95%, 20 minutes (see the settings for every number).
+- A world whose settings still held the old numbers takes the new ones and keeps its difficulty. A number someone
+  chose is kept.
+
+## 3.48.0: The First Wound
+
+### Fixed
+- **The Starved One no longer sinks back when the last fighter flies to a pillar.** It counted only players within 84
+  blocks of the Heart's centre, in a straight line, and a node high up a pillar lies further out than that. Now:
+  - The whole island group counts: 100 blocks out from the Heart, from 48 below its floor to 160 above
+    (`starved_arena_reach`, `_below`, `_above`), every pillar, node and strand inside it.
+  - With nobody there it waits 30 seconds (`starved_leave_seconds`) before it sinks back; anyone who comes back keeps
+    the fight going.
+
+### New
+- **The Starved One rises.** After its warning it claws its way up out of the Heart (8 seconds, `starved_rise_seconds`):
+  the sky darkens and the fog closes in, the ground cracks and shakes harder and harder, souls spiral in from the whole
+  island group, the four pillars light one by one and stream their souls into the Heart, the floor breaks open, and it
+  drags itself up hand over hand until it bursts free with a roar, two shockwaves and its title. Nothing can hurt it
+  while it rises.
+- **Its arena** flies together round the Heart as the Elders' do (`starved_arena`): a sigil on the floor, a ring wall
+  of hush masonry with soul lanterns and four gates at the strands, four spires chained to a great crown that hangs over
+  the altar, and 24 islands in three layers. The pillars, their nodes, the strands and the altar always stay free.
+  Everything it set down goes away again however the fight ends.
+- **It changes twice**, at 66% and 33% health: the floor erupts in a wave of crystal spikes (whoever stands at one is
+  thrown up and hurt) and islands come loose and fall where their shadow shows; one that lands on the Starved One
+  costs it a tenth of its health and dazes it.
+- **It drinks time**, once, at half health: it hovers over the altar, a vortex of souls round it, and drinks the light
+  out of the arena's lanterns and out of everyone near, pulling them in, slowed and in the dark. A ring shows how far its
+  soul-fire burst will reach; get out of it before it lands (18 damage). Quench all four pillars while it drinks and it
+  loses the move.
+- **It dies** as the Elders do: the camera holds on it, its four chains snap one by one, its embers go out while the
+  arena flies apart, and it blooms into soul fire. Then the Thread and the Shears are laid as before.
+- **Its own voice and its own theme.** Seventeen sounds of its own (voice, breath, hurts, roar, death, the rise, the
+  dive, the call of the young, the hunting ray, the drink, the pillars' healing, quenching, binding and breaking free,
+  the changes, its signature move and the eruptions) replace the Keeper's roar, the Warden's heartbeat and the Phantom
+  it borrowed, and a theme of its own plays through the fight: *The First Wound* (three minutes; a broken clock that
+  stops as it drinks time, a quickening heartbeat, a low choir and a cracked bell).
+- Every number is a setting (*The Starved One* in the settings screen).
+
+## 3.47.1: A Clean Slate
+
+### New
+- **`/tether relic_reset`** starts the relics over in a world (operators, or `extremedimensions.admin.relic_reset`).
+  Without `confirm` it explains what will happen; `/tether relic_reset confirm` does it at once, no restart needed.
+  - Every player loses the relic bound to their Tether, online or not; its gift and price stop at once.
+  - Every relic that exists now crumbles to dust as soon as a player holds it, has it in their ender chest or opens the
+    container it lies in (one on the ground crumbles once picked up).
+  - Relics found from then on carry a mark and are not touched. A world that never resets them is not touched at all.
+  - Things the Ferryman's Obol is still keeping for a player who died and has not respawned yet are safe.
+  - The Seam is reset apart from this, with `/tether seam_reset` (it is made anew the next time the world loads).
+
+### Fixed
+- **Clans no longer dissolve when the server restarts.** They were saved, but never read back.
+
+## 3.47.0: Spent Relics
+
+### New
+- **Eight more relics**, two of each tier, each with a gift and a price. Every number is a setting.
+  - **Ashen Locket** (common): 25% less damage from fire and lava; 25% more from freezing and drowning.
+  - **Miner's Candle** (common): Night Vision in the Overworld below Y 40 with rock overhead; Cave Lurkers come half
+    again as often.
+  - **Magpie's Glint** (uncommon): a wild creature you slay drops its loot twice one time in four (not from a spawner,
+    not a boss, not the tribe); Magpies come for your chests twice as often.
+  - **Anchor Rivet** (uncommon): fuel you feed an anchor gives 20% more charge; a Lurker drinks your anchor twice as
+    fast.
+  - **Muffled Bell** (rare): the sculk does not hear you (sensors, shriekers and the Warden), and Cave Lurkers hear you
+    as if you always sneaked; Sculk Lurkers come twice as often, and still rattle the shriekers in your name.
+  - **Veil Scale** (rare): in the Seam and the Fray you drift down slowly once you fall more than 4 blocks; 30 seconds
+    less in the Seam.
+  - **Ferryman's Obol** (epic): dying beyond the wound (in the Nether, the End, the Seam or the Fray, a Collapse
+    included) you keep everything you carry, and it is back on you when you respawn. The Tether still breaks. Every
+    such death costs a curse more, and your Tether drains 15% faster beyond the wound.
+  - **Hollow Crown** (epic): you never hunger; you never heal by yourself either. Potions, golden apples, beacons and
+    totems still heal you.
+- The tiers are now: eight common, six uncommon, seven rare and five epic, 26 relics in all.
+
+### Changed
+- **A relic serves once.** It works from the moment it is bound, and it stays bound until another relic takes its
+  place. Then the old one crumbles; it does not come back to your hand.
+  - Binding a relic while another is bound first warns you which one it will break; use it again within a few seconds
+    to bind it.
+  - The Curses screen no longer takes a relic off; it shows the bound relic and that it stays.
+  - `relic_single_use` (on by default) switches this; off, a relic comes back when you bind another or take it off, as
+    before.
+
+## 3.46.1: Relics by Worth
+
+### Changed
+- **The older relics are weighed to their tiers.** A common relic now gives a little and asks a little less. A rare one
+  gives a lot, and its price weighs lighter than its gift.
+  - **Ember Heart** and **Pale Shard** (common): the price in the other world is 15% more drain instead of 20%.
+  - **Tithe Bell** (common): half again the experience instead of three quarters; it still costs a level on every safe
+    return.
+  - **Kindred Knot** is common now, not uncommon: it does nothing without an ally beside you.
+  - **Featherbone** (uncommon): you fall 10 blocks further without harm instead of 8.
+  - **Keeper's Eye** (rare): ×2.5 the chance of fragments from wild kills instead of ×2.
+  - **Seam Lantern** (rare): 90 seconds more in the Seam instead of 60.
+  - **Lurker's Tooth** (rare): Lurkers come half again as often instead of twice as often.
+  - **Held's Chain** (epic): it holds you 20 seconds instead of 15.
+  - Hungering Hand stays as it was.
+- The tiers are now: six common, four uncommon, five rare and three epic.
+- A world whose settings still held the old numbers takes the new ones. A number someone chose is kept.
+
+## 3.46.0: Rarer Relics
+
+### New
+- **Relics come in four tiers: common, uncommon, rare and epic.** The better a relic, the rarer it is found. A relic's
+  name takes its tier's colour, and its tooltip says its tier right under the name.
+  - An ordinary find draws a tier first and then one of its relics: common 50, uncommon 30, rare 15, epic 5
+    (`relic_weight_*`).
+  - Great foes give the rarer tiers more often: common 20, uncommon 35, rare 30, epic 15 (`relic_great_weight_*`).
+    These are the Matriarch, the Ferryman, the Last Weaver, the Knot Mother, the Starved One and a Rift Trial's gold
+    medal.
+  - Common: Ember Heart, Pale Shard, Tithe Bell, Pilgrim's Sandal, Lodestone Chip.
+  - Uncommon: Hungering Hand, Featherbone, Kindred Knot, Thornward Bark, Hollow Whistle.
+  - Rare: Keeper's Eye, Seam Lantern, Lurker's Tooth, Last Stitch, Hunger's Fang.
+  - Epic: Debtor's Seal, Unbound Pinion, and the Held's Chain, which is still only found where the Held left it.
+- **Eight new relics**, each with a gift and a price. Every number is a setting.
+  - **Pilgrim's Sandal** (common): Speed I on an expedition and in the Seam; you hunger 25% faster there.
+  - **Lodestone Chip** (common): the Tether drains 10% slower everywhere beyond the wound; a Collapse brings one curse
+    more.
+  - **Thornward Bark** (uncommon): whoever strikes you up close takes 2 damage back (not from arrows, never in a loop);
+    your own blows by hand deal 10% less.
+  - **Hollow Whistle** (uncommon): the Hollowlings' barter costs 30% less; the standing you win with the tribe is
+    halved (what you lose is not).
+  - **Last Stitch** (rare): once an expedition (or a Seam visit from home), a killing blow leaves you at 2 hearts with
+    a moment of Resistance. It does not hold against the void or /kill, nor while you hold a totem. Your maximum health
+    is a heart lower.
+  - **Hunger's Fang** (rare): 15% of the damage you deal by hand heals you, the killing blow included; you hunger 50%
+    faster, always.
+  - **Debtor's Seal** (epic): all atonement you earn is doubled, fragments included (what an echo gives back is not).
+    Every curse a death, a Collapse or a Lurker brings (the Cave Lurker, the Tidewalker and a swarm too) comes twice. A
+    death in a boss fight, or an Elder's ultimate, brings its curses three times.
+  - **Unbound Pinion** (epic): the Elders cannot pull you from the sky or bind your wings, so you can fly with an elytra
+    through a boss fight. In return you take 30% more damage from everything, and an elytra you glide on wears 25 times
+    as fast. It stops one point short of breaking, as a worn-out elytra does.
+
+## 3.45.0: Nothing Left Behind
+
+### Fixed
+- **Every block a boss fight puts down goes away again.** Nothing an Elder, its arena, its ultimate or the Starved One
+  places stays in the world once the fight is over, however it ends: the boss slain or gone, everyone gone home, the
+  server stopped, or even a crash mid-fight.
+  - Each block a fight sets down is kept in one ledger with what stood there before, and put back once nothing in the
+    fight holds it any more. The ledger is written to the world as it goes (`extremedimensions_fight_blocks.dat`), so
+    after a crash whatever was left is put back as its ground loads again.
+  - The Pale Mason's arena no longer has chorus flowers (they grew chorus plants the arena never knew of, which stayed
+    behind and dropped chorus fruit): end rods stand there now. The Ferryman's crimson nylium, which turned to
+    netherrack on its own, is nether wart block and crimson hyphae now.
+  - An arena takes down every block of its own when it dissolves, also those a neighbour reshaped (walls, fences,
+    stairs, lanterns used to stay behind), and nothing pops off as an item.
+  - The ground an Elder's blows mark (the Matriarch's roots and moss, the Ferryman's soul soil, the Weaver's scorched
+    earth and glass) now changes back after a while (`elder_mark_seconds`, 45 s) and at the latest when the fight ends;
+    what grew there comes back too.
+  - Blocks a charge or a beam tears up fly off and vanish instead of landing somewhere as new blocks.
+  - Elders no longer light real fire: their blasts and scorch show flames, and only soul soil burns with soul fire.
+  - Thorns, chains, the Weaver's needles, the Knot Mother's anchors and the Starved One's nodes are taken back when
+    the fight ends, also where their ground was not loaded.
+- **Bosses no longer sink into the ground.** Their height came from the average of the ground under them, and they only
+  looked 8 blocks up, so they sank into the rim of a crater, stayed inside ground that rose under them and climbed onto
+  ledges overhead. Now:
+  - A boss stands on the highest ground under its whole body (the Ferryman's under the whole length of his boat).
+  - With its feet in blocks it climbs straight out; it never climbs onto an arch, a halo or a ledge over its head.
+  - It comes down without dipping into the ground, and steps up without standing inside the step.
+  - It no longer walks through tall walls, towers and hills: it slides along them or stops.
+  - The Pale Mason's blink and the Starved One's swoop always land on top of the ground.
+  - Leaves, logs and the like no longer count as ground to stand on, nor do barrier blocks.
+
+## 3.44.0: Home or Lock
+
+### New
+- **The End's own ending.** The Pale Mason, slain, leaves the two things he never set down while the End has no ending
+  yet: the **Homeward Keystone** and the **Pale Lock**. Set one in the fitting of an Unfinished Anchor that has been
+  attuned with an Eye of Ender, and it decides the End for the whole world. The other one only crumbles after.
+  - *Home*: the anchor is finished before your eyes. Its pillars rise whole, its arches close, its halo closes into a
+    full ring, and a door of light opens in it (`pale_door_seconds`). The Endermen near (`pale_door_range`) walk to it
+    and go home through it, and they leave their thanks at the fitting: Homing Pearls, pearls, eyes and fragments.
+    Afterwards the Endermen of the End let a gaze pass (`pale_home_calm`; one you strike still fights back), and the
+    Pale Haulers and the Pale Squalls come half as often (`pale_home_quiet`).
+  - *Lock*: the anchor is sealed and breaks apart. Its halo, its arches and the tops of its pillars fall away into
+    the void, the fitting becomes the lock, and the hoard they put by for the way home bursts out: pearls, shulker
+    shells, gold, diamonds, end crystals, fragments, and sometimes an elytra or a Tetherite template. Afterwards an
+    Enderman near a player in the End may turn on them unprovoked (`pale_lock_hostile_chance`,
+    `pale_lock_hostile_range`; never in peace, never on a creative player), and the Haulers and Squalls come half again
+    as often (`pale_lock_wrath`).
+- A journal page, *48. The Last Stone*, written in when the Mason falls; the Path shows *Home or Lock* beside it, done
+  once the End has its ending. Two advancements: *Home at Last* and *Locked Out*.
+- `/tether reach choice home|lock|undo` for operators: near the fitting of an anchor it plays the scene there as if the
+  Keystone or the Lock were set in it; `undo` forgets the End's ending again.
+
+### Fixed
+- The screenshots of an Elder's blows step back from it first, so a blow is not shot from inside the Ferryman's hull.
+
+## 3.43.0: Loom and Toll
+
+### New
+- **The Last Weaver: three new blows.**
+  - *Warp and Weft* (`weaver_warp_damage`): she weaves a great grid of threads in the air over you and those near you.
+    Its lines show on the floor while it hangs, then she brings her arms down and it slams onto the ground. Stand in
+    the gaps between the lines, or jump.
+  - *Spindle Storm* (`weaver_spindle_damage`, `weaver_spindle_pull`): she spins up and three tornadoes of thread rise
+    and wander after the living. They draw you in by the squall's rules (a wall at your back, sneaking, Anchored),
+    cut whoever is caught in them and tear the ground they cross. Then they burst.
+  - *The Loom Comes Down* (`weaver_needle_damage`): four times she yanks threads down out of the sky, and rows of
+    great needles fall toward whoever she aims at (a sigil burns where each will land). They stay standing in the
+    floor for a while as spikes to hide behind.
+- **The Ferryman: three new blows.**
+  - *The Undertow* (`ferryman_undertow_pull`, `ferryman_geyser_damage`): he drives his pole into the floor and stirs
+    a whirlpool of soul fire that draws everyone round and in (by the squall's rules). Then he rips the pole up and a
+    geyser of soul fire erupts at its heart. Get out of the middle before it does.
+  - *Oars of the Drowned* (`ferryman_oar_damage`): two spectral oars rise out of the ground and he rows. Three strokes
+    sweep a wide arc in front of him, each shown on the floor first, tearing the ground and flinging whoever is in
+    their way.
+  - *Bells of the Drowned* (`ferryman_bell_damage`): drowned bells rise out of the floor beside each of his
+    passengers and round him, and toll one after another. Each toll runs a shockwave out over the ground; jump it.
+- Each new blow has its own animation, glow and sounds. The Knot Mother keeps her own blows.
+
+## 3.42.0: The Hanging Lanterns
+
+### Changed
+- **The Matriarch's Verdant Requiem, after the reference art.**
+  - As her roots go down, a vortex of root and moss opens high over her and turns, smoke and the void pouring round
+    it.
+  - Lanterns come down out of it on chains and hang over the arena, drifting after whoever is near. One after another
+    they burn beams of violet light down onto the ground under someone (`matriarch_requiem_beam_damage`); a sigil
+    shows where, a moment before.
+  - At the last the lanterns are drawn back up, the vortex closes down into her, and she blooms. Her roots still
+    burst in a spiral round her, and since 3.41 the bloom tears up the whole arena.
+
+## 3.41.1: Torn where the fight is
+
+### Changed
+- **The ultimate tears up the ground where the fight is.** In a great arena, the upheaval now covers up to 72 blocks
+  round the middle (times `elder_upheaval_scale`). It used to be spread thinly over the whole 144-block floor, most of
+  it out of sight. It also brings about twice as many cliffs, spikes, craters and heaves, and more of the Matriarch's
+  roots. `elder_upheaval_blocks` now allows 30000 blocks for one ultimate (was 20000), still placed within
+  `elder_upheaval_budget` a tick.
+
+## 3.41.0: The Ground Breaks
+
+### New
+- **Every Elder's ultimate tears up its arena.** While it builds, the ground shakes harder and harder, glowing
+  fissures run out across the floor from the Elder, and blocks tear loose and hang turning in the air round it. When
+  it breaks, the whole arena is thrown up into new ground over the old:
+  - cliffs burst up out of the floor, some on a ring round the arena and some anywhere;
+  - clusters of spikes thrust up;
+  - one or two chasms tear across it from the middle;
+  - craters blow open with broken rims;
+  - the floor heaves into low relief;
+  - under the Matriarch, great roots tear up out of the ground, arc over and dive back in.
+  
+  The hanging blocks slam down, and whoever stands where the ground erupts is thrown into the air and hurt
+  (`elder_upheaval_damage`, `elder_upheaval_throw`). Each Elder tears up its own ground:
+  - the Matriarch: root, dark oak, moss and rooted dirt;
+  - the Ferryman: basalt and blackstone, with soul fire burning in the chasms;
+  - the Last Weaver and the Knot Mother: deepslate, tuff, calcite and amethyst;
+  - the Pale Mason: end stone, purpur spikes, obsidian crags, crying obsidian glowing in the chasms and veins of gold.
+  
+  A chasm never opens a hole to the void (the floor under it always holds). When the fight ends, the torn ground sinks
+  back and the arena is as it was before it dissolves. Without `elder_griefing` (or with mobGriefing off) the ground
+  shakes, glows and throws, but no block changes. Settings: `elder_upheaval` (on/off), `elder_upheaval_scale`,
+  `elder_upheaval_budget` (blocks a tick), `elder_upheaval_blocks`, `elder_upheaval_displays` and
+  `elder_upheaval_linger_seconds`.
+- **The Pale Mason, all in**, after the concept art. Four new blows:
+  - *Bound Stones* (`pale_mason_chain_damage`): he hauls great cubes of violet light out of the air on chains of gold
+    and swings them round himself at the height of a man, far out and then drawn in close. A ring on the floor shows
+    each sweep before it comes. Whoever is caught is struck and flung along the swing. Then he hurls the cubes at
+    whoever is near.
+  - *Pillars of the Anchor* (`pale_mason_pillar_damage`): he drives his fist and then his palms into the floor, and
+    pillars of violet light tear up in three pulses, each a ring further out and under everyone he can see. A sigil
+    burns where each will come.
+  - *Golden Rings* (`pale_mason_ring_damage`): his halo flares and spins, and three times he casts a ring of gold out
+    across the floor, each faster than the last. Jump it.
+  - *The Unfinished Spiral* (`pale_mason_spiral_pull`, `pale_mason_burst_damage`): he rises, arms wide, and the floor
+    comes up in stones that wind round him in a climbing spiral. Everyone near is drawn in by the squall's rules (a
+    wall at your back holds you, sneaking halves it, Anchored eases it), and close by him the stones grind. Then it
+    bursts and throws everyone near off.
+  
+  Each blow has its own animation, its own glow (violet, white, gold) and its own sounds.
+
+### Changed
+- **Every Elder stands under its great piece, not in it.** The Last Weaver's and the Knot Mother's loom used to run its
+  lower beam through her head, and the Pale Mason's halo hung its lower arc through his body, so they seemed to come
+  out of an object of their own. Now the loom's lowest beam and the halo's lowest arc cross the middle well over the
+  Elder's crown, as the Matriarch's root arches always did. In a small arena the arches are raised to match. A test
+  checks every arena at two sizes.
+
+## 3.40.0: The Pale Mason
+
+### New
+- **The Pale Mason**, after the concept sheets: the foreman of the Endermen of the Pale Reach, the first of them torn
+  loose when the wound opened. Eighteen blocks of dark Enderman under a hood and a ragged mantle of pale end stone,
+  chains of gold, a broken halo with golden spokes, a violet core in his chest, long violet claws. He wants the one
+  thing his anchor lacks: your Tether.
+- **When he comes.** Once on each expedition that has gone on a while out in the Pale Reach
+  (`pale_mason_after_seconds`, 150), he may come (`pale_mason_chance`, 35%). Stone and chains are heard first for
+  15 seconds with a bar counting down (`pale_mason_wake_seconds`), as with every Elder since 3.38; leave the Reach
+  meanwhile and he lets you be. `/tether boss pale_mason` calls him at once.
+- **His arena** flies together round him as he forms, as every Elder's does, in the stone of the End: a round anchor
+  floor of end stone and purpur ringed with gold light, broken anchor pillars banded in gold round it, and over the
+  middle a great broken halo standing on its edge, golden spokes running in to a hub of gold. Its four keystones ward
+  him until broken, and in his domain the floor gives way under his visitors: the void wants them.
+- **His blows:**
+  - *Teleport Strike*: he is gone in a burst of violet and steps out of the air beside you, a claw already coming
+    down where a sigil burns (`pale_mason_strike_damage`).
+  - *Anchor Walls*: he drives his hands down and walls of end stone and purpur grind up round you, a gap in each, for
+    12 seconds (`pale_mason_wall_seconds`). They hem you in, and shelter you from his Door.
+  - *Falling Blocks*: great blocks rise round him, turning, then he hurls them one after another at whoever stands
+    under them; a sigil shows where each will land (`pale_mason_block_damage`, `pale_mason_block_size`).
+  - *The Gaze*: he goes still and his eyes blaze. Whoever looks him in the face then is struck where they stand
+    (`pale_mason_gaze_damage`). Look away, or at his feet; a carved pumpkin keeps it off, as with an Enderman.
+- **The Last Door**, his ultimate: he spreads his arms and rises, and a doorway of purpur and gold opens onto the void
+  before him. It draws everyone near towards it (`pale_mason_door_pull`): sneaking halves the pull, a wall at your back
+  stops it, Anchored eases it, by the same rules as the Pale Squall. Whoever reaches it is struck and thrown back
+  (`pale_mason_door_damage`). Then it slams, and his curse falls, as every Elder's ultimate does.
+- **The Homing Pearl**, his: used out in the End on an expedition, it takes you home to the Void Anchor feeding your
+  expedition at once, and is spent. His spoils besides: ender pearls, Tether Fragments, shulker shells, gold, an end
+  crystal and a Tetherite template now and then, and the Elders' elegy fragments for everyone who fought him.
+- His own sounds and theme, a title card, a journal page (46; the pages in your own hand are 47 now), a bestiary
+  page, the advancement *The Last Door Closes*, his spoils in JEI/EMI, and every value in the settings
+  (World rules: The Pale Mason).
+
+## 3.39.2: Shoves that land
+
+### Fixed
+- **Every shove, pull and drag the mod sets on a player now reaches them.** A motion set on a player on the server
+  moves no one by itself: the player's own client moves them (the client test measured it at 0.00 blocks). Those that
+  came with a blow that landed already reached you, since the game sends the motion along with a hit; the ones without
+  a hit never moved anyone. They are now sent to the player's client to take on, the same way the Pale Squall's gust
+  is since 3.39.1. What now works as it was meant to:
+  - the Edgecrawler dragging you toward the edge (until now only its throw reached you, and only when it hurt);
+  - the Tidewalker pulling you down out of a capsized boat and holding you under;
+  - a Cragback's or Gatebreaker's slam pushing you back when your shield takes it;
+  - the Ferryman's chain hauling you in, and the Last Weaver's thread pulling you back when you stray from where it
+    caught you;
+  - the Ferryman's gaol stopping you dead at its bars, and Tethershot's pull when it strikes a player.
+  Shoves that came with a hit (Lurkers and Keepers dragging you out of a hole, Elder blows and snares, Veil Rays, the
+  Starved One) feel the same as before, and now also reach you when their damage is set to 0. The client test now checks that a shove sent this
+  way moves a player.
+
+## 3.39.1: The squall blows
+
+### Fixed
+- **Pale Squalls now push.** The warnings came and nothing moved: the gust was set on the player's motion on the
+  server, and a player is moved by their own client. The gust is now sent to each player's client and added to their
+  motion there, every tick it blows, so it carries you along the way the motes stream (sneak, brace against a wall,
+  Anchored and Unmoored work as before). The client test now stands a player on a floor, lets a squall blow and checks
+  that it carries them off.
+- **A squall takes hold of players in creative** standing on the ground too, as an explosion's push does; not of one
+  flying in creative, nor of a spectator. (It left everyone in creative alone, which made `/tether event squall` look
+  dead to an operator trying it out.)
+
+## 3.39.0: The Pale Reach
+
+### New
+- **The Pale Reach.** Once the Dragon has fallen, the End's far islands wake, from 1000 blocks out
+  (`pale_reach_from`). The Endermen there were people once, torn loose when the first wound opened, and they build
+  anchors to find their way home, and never finish one. A new journal page tells of it the first time you come out there.
+- **Unfinished Anchors.** The Reach is laid out in squares (`pale_anchor_spacing`, 512 blocks); about every other one
+  (`pale_anchor_chance`) holds an Unfinished Anchor hanging over the void: a plinth of end stone and obsidian under a
+  round floor, a lodestone fitting between four golden posts, six broken pillars of purpur and pale stone with
+  half-built arches, a halo with golden spokes not yet closed, chains, and loose blocks hanging in the air. When you
+  come near, it flies together block by block, as the Seam builds itself (`pale_anchor_build_seconds`); a beam over its
+  fitting shows where it is from far off. Its barrels hold pearls, chorus, Eyes of Ender, gold, Tether Fragments and
+  now and then a diamond, a shulker shell or an end crystal. Over an island it stands on the island; never over an End City.
+- **Attune a fitting.** Use the fitting with an Eye of Ender (`pale_fitting_cost`) and its beam turns pale and steady:
+  within 48 blocks of it (`pale_fitting_range`) your Tether drains at half the pace (`pale_fitting_drain`), a place to
+  catch your breath out where the drain runs fastest. Advancement: *A Socket for the Way Home*.
+- **The Pale Hauler** (after the concept): an Enderman's lanky dark body under a hood and ragged mantle of pale end
+  stone, the Endermen's violet eyes in a face of shadow. They come in twos and threes in the Reach
+  (`pale_hauler_spawn_chance`, `pale_hauler_max`) and haul the blocks you laid out over the void: a block shakes in a
+  Hauler's grip for a moment (`pale_hauler_pull_seconds`), then flies to it, and it carries it off over its head. Never
+  a block you stand on or right beside: the gap opens a step ahead. Look it in the eye and it lets go and steps away;
+  the third time it goes. With nothing to haul it crouches, glowing red, and leaps at you (`pale_hauler_damage`).
+  After six blocks (`pale_hauler_pulls`) it is gone with them, unless you slay it: then every block falls. It has a
+  page in the bestiary, words in the Wound Lens, its spoils in JEI, and `/tether lurker pale_hauler` and
+  `/tether lurkers pale_hauler on|off`.
+- **Pale Squalls.** Now and then on an expedition in the Reach the void draws breath (`pale_squall_chance`): for four
+  seconds motes stream past the way it will blow, then for eight seconds a gust pushes you along
+  (`pale_squall_push`). Sneak and it halves (and you keep to the edge as ever); brace against a wall and it cannot move
+  you. Anchored on chest or legs eases it (`pale_squall_anchored`), the curse Unmoored makes it worse, and on wings it
+  pushes twice as hard. `/tether event squall` starts one.
+- `/tether reach anchor` flies an Unfinished Anchor together a little way ahead of you, for operators.
+- Every setting is in the settings screen under the new part *The Pale Reach*.
+
+## 3.38.0: Fair Warning
+
+### Changes
+- **Every boss now gives warning before it comes, as the Matriarch does since 3.28.** Each one stirs for 15 seconds
+  first: a bar counts down for everyone near, the place groans louder as the time runs out, and chat says what is
+  coming and how to let it pass. Whoever is still near when the bar runs out is the one it rises for (the one who woke
+  it, first of all); if everyone goes far enough, it settles again, and nothing is lost.
+  - **The Ferryman**: his bell tolls across the lava for the one he comes for, wherever they go (a gold bar, soul fire
+    round them, the bell louder each toll). Leave the Nether before the last toll and he lets this crossing pass: he
+    has had his chance on that expedition. Your first Nether expedition after the dragon also tells you, once, that he
+    sails there now and may come on a long crossing.
+  - **The Last Weaver**: walking into a village of the Thinned no longer wakes it on the spot. Its threads tighten
+    first (a blue bar, light running up the threads, a humming that grows); go 48 blocks from the village and it sinks
+    back into the weave, and that village wakes it again on your next visit. Coming within 40 blocks of a village whose
+    Weaver may still wake, you see threads of light over it and are told so.
+  - **The Knot Mother**: pulling the First Knot's heart with the Plumb Line loosens the knot first (a purple bar, the
+    strands shedding and creaking); go 24 blocks from the heart and it pulls tight again, with no rest to wait out. In
+    the chamber, while she can be woken, her strands stir round the heart and you are told that pulling it wakes her.
+  - **The Starved One**: stepping onto the altar makes the Heart groan first (a purple bar, souls gathering over the
+    altar and where it breaks through); go 32 blocks from the altar and it sinks back into the hunger, and the altar
+    wakes it again. Within 24 blocks of the altar souls drift over it and you are told that stepping onto it wakes it.
+- All in the settings screen (World rules → The Elders), on every difficulty: `ferryman_wake_seconds`,
+  `weaver_wake_seconds`, `weaver_calm_range`, `weaver_warn_range`, `knot_mother_wake_seconds`,
+  `knot_mother_calm_range`, `starved_wake_seconds`, `starved_calm_range` and `starved_warn_range`. A wind-up of 0
+  brings the boss at once as before; `/tether boss` still calls one at once.
+
+## 3.37.0: Weight Turned Aside
+
+### Changes
+- **The bosses shrug off the mace.** A smash from a height took an Elder's or the Starved One's whole health in a few
+  blows. Now only a tenth of a mace's blow lands on them (`boss_mace_damage`, World rules → The Elders; 0 = immune,
+  1 = as before): the blow glances off in sparks, and the striker reads why on the action bar. Every other weapon
+  (swords, axes, tridents, bows, crossbows) hits them as before.
+
+## 3.36.0: Lighter Fights
+
+### Changes
+- **A new Display option, Effects** (Full, Reduced, Minimal), kept on each player's own computer: how much of the mod's
+  own spectacle it draws. The sparks, rings, beams and wisps of the Elders' blows went past Minecraft's Particles
+  option until now; they follow Effects (all of them, half or a fifth), and so does the air of the Seam (its fireflies,
+  dust and motes, which also follow Particles). Lower it if fights stutter on a slower computer. The Display tab is a
+  little tighter to fit it.
+- **The client's frame time is now measured in CI**: the client test reports it (PERFC lines) in the Overworld, while an
+  Elder's arena flies together, at each Elder's blows (the first blow again at Minimal) and in the Seam (in full and at
+  Minimal), with what is drawn near. (CI renders in software, so the numbers are read beside each other, not as a
+  player's frame rate.)
+
+## 3.35.0: In the Viewer
+
+### Changes
+- **JEI support.** The mod's recipes always showed in JEI by themselves; now JEI also shows what no recipe says:
+  - **Anchor fuel**: every Nether and End fuel and the charge it gives an anchor (look up a lodestone's uses).
+  - **Hollowling barter**: every ware of the young with its price (before trust lowers it), what it gives and when it is
+    offered (every day, some days, when the tribe trusts you, for kin only), and every gift they take.
+  - **Spindle**: the Tether Fragments and Seam Silk a Tether Cord takes, and how many turns.
+  - **Spoils and finds**: what every creature and find leaves, read from the mod's loot tables, with what the game
+    gives besides (the Elders' elegy fragments, threads and relics, What Listens from the Cave and Sculk Lurkers).
+  - **A page for every item no recipe makes**: where Tether Fragments, Seam Silk, the relics, the threads, the discs
+    and the rest come from, and what they are for. The Tetherite upgrade template and the ingot say how the Binding's
+    odds stand, as this world's settings have them.
+  - Everything follows the settings (prices, the Spindle's counts, the Binding's odds) and both languages. JEI is not
+    needed: without it nothing changes. EMI has no build for this game version yet; REI is to follow.
+- The compatibility test in CI now runs with JEI too and opens its recipe screen on the mod's categories.
+
+## 3.34.1: Rulebook polish
+
+### Fixes
+- The settings overview no longer shows a cut-off hint beside the search box; the search box itself now says it
+  searches every part ("Search every part…").
+- In search results, the Lurker's own settings sit under one heading, *The Lurker*, instead of *The Lurker: The Lurker*.
+
+## 3.34.0: A Clearer Rulebook
+
+### Changes
+- **The settings screen's World rules are far easier to find one's way in.** Over seven hundred values in one long
+  list were too much, so:
+  - **They open on an overview**: a tile for each part of the rules (Anchors, The Lurker, The Elders, Each curse's
+    maximum and strength and so on), with how many of its values differ from their defaults in gold. A tile opens that
+    part alone; *Back* (or Escape) goes back to the overview.
+  - **The two longest parts have headings**: The Lurker's settings under each creature (Lurker, Cave Lurker, Magpie,
+    Wick, Tidewalker and the rest, then logging out in danger), the Elders' under each Elder, what every fight shares,
+    the domains, the cores and falling islands, strength and reach, and the hexes.
+  - **Switches are On/Off buttons** (66 of them, from `lurker_enabled` to `elder_griefing`): a click flips one, no more
+    typing 0 or 1. A click on a switch's name flips it too.
+  - **What differs from its default is marked in gold**, and a **↺** beside a field puts its default back. Hovering a
+    setting tells what it does, its default and its key in the config file.
+  - **Changed** lists every value that differs from its default, from every part at once (with what was changed but not
+    applied yet, in yellow).
+  - **Undo** takes back every change not applied yet; **Defaults** fills in the defaults of the part open (or of
+    everything, from the overview). As before, nothing changes until **Apply**.
+  - **Leaving with changes not applied asks first**: Done says *Leave anyway?* and a second press leaves without them.
+  - The search still looks through every part at once, under each part's heading; the panel grows with larger windows.
+
+## 3.33.0: The Hungry Pillars
+
+### Changes
+- **The Starved One is a real fight now, alone or not.** It was too easily slain by one player. Now:
+  - **The four pillars heal it.** High up each of the great pillars round the Heart, on top of the lowest piece of its
+    shaft (some forty blocks up, as the dragon's crystals stand on their towers), a **heart of sculk** opens as it
+    wakes, with a glowing copy of itself turning over it that shows through the stone. While a heart feeds it, a beam of
+    souls runs from it to the Starved One, which heals 1% of its health a second for each (`starved_heal`), and its
+    boss bar turns green.
+  - **Quench them.** Shoot a heart with an arrow (or throw a snowball, an egg, a trident or a wind charge at it), break
+    it, or feed it one Seam Silk: it goes dark for 40 seconds (`starved_socket_seconds`) and then feeds it again.
+  - **Three quenched and it heals no more** (`starved_heal_quench`); **all four and it falls stunned** for 8 seconds
+    (`starved_bind_seconds`, was 12), held down in chains and taking double damage, as before. The hearts' own time
+    stands still while it is stunned. Free, it still takes only half the harm. This holds for any party: three and four,
+    whoever comes.
+  - **Its blows hit half again as hard** (`starved_damage_scale`, 1.5).
+  - Chat says it all as it wakes, and again as hearts are quenched and wake; the journal's Path and bestiary say so too.
+- **The Elders hit half again as hard**: `elder_damage_scale` is 2.25 (was 1.5); a file still holding 1.5 is brought up
+  to it, a value someone chose stays.
+- `starved_sockets` now means the pillars quenched at once to stun it (4, was 2 plus more for larger parties), and
+  `starved_socket_silk` the silk to quench a heart by hand (1, was 3). Files still holding the old defaults take the new
+  ones.
+
+## 3.32.0: Heavier Crowns
+
+### Changes
+- **Every boss has half again its own health, and each one's health is a setting** (World rules, 1 to 1024):
+
+  | Boss | Setting | Was | Now | In all, alone | Two players |
+  |---|---|---|---|---|---|
+  | Matriarch | `matriarch_health` | 640 | 960 | 1440 | 2160 |
+  | Ferryman | `ferryman_health` | 520 | 780 | 1170 | 1755 |
+  | Knot Mother | `knot_mother_health` | 560 | 840 | 1260 | 1890 |
+  | Last Weaver | `weaver_health` | 480 | 720 | 1080 | 1620 |
+  | Starved One | `starved_health` | 500 | 750 | 750 | 1125 |
+
+  The Elders' health scale (`elder_health_scale`, 1.5) and the players fighting still multiply an Elder's own health
+  (every blow is divided by it), and every other player at the Heart still adds half to the Starved One; the "in all"
+  columns show what that comes to. A setting holds for every boss that comes from then on; one already risen keeps the
+  health it has.
+
+## 3.31.0: Thicker Hides
+
+### Changes
+- **Every Lurker and the Keeper have half again their health, and each kind's health is a setting.** The settings
+  screen (World rules) has a health setting for each, 1 to 1024 (2 is one heart):
+
+  | Kind | Setting | Was | Now |
+  |---|---|---|---|
+  | Lurker | `lurker_health` | 60 | 90 |
+  | Cave Lurker | `cave_lurker_health` | 30 | 45 |
+  | Sculk Lurker | `sculk_lurker_health` | 14 | 21 |
+  | Magpie | `magpie_health` | 24 | 36 |
+  | Wick | `wick_health` | 4 | 6 |
+  | Tidewalker | `tidewalker_health` | 40 | 60 |
+  | Gatebreaker | `gatebreaker_health` | 180 | 270 |
+  | Lockwarden | `lockwarden_health` | 80 | 120 |
+  | Threadbiter | `threadbiter_health` | 6 | 9 |
+  | Edgecrawler | `edgecrawler_health` | 30 | 45 |
+  | Cragback | `cragback_health` | 140 | 210 |
+  | Keeper | `keeper_health` | 140 | 210 |
+
+  The Gatebreaker and the Cragback still grow by half for every other player near. A setting holds for every one that
+  comes from then on; one already out keeps the health it has. The Hollowlings and the Elders are as they were.
+
+### Fixes
+- **The Starved One no longer stops growing at four players.** It grew by raising its health, and the game holds any
+  creature's health to 1024 at most, so against four or more it had 1024 instead of 1250, 1500 and on. Now it keeps
+  its own 500 and every blow on it is divided instead, as the Elders do: 750 in all against two, 1000 against three,
+  1250 against four, 1500 against five (`starved_health_per_player`, 0.5).
+
+## 3.30.0: Lights Out
+
+### New
+- **`/tether lurkers`: switch any kind of Lurker off, or on again.** Every kind already had a switch in the settings
+  screen; now one command shows them all in chat, each on or off with a button to switch it, and
+  `/tether lurkers <kind> on|off` or `/tether lurkers all on|off` does it straight away. The kinds: `lurker` (the
+  common one, with its stalking, hunting, draining and swarms), `cave`, `sculk`, `magpie`, `wick`, `tidewalker`,
+  `gatebreaker`, `lockwarden`, `threadbiter`, `edgecrawler` and `cragback`. It changes the same settings as the screen
+  (`lurker_enabled`, `cave_lurker_enabled`, `magpie_enabled` and so on): saved, for the whole world, and every
+  operator is told. No new ones of a kind switched off come; any already out stay until they leave or are slain.
+  Needs `extremedimensions.admin.settings` (operator level 2 without a permission mod).
+
+## 3.29.0: By Leave
+
+### New
+- **Permissions for every operator command and screen, for LuckPerms and the like.** Each asks a permission of its own
+  through Fabric API's permission API, so a server can let a moderator open the Players screen without making them an
+  operator, or keep bosses and the Seam reset to a few:
+  - `extremedimensions.admin.players`: the Players screen (and the crown in the Curses screen), `/tether players`,
+    `/tether curse` and `/tether tribe set`;
+  - `extremedimensions.admin.settings`: changing the settings (the settings screen), `/tether preset` and
+    `/tether overworld_penalties`;
+  - `extremedimensions.admin.spawn`: `/tether boss`, `hoard`, `lurker`, `event`, `storm`, `seam`, `break_seal` and
+    `seam_showcase`;
+  - `extremedimensions.admin.export`: `/tether export` and `/tether discord_test`;
+  - `extremedimensions.admin.seam_reset`: `/tether seam_reset`.
+- **Nothing changes without a permission mod.** Each falls back to the operator level it always needed (level 2, and
+  level 4 for the Seam reset), and in a world of your own you hold them all. The fallback levels are not settings, so
+  whoever may change the settings cannot lower the bar for a permission they lack. The README has the table and a
+  LuckPerms example.
+
+## 3.28.0: She Stirs
+
+### Changes
+- **The Matriarch gives warning before she comes.** She used to rise the very moment a nest was woken, right beside
+  whoever woke it, wherever that was: by the house, on the way home. Now:
+  - **You are told when you have earned her.** When your third Keeper falls (`matriarch_after_keepers`), chat says so:
+    the next nest you wake calls the Matriarch herself, so choose where.
+  - **Every nest she sleeps beneath warns you.** Come within 20 blocks of a nest while she waits for you
+    (`matriarch_warn_range`) and purple smoke rises over its barrel; on coming near a new nest, and about once a minute
+    after, you are told that opening or breaking its barrel, or striking its young, wakes her.
+  - **Woken, she stirs before she rises.** A purple bar, **The Matriarch stirs**, counts down 15 seconds
+    (`matriarch_wake_seconds`) for everyone within 64 blocks, the ground groans louder as she nears the surface, and
+    everyone near is told. Whoever earned her and is still within 32 blocks of the nest when it runs out
+    (`matriarch_calm_range`) is the one she rises for, the one who woke her first of all. If all of them go that far,
+    she sinks back to sleep, and the next nest they wake calls her again: you choose the place, not the nest.
+- **A nest wrecked by a blast or fire gives the same warning.** A nest whose barrel is blown up or burnt (by a creeper,
+  a raid's ravagers, lightning) is answered for by whoever comes within 24 blocks, as before; with the Matriarch earned,
+  that now starts her wind-up instead of bringing her at once, so there is time to walk away from the house.
+- All three are in the settings screen (World, The Elders), on every difficulty; `matriarch_wake_seconds` 0 brings her
+  at once as before. `/tether boss matriarch` still calls her at once.
+
+## 3.27.5: Stay
+
+### New
+- **Your Hollowling can stay.** Sneak and use your companion Hollowling with an empty hand: it crouches where it is and
+  waits there instead of following, and chat tells you where (x, y, z). It does not come after you, is not brought to
+  your side when you go far or to another world, and is still there when you come back, after a restart too. Sneak and
+  use it again to take it along. While it waits it brings no gifts and keeps no watch for you; if it is slain there, the
+  bond is lost as it always was. Using it with an empty hand without sneaking still opens its barter.
+
+## 3.27.4: Light Metal
+
+### Changes
+- **Tetherite's drawbacks in a section of their own, with one switch for all.** The settings screen (World) now has a
+  section **Tetherite: drawbacks**, apart from the long list of the binding's values: first `tetherite_drawbacks` (1
+  on, 0 off), then the weight (3% speed a piece worn), the hunger (10% a piece worn or held) and the call to the Lurkers
+  (25% a piece). Switched off, Tetherite weighs nothing, feeds on no one and calls no Lurker, whatever the values say,
+  and its tooltips no longer list them; its strengths stay. On by default, on every difficulty.
+
+## 3.27.3: Emptied Stays Empty
+
+### Fixes
+- **A barrel of the Seam is stocked once, ever.** An island the Seam had left half built (when the world was closed
+  or restarted while it was still coming together, or when everyone flew far from it before it was done) was built
+  again on the next visit, and every barrel on it was stocked again with it, including those already emptied. Barrels
+  you had looted could be full again. Now every barrel the Seam stocks is remembered: an island built again leaves it
+  as it is (no new loot, and not put back if it was broken). Only a Seam made anew (`/tether seam_reset`) is stocked
+  afresh. Barrels stocked before this version are remembered from the first time they are stocked again.
+
+## 3.27.2: Silently
+
+### New
+- **Curses laid on and lifted off silently.** The Players screen has a new switch at its foot, **Silent**. While it is
+  on, whatever you change is not told to the player: a stack laid on comes without a toast and is not written in their
+  newest curses (nor marked new in their Curses screen), and a stack lifted off, or every curse lifted at once, comes
+  without a message in chat. The curses act at once all the same, and the server log still notes every change, marked
+  "silently". The minus and plus buttons sit on a violet line while it is on, and their tooltips say so. It stays on
+  until you switch it off again or close the game.
+
+### Changes
+- The Players screen's footer buttons are shorter, to make room for the switch: "Lift every curse", "Show: all" or
+  "Show: carried", and "Silent: on/off". Seam visits and Fray descents read "5/2", so they no longer get cut off.
+
+## 3.27.1: Fits the Screen
+
+### Fixes
+- **The Players screen fits a short screen.** It showed eight curse rows whatever the window, so at a large GUI scale
+  (a screen 240 pixels high in GUI terms) its foot, with Done and Lift every curse, fell off the bottom. It now shows as
+  many rows as fit, eight down to three, and scrolls the rest. A narrow set tab names its set on hover; the open one,
+  which shows its name already, no longer repeats it.
+
+## 3.27.0: The Players Screen
+
+### New
+- **A Players screen for operators.** `/tether players` opens it, and so does a crown beside the pact and Rift Trials
+  buttons in the Curses screen, shown only to operators (and to the player of a world of their own). On the left every
+  player the world knows, online first and then offline, yourself among them, with a search box and how many stacks each
+  carries. On the right the player picked: online or offline, the world they are in (the Fray named apart from the
+  Seam), whether they are on an expedition and their health; their scars, curses lifted, deaths, expeditions, Seam
+  visits and Fray descents, standing with the tribe, pact, relic, the curse they atone for and their clan; and their
+  newest curse, where it came from and how long ago.
+- **Curses laid on and lifted off, for anyone, offline too.** Under the overview, every curse of a set (the Abyssal ones
+  under Extreme) with its stacks and its atonement so far. A minus lifts one stack: plainly, without the scar or reward
+  an atonement gives. A plus lays one on, up to the curse's maximum; the player sees it as a toast, "from an operator",
+  and in the Curses screen's newest curses. "Lift every curse" (press twice) clears them all. A player online is told
+  when a stack is lifted and their curses act at once; a player offline finds them so when they come back. Every change
+  is written to the server log with who made it. The server checks every request: no one else gets the data or changes
+  anything.
+
+## 3.26.2: Called By Name
+
+### Changes
+- **`/tether lurker <kind> <player>`.** Every kind the command calls (the Lurker's watch, stalk, hunt, drain and swarm,
+  the Cave and Sculk Lurkers, the Magpie, the Wick, the Tidewalker, the Gatebreaker, the Lockwarden, the Threadbiter,
+  the Edgecrawler and the Cragback) now takes a player, or a selector such as `@a`, after it: the creature comes near
+  that player and is set on them, not on whoever typed it. Without a name it comes for you, as before. Operators only.
+
+## 3.26.1: Bound Near Its Source
+
+### Changes
+- **Tetherite binds only near where it came from.** On Normal and Hard a binding can be done only in the Seam (the Fray
+  included); on Extreme only down in the Fray; on Easy anywhere (`tetherite_bind_where`: 0 anywhere, 1 the Seam, 2 the
+  Fray). Elsewhere the smithing table shows the result but will not let it be taken, by hand or by shift-click, and
+  nothing on it is spent: the panel beside it says where the metal binds, and so do the tooltips of the Tetherite Ingot
+  and the upgrade template. In Creative it binds anywhere. A world on a difficulty takes that difficulty's setting on
+  upgrading (settings layout 8).
+
+## 3.26.0: The Binding
+
+Tetherite was the end of the road with nothing asked of it: smelt the ore, make the ingot, upgrade at the smithing
+table, done. Now the metal of swallowed Tethers is won harder, may refuse you, and asks its price of whoever bears it.
+
+### Tetherite is won harder
+- **The ore wants netherite.** A diamond pick only breaks it; a netherite pick (or a Tetherite one) brings it out.
+- **Only a blast furnace gives up its scrap.** The plain furnace recipe is gone; a blast furnace takes ten seconds an ore.
+
+### The binding: the upgrade may fail
+- **Taking a Tetherite upgrade from the smithing table rolls whether the metal holds.** On a plain netherite piece the
+  chance is 40% (`tetherite_bind_chance`; Easy 55%, Hard 30%, Extreme 20%). If it fails, the ingot shatters, the piece
+  is worn by a quarter of its durability (never broken, `tetherite_bind_wear`) and keeps a **scar**; the template
+  survives (`tetherite_bind_keep_template`). Each scar makes the next try on that piece 10% likelier (up to three).
+- **What makes the chance:**
+  - Unbreaking +5% a level, Mending +10%, Knitting +10%;
+  - the Curse of Binding +10% (the metal takes to what is already bound), every other curse −10%;
+  - Luck +5% a level, Bad Luck −5%;
+  - binding in the Seam +10%, and down in the Fray another +10%;
+  - a Tether Cord held in the other hand +15% (spent on the try, whatever comes of it);
+  - never below 5% nor above 95% (`tetherite_bind_min`, `tetherite_bind_max`).
+- **You see it before you try.** While a binding waits in the result slot, a panel beside the table gives its chance and
+  every share that makes it, and what a failure costs. Shift-clicking the result rolls too. In Creative it always holds.
+
+### Tetherite asks its price
+- **Heavy:** each piece of Tetherite armor worn slows you by 3% (`tetherite_weight`; the full set 12%).
+- **Hungry:** each piece worn, and a Tetherite tool or weapon in either hand, makes you 10% hungrier (`tetherite_hunger`).
+- **It calls the tribe:** the Lurkers find you 25% more often for every piece you bear (`tetherite_lure`).
+- The tooltips of Tetherite gear say so, in red under the set's gift.
+
+### You can see which curse you got
+- **A curse laid without a choice now says so.** A Lurker's touch, a Cave Lurker, the swarm, a Tidewalker, a barter, a
+  Collapse, leaving in danger, an Elder's ultimate: a toast names the curse and where it came from, the moment it lands.
+- **The Curses screen remembers.** A strip along its top shows the newest curse, where it came from and how long ago;
+  hover it for the last six, click it to open that curse. Curses that came since you last looked carry a pulsing mark in
+  the grid, and the screen opens on the newest of them.
+
+### The big Lurker walks instead of spinning
+- **It turns steadily**, at most 35 degrees a tick, as its smaller kin already did, instead of snapping round.
+- **Its wide body no longer circles the points of its route** it cannot stand on (by a wall, round a corner): it strides
+  past them when its body passes straight on, never cutting a corner into the wall.
+- **It leaps ledges of one and a half to five blocks** when its way round is long or it makes no headway, not only when
+  there is no way round. It climbs as a leap: straight up past the ledge's top, then drawn over onto it, so its body
+  never strikes the ledge's side; and **never through a wall**: if anything stands in its way across the top, it goes
+  round.
+
+### Settings
+- Nineteen new settings in the Tetherite section (EN/NL), with bounds. A world on a difficulty takes that difficulty's
+  binding chance on upgrading (settings layout 7).
+
+## 3.25.2: No Warning Until You Leave
+
+### Changes
+- **The combat lock no longer gives the hunt away.** 3.25.1 showed a red chip on the HUD the moment the wound came for
+  you, so a Lurker on its way was spotted before it was seen. The chip is gone: you learn you are held only when you
+  press Escape to leave, from the warning across the top of the pause menu (what holds you, what leaving now costs, and
+  for a blow how many seconds yet). What comes for you comes as a surprise again.
+
+## 3.25.1: Quiet Company
+
+### Changes
+- **A companion Hollowling is quiet company.** It chattered every ten seconds or so and chittered aloud every two
+  seconds at any monster you had not seen, at full volume. Now it chatters about every ninety seconds
+  (`companion_ambient_seconds`), warns aloud at most every thirty seconds (`companion_warn_seconds`; between those it
+  still looks at the danger and a mote hangs over it), and everything it says is at 30% of a wild one's volume
+  (`companion_sound_volume`). Wild Hollowlings are as loud as ever.
+- **You can see when leaving would cost you.** While the wound is after you (a swarm, a hunting Lurker, the Keeper, a
+  raid, an Elder, or a blow from one of its creatures in the last `flee_danger_seconds`), logging out costs a curse when
+  you come back. A red chip now heads your meters on the HUD, saying what holds you and what leaving would cost, with a
+  countdown for a blow; the pause menu says it above its title, where the button to leave is. For a server's tablist,
+  `%extremedimensions:danger%` reads "Hunted" for everyone held, so others can see it too.
+
+### Fixes
+- **A Tether no longer goes back to the Nether.** Home with a full pack, the returned Tether was dropped where you stood:
+  in the portal you came through, which carried it straight back. It is now kept for you, with its tier and its
+  enchantments, and comes back into your pack the moment a slot is free.
+
+## 3.25.0: Mother of Knots
+
+The Knot Mother fought to the Last Weaver's music. Now her fight has a theme of its own, "Mother of Knots", composed
+for her (`tools/sounds/boss_knot_mother.py`) from the same voice as her sounds: her choir, her bronze, her threads.
+
+### Her theme
+- **About three minutes in D minor at 128 beats a minute, in 3+3+2**: every bar is pulled in three tugs, like a knot
+  being drawn tight. Her theme circles its root and winds back on itself (D, F, E, D; A; B flat, A, G, A), and its answer
+  climbs, then draws tight down a chromatic step (D, F, G, A, G, F; E, E flat, D).
+- **It tells her fight**: out of a low drone her heart beats, her theme is plucked on threads and rung on bronze; a
+  low string ostinato and great drums take hold; her choir sings the theme with a braam at every change of chord;
+  then everything drops away to her heart, a creaking thread and whispers; it all comes back brighter bar by bar, the
+  drums denser, a snare roll and a riser, two bars without drums, and the climax: through the Neapolitan (D minor,
+  E flat, B flat, A), the choir an octave higher, bronze doubling it, knots ticking in sixteenths, a gong every eight
+  bars. A lighter pass with the strings singing her theme, one last great hit, and the choir, her threads and her heart
+  fade.
+- **Stereo**, the drums and strings in a stone room, the choir, bronze and threads in a great hall. It swells in from
+  near silence and fades out to it, so the fight's music lays one pass seamlessly over the next, and it is as loud as
+  the other Elders' tracks.
+- The Last Weaver keeps "Final Collapse"; when both fight near you, the track already playing plays on, as before.
+
+## 3.24.0: A Voice to Bind With
+
+The Knot Mother looked like a final boss and sounded like a garden shed: she borrowed the Last Weaver's thin glass
+chimes for a voice, and her blows were announced by a tripwire's click and a lead being tied. She now has a sound of
+her own for everything she does, made for her (`tools/sounds/knot_mother.py`), and her blows land with the weight of a
+boss.
+
+### Her own sound
+- **Her voice is a choir**: a woman's voice multiplied into many, a growl an octave or two under it, bronze on top. It
+  rises before each of her blows (two voicings), cries out when she is hurt, hums low through closed lips at rest,
+  roars with a braam swelling under it, and in death falls away in a long wail while her rings crash down one by one
+  and every thread snaps.
+- **Her blows sound like what they are**: her **Threadline** is drawn tight with a creak and a rising thread that sings
+  up to the very moment she sweeps it (faster as her blows come faster), then cracks like a whip with a boom under it,
+  heard from her and loud where it runs at you; her **Knot Snare** is woven with knots tied faster and faster up to
+  the moment it closes, and closes with a rope cinched, a heavy twang and her bronze; threads cast are plucked in a
+  chord.
+- **Her anchors** rise with a low bronze clang, ring heavier and higher with every blow they take, and break with a
+  great snap, shards, bronze crashing and two booms; **laid bare** her core thrums like a heart.
+- **Her great moments**: she **forms** to a drone out of nothing, threads tightening, a heartbeat ever faster and her
+  choir rising up to the moment she tears free (in step with `elder_spawn_seconds`); each **phase** (70% and 35%)
+  turns with a great gong, her choir and her roar; her **ultimate** begins with everything drawn up to a cry and a
+  boom, and ends with every thread snapping at once.
+- Mastered loud and heavy (sub-bass you feel, with the upper harmonics you hear on small speakers too), mono so the
+  world places them, each with an English and Dutch subtitle. The Weaver's machinery she runs on keeps its own sounds
+  for the Last Weaver.
+
+### Her blows land
+- **Threadline**: the floor jolts under its prey as it is swept (a shake and an impact frame), the floor bursts where it
+  begins, and it scores the floor as it runs (sparks, shards and a slash of cracked light behind it).
+- **Knot Snare**: each pattern closes with a jolt for whoever stands near it and violet light pouring off the knot.
+- **An anchor breaking**: a flash, a shake for everyone near, the floor bursting at its foot and the thread whipping
+  back to her; **laid bare**, violet light pours out of her core, pulsing while it lasts.
+- **Her phases**: a flash, the floor bursting under her and a shockwave running out across her chamber, violet light
+  storming round her.
+
+## 3.23.1: Room for Everything
+
+### Fixes
+- **A tangle's barrel no longer swallows its rare finds.** A barrel of the Fray's tangles can come out of its loot table
+  filled to the brim; the wound's own record and the fragment of the abyss's song then found no empty slot and were
+  lost. They now take the place of the last ordinary thing in it.
+- **The Knot Mother finds room for every anchor.** An anchor whose place round her was taken (a pillar, a hole in the
+  floor) was left untied; she now ties it at the nearest free spot beside it.
+- Tests: the tests that wake the Knot Mother (one of a kind) now wait their turn rather than run into each other, and the
+  Threadline test reads whether the thread caught its player instead of how hurt they are.
+
+## 3.23.0: Who Holds the First End
+
+The Knot Mother wore the Last Weaver's body, only recoloured, and fought with the Last Weaver's blows. She is the thing
+tied into the First Knot, and now she looks it and fights like it, after her own design document and concept sheets:
+where the Last Weaver unmakes the thread, she binds it.
+
+### Her own shape
+- **A tall, narrow, veiled figure some eighteen blocks high.** A deep pointed hood full of dark, with a crack of violet
+  light where a face would be; robes of charcoal and deep violet edged in ash lilac, layer over layer of long tatters
+  flaring wide to the floor; a mantle of tatters on her shoulders and bronze chains in swags across her front.
+- **The knot crown**: behind her head a ring of aged bronze, thorns standing out of it, knots of violet light on it, a
+  thin inner ring of thorny vine and one tall spire; a circlet of thorns round the hood.
+- **Rings float about her**: a tilted ring of thorns round her shoulders and a loom wheel behind her back.
+- **At her breast a void-violet core** in a thorned bronze frame, her brightest light. **Her hands are skeletal and
+  clawed**: one raised, threads of amber light hanging from its fingers and looping across to the other, held low,
+  its threads running down to the floor.
+- **Her colours follow her design**: void black and charcoal for her mass, deep violet for her cloth, violet for her
+  core and the crown's knots, amber only for her threads, aged bronze (never gold) for her metal.
+- **She moves as herself**: she glides and sways; her crown turns slowly, her rings float and turn, her core pulses.
+  Every blow begins in her hands. She forms from the floor up, threads drawing her together, the crown and rings last;
+  dying, her threads break one by one, the crown falls still and the rings drop away.
+
+### Her own kit
+- **Threadline**: she raises a hand; a thread of amber runs from it to the floor where its sweep begins and a line of
+  marks kindles there; then the thread is swept low across the floor, through where you stand and on to the wall.
+  **Jump it, or step out of its lane** (`knot_mother_threadline_damage`, `knot_mother_threadline_sweep`). Her light
+  turns amber as she begins. She uses it most against those who keep far off.
+- **Knot Snare**: her hands pull towards each other and patterns are drawn on the floor, one under you and more about
+  you, closing inwards for at least 1.5 seconds (`knot_mother_snare_warning`). Whoever is still in one when it closes
+  is **held fast** for a moment, no step and no jump (`knot_mother_snare_seconds`; Steadfast loosens it), and loses
+  Seam time (`knot_mother_snare_time`); it hurts little. Her light turns violet as she begins. She uses it most against
+  those who come close.
+- **Her anchors**: once formed she ties herself to three anchors round her chamber (`knot_mother_anchors`), pillars of
+  crying obsidian topped by a node of amber light, a thread running from each to her core. **While they stand she
+  shrugs off half of every blow** (`knot_mother_anchor_ward`, less as they break).
+- **Break an anchor and she is exposed**: three hits on its node (`knot_mother_anchor_hits`) and its light goes out,
+  the thread snaps, and she hangs still for four seconds, her mantle fallen open on a core burning white
+  (`knot_mother_exposed_seconds`); **blows do half again as much** while she lies exposed
+  (`knot_mother_exposed_damage`).
+- **Her phases**: at 70% and 35% of her health every thread is drawn back to her and her anchors are tied again, all of
+  them; at the second her blows quicken. She no longer calls the Thinned.
+- She keeps the Weaver's thread and cradle, and her ultimate, *The First Knot*; she has none of the Weaver's needles,
+  Lance or unravelling.
+- **She cannot stray far from where she woke** (`knot_mother_leash`, 14 blocks): her cords hold her to her chamber.
+- When she goes (slain, or left), her anchors go with her; an anchor left behind by a server stopping mid-fight is
+  taken out of the world once its chunk is loaded.
+
+### Also
+- The bestiary's page on her tells of her new shape, her anchors and her blows (English and Dutch).
+- Tests: her Threadline catches a player standing in its lane and passes under one in the air over it; her cords bring
+  her back past her leash rather than after a player further off; a snare holds a player fast (no walking, no jumping),
+  takes its Seam time and gives after its time; her Snare catches a player standing still only after its warning; her
+  anchors stand, shield her, break after three hits, expose her to heavier blows, and go with her.
+
+## 3.22.1: Rock on Its Back
+
+### Fixes
+- **The Cragback looks like what it is.** The stones of its back were the same dark hush stone as its cloak, and sat
+  low in its hump, so it read as one more dark creature, not a boulder. Its back now carries five stones (pale hush
+  stone, tuff and two of Tetherite ore) set well up on its hump, light against the dark, so a sleeping Cragback looks
+  like a rock with something under it.
+
+## 3.22.0: The Seam's Own
+
+The Seam had its rays and its Thinned, and the Lurkers only ever watched there. Now it has a tribe of its own: one
+small, one middling, one huge, each made for the islands and the void between them.
+
+### The Threadbiter (small)
+- **Knee-high scraps of the tribe with mouths too big for them**, their cloaks the Seam's dusk violet shot through with
+  stolen gold thread. A pack of them (two to four, `threadbiter_pack`) comes scurrying over the islands for a visitor,
+  twice as often once the visitor's thread runs thin.
+- **They gnaw at your thread**, the time that holds you in the Seam: every bite takes a few seconds
+  (`threadbiter_bite`), a strand of gold drawn out of you into its mouth, but they never bite it shorter than
+  `threadbiter_floor` seconds. After a few bites (`threadbiter_bites`) one runs off with what it ate, trailing gold, and
+  when it has run long enough (`threadbiter_flee_seconds`) it is gone, and the time with it.
+- **Slay it and every second it ate comes back to you.** They never hurt anyone otherwise; one sweep of a sword does
+  for a pack.
+
+### The Edgecrawler (medium)
+- **It hangs under the islands' rims**, grey as the undersides it clings to, long in the arm, its stone mask set with
+  small glowing eyes the green of lichen. When you stand near an edge (`edgecrawler_edge_range`, a drop of open air at
+  least `edgecrawler_drop` deep), it may climb up over the rim behind you.
+- **It comes on only while it is not looked at**, then rears up and reaches. A raised shield turns the reach. Caught,
+  you are **dragged to the nearest edge and thrown over** (`edgecrawler_throw`, `edgecrawler_damage`).
+- **Crouch and you plant your feet**: it cannot throw you, and it slinks off. Strike it and it lets go. With no edge
+  near, it rakes you with its claws instead. Its throw landed, it climbs back down under the rim.
+
+### The Cragback (large)
+- **Some of the tribe lay down so long ago that the islands grew over them.** The Cragback sleeps hunched on an island,
+  its back grown over with hush stone and veins of Tetherite (real blocks on its back), a boulder like any other.
+- **It wakes** when a block is broken near it (`cragback_wake_range`; Tetherite ore from twice as far: it guards the
+  veins), when it is struck, or when someone stands by it without crouching. Sneak past and it sleeps on.
+- **Awake** it is slow and heavy: close, it **slams** the ground (all near it hurt and thrown back, toward the edge as
+  often as not; a shield turns it); further off, it pounds the ground and **rocks fall** where a ring of dust shows
+  round its prey. Half beaten, a stone breaks off its back and it comes on faster. More players near, more health it
+  has.
+- **Slain, it gives up the Tetherite of its back**: scrap always, often ore and Seam silk too.
+
+### The Lurker in the Seam
+- A Lurker watching you in the Seam never steals there; but **once your thread runs thin** (under a third of your
+  time, in the Fray, or as the Seam pulls you out) it may now come to hurt you instead of leaving
+  (`lurker_seam_hunt_chance`).
+
+### Everywhere
+- All three in the bestiary, through the Wound Lens, with `/tether lurker threadbiter|edgecrawler|cragback`, on the
+  difficulty presets, kin spared, and every number a setting in English and Dutch.
+
+### Tests
+- A Threadbiter gnaws seconds off the thread and gives every one back when it is slain.
+- An Edgecrawler drags its prey to the edge and throws them over; a crouching player cannot be thrown.
+- A sleeping Cragback wakes when Tetherite ore is broken near it, slams whoever is close, and drops Tetherite scrap.
+
+## 3.21.1: Loot Held High
+
+### Fixes
+- **The Magpie's loot is held up where you can see it.** The thing it last took sat inside its hood, hidden by its
+  hunched head (the screenshots showed nothing over it); now it floats well over its hood as it runs.
+
+## 3.21.0: The Lockwarden
+
+The End was the one world without the tribe. Now it has the one who kept the lock.
+
+### The Lockwarden
+- **The Dragon was the lock on the first wound, and the Lockwarden kept watch over the lock.** Tall and thin, cloaked
+  in the End's own dark purple, a mask of pale end stone with a keyhole in it, eyes of an Enderman's magenta. With the
+  Dragon fallen there is no lock left to keep, and it roams the End after what still opens ways.
+- **It comes only for those who carry ender pearls**, once the Dragon has fallen: it steps out of nowhere a little way
+  off and watches, then comes on in steps as an Enderman does, from one spot near you to another, closer each time.
+- **The snatch**: a moment's reach (motes gathering in its hands), then your ender pearls are gone (16 at most,
+  `lockwarden_takes`) and you are hurt. Sometimes (`lockwarden_maroon_chance`) it takes you with it: you find yourself
+  on a **lost islet** of end stone some way out over the void (`lockwarden_maroon_distance`), one ender pearl lying at
+  your feet to get back with. Then it steps away and is gone.
+- **Counters**: carry no pearls and it has no business with you. A raised shield turns its reach. Strike it and half
+  of what it took falls; slay it and all of it does, with chorus fruit, tether fragments and sometimes a shulker shell.
+  Kin are spared.
+- In the bestiary, through the Wound Lens, with `/tether lurker lockwarden`, on the difficulty presets, and every
+  number a setting in English and Dutch.
+
+### Tests
+- A Lockwarden snatches a player's pearls, leaves them on a lost islet of end stone with one pearl at their feet, and
+  drops all 16 when slain.
+
+## 3.20.0: Deep Water, Broken Walls
+
+Two more of the tribe: one for the water, which had nothing in it, and one that finally gives the Wound Storms teeth.
+
+### The Tidewalker
+- **Kin of the tribe gone down into the deep water**, long and lean, its cloak turned to kelp, its skin the grey-blue of
+  the drowned, a bone mask grown over with barnacles and slit with gills, eyes of sea-glow. It breathes water and swims
+  as it likes.
+- **Where you row or swim over deep water** in the Overworld (twice as likely at night), it rises out of the dark
+  below and **circles under the surface**, closing in; a trail of bubbles breaking above it is all you see.
+- **Then it strikes**: a rower is thrown out of the boat (the boat is shoved away, not broken); a swimmer is seized
+  and **dragged down**, hurt, the breath torn out of them, and maybe cursed. A blow makes it let go. It circles and
+  strikes again, three times at most (`tidewalker_strikes`), then sinks away.
+- **Counters**: a torch or lantern held up over the water, or the Conduit's power, keeps it off (it sinks away at
+  once); it never follows anyone ashore. Slain, it gives up what it took from the wrecks of the deep: gold, emeralds or
+  iron, prismarine, sometimes a nautilus shell, rarely a heart of the sea.
+
+### The Gatebreaker
+- **The biggest of the tribe**, a slow giant of storm-grey stone and iron with a riveted helm for a mask and the
+  storm's pale violet light in its cracks, taller than a Keeper.
+- **The Wound Storms wake it.** While a storm rages round you (after the Dragon has fallen), it may step out of a tear
+  in the storm, with a crack of thunder, and come straight for you.
+- **Walls do not stop it.** Shut away where it cannot walk to you, it draws back its fists (dust trickling from the
+  wall) and brings them down: the wall breaks open, up to 12 blocks a blow (`gatebreaker_smash_blocks`). Only where
+  mobGriefing allows (and `gatebreaker_breaks` is on); nothing as hard as obsidian (`gatebreaker_hardness`), and never
+  a chest, a furnace or an anchor. The blocks drop.
+- **Its slam**: close enough, it raises both fists and slams the ground; everyone near it is hurt (10 half-hearts) and
+  thrown back. A raised shield turns it.
+- **Fight it together**: it has half again as much health for every further player near it. It goes back into the
+  storm when the storm passes, or after four minutes. Slain, it leaves tether fragments, iron, obsidian and sometimes
+  diamonds.
+
+### Both
+- In the bestiary, through the Wound Lens, with `/tether lurker tidewalker` and `/tether lurker gatebreaker`, on the
+  difficulty presets, and every number a setting in English and Dutch.
+- The Magpie's screenshot now holds its loot up by the same code as the game.
+
+### Tests
+- A Tidewalker seizes a swimmer and tears the breath out of them, lets go when struck, and goes when a lantern is held
+  up.
+- A Gatebreaker breaks through a stone wall to a player shut in behind it, all but the obsidian in it.
+
+## 3.19.0: Thieves in the Night
+
+Two new members of the tribe, both after what you have rather than who you are.
+
+### The Magpie
+- **A lean thief**, a little taller than you, black-cloaked with a white mask, a black cap and a gold glint in its eyes.
+  It never touches you. It goes for what you keep: a chest or a barrel with something in it, a little way from where
+  you are and left alone (in the Overworld and the Nether, never a hoard's barrel or a chest still sealed with its loot).
+- **It creeps up out of sight** and robs the chest of its brightest things, one at a time: enchanted and rare things
+  first, then gems and metals, then the fullest stacks, three at most (`magpie_takes`). You hear the lid and are told
+  that something is at your chest. Look right at it close by, or come within a few blocks, and it bolts.
+- **It runs your things home** to a hoard (the one the Lurkers fill), the last thing it took held up over its head,
+  glittering, so it can be followed. Every blow shakes one thing loose; slain, it drops all it carries. What reaches the
+  hoard waits there for you.
+- Your standing with the tribe drops when you slay one, as for a Lurker. Kin are never robbed, and nothing comes on
+  Peaceful or once the seal is broken (unless the world was severed).
+
+### The Wick
+- **A knee-high thing of tallow and soot** with a flame for eyes. On dark, dry nights in the Overworld, where a player
+  keeps a good deal of light about them (`wick_lights`), one to three come out of the dark and **eat the light**:
+  torches and lanterns eaten whole (where mobGriefing allows, `wick_eats`), candles snuffed out, one after the other
+  until each is full (`wick_meals`), and then they sink into the ground.
+- **Soul fire frightens it**: a light with a soul torch, soul lantern or soul campfire near it (`wick_fear_range`) is
+  left alone, and a Wick that comes near soul fire runs. Water and rain put it out.
+- **Slain, it gives back** the torches and lanterns it ate; full of fire, it bursts and singes whoever stands beside it
+  (`wick_burst_seconds`). It never hurts anyone otherwise.
+
+### Both
+- In the bestiary (lore, and how to face them after three), seen through the Wound Lens (what it is about), summoned
+  with `/tether lurker magpie` and `/tether lurker wick`, and on the difficulty presets (how often they come, and how
+  much a Magpie takes). Every number is a setting, in English and Dutch.
+
+### Tests
+- A Magpie robs a chest of its three brightest things and leaves the stick, holds its loot up, drops one thing to a
+  blow and the rest when slain.
+- A Wick eats the torches round it but not the one beside a soul torch, and gives them back when slain.
+
+## 3.18.1: Heads Above Water
+
+### Fixes
+- **The tribe swims with only its head out of the water.** Lurkers, Cave and Sculk Lurkers, Hollowlings, Keepers and the
+  Thinned floated the way vanilla's mobs do, with only 0.4 blocks of water at their feet, so a tall Lurker stood three
+  quarters out of a lake. Now each floats with the water up to a little under its eyes. In shallower water they wade.
+- **They swim.** In the water a body of the tribe lies forward and pulls itself along in a slow breaststroke, arms
+  sweeping out and back, legs kicking, its rags floating up and trailing behind it.
+
+### Tests
+- Every body of the tribe floats with the water just under its eyes, and most of it under the water.
+
+## 3.18.0: The Starved One Reborn
+
+The last fight was the weakest: a Lurker scaled up, walking about the Heart, stunned by two scraps of silk on two little
+pedestals. Now it is the end of the story.
+
+### Its own body: the hunger, not a Weaver
+- **A new model.** In the story the Starved One is what came through the first wound, the hunger itself; it was never
+  a Weaver, and the Weavers' signs (the halo, the gown, the violet light) are not its own. So it is drawn as hunger: a
+  starved, hunched thing some six blocks tall (sized for the Heart's island) that leans in towards what it wants; a
+  hood with no face in it but a wide maw of embers lined with teeth; a crown of broken iron spikes on its brow, its band
+  snapped open; its ribs open on a belly of ember light that is always empty; ash-grey skin over bone and a spine that
+  stands out along its back; long bony arms with rusted shackles and long claws; no legs, only grave-rags that gather
+  into a tail of tatters trailing behind it; and the snapped chains of the binding that could not hold it, wound round
+  it and dragging from its wrists and crown. Charcoal, rust and ember, no violet. Its maw, belly, veins and claw tips
+  glow.
+- **It moves**: it breathes slow and hungry in the air, its tail ripples in a long wave and streams out behind it in
+  flight, its rags and chains stir and its crown rattles; it flings its arms back before it falls on you, winds up and
+  rakes, rears up with its maw to the sky to call its young, draws its head back and snaps it forward to bite, reaches
+  out and hauls. Bound, its arms are dragged out and down and it hangs its head, shuddering.
+
+### Every blow lands (all the bosses)
+The Elders' blows were big but stiff: a giant stood where it was and moved its arms. Now every boss puts its weight into
+its blows, the Matriarch, the Ferryman, the Last Weaver, the Knot Mother and the Starved One alike.
+- **Gather, strike, rebound.** Before a blow lands a boss gathers for it (sinks into its knees or rises, draws back,
+  strains with a tremor), then throws itself into the blow, which snaps through past where it is going and settles back
+  with a rebound. Raking, slamming and planting blows snap through instead of easing.
+- **Impact frames.** As a blow lands the boss holds still for an instant before it follows through, the view of
+  everyone near jolts down and springs back, a short hard shake goes through the ground and dust bursts up where it
+  struck. (Footsteps and the long rumble of an ultimate do not; calm mode keeps a quarter of the jolt and no frames.)
+- **Into the blow.** The Matriarch steps in to her sweep and plants her feet as it falls; the Ferryman's boat surges in
+  under his falling pole and stops dead as it strikes; the Last Weaver (and the Knot Mother) rises high calling its
+  needles and drops as they fall, and swoops in on the one it unravels. The Starved One's claws, bite, drag, binding
+  and rising land the same way.
+
+### It flies
+- It rises out of the Heart itself, through the stone, and hangs in the air. It circles its prey a few blocks over it,
+  out of reach of a sword; now and then it falls on it claws first, rakes it if it gets there, and climbs away slowly
+  (the moment to strike back). It drifts through stone as through smoke.
+- Its veil-step now comes out in the air behind you and falls on you at once. Its bite through your thread and its drag
+  near death stay.
+
+### What it brings
+- **Its young**: waves of the tribe's young, red-eyed and biting, called up round one or two of those at the Heart
+  (`starved_minions` every `starved_minion_seconds`, at most `starved_minions_max` at once).
+- **The Veil Rays turn on you**: every calm ray near the Heart turns Frayed and hunts while it lives, and Frayed Rays
+  rise out of the dark to circle the Heart (`starved_rays`, one more for every player beyond the first). When the fight
+  ends the young fade, the risen rays sink back and the turned ones calm again.
+
+### The four pillars bind it
+- The two little pedestals are gone. The four great obelisks of the Heart's crown, each on its own island, are what
+  hold it now. As it wakes, a socket of reinforced stone opens in each shaft, on the corner facing the Heart at eye
+  height above the plinth's top step, and **strands** of hush stone (three wide, walled, rising by half blocks) run out
+  from the Heart's rim to each island.
+- Feed a socket Seam Silk (`starved_socket_silk`, 3) and it burns (`starved_socket_seconds`, 40). Once enough burn at
+  once (`starved_sockets`, 2 alone, one more for every two players beyond the first, four at most) their light
+  **binds** it: chains of light run from the sockets, it is dragged down before whoever is nearest and held there
+  (`starved_bind_seconds`, 12), taking double the harm (`starved_bound_damage`). Then every socket goes dark and must
+  be fed again.
+- Free, it takes only half the harm (`starved_unbound_damage`); in full if no pillar stands to bind it.
+- Clear words at every step: how many pillars and how much silk when it wakes, the silk counted as a socket drinks,
+  how many burn, when one burns out, when it is bound and when it tears free. The boss bar turns white while it is
+  bound.
+- The fight reaches the pillars' islands: time stands still, the bar shows and its health is counted for everyone
+  within 84 blocks of the Heart (was 48).
+
+### Text
+- The journal's page of the Heart, the Path, the bestiary and the walkthroughs tell the new fight (English and Dutch).
+
+### Tests
+- The pillars ask more of a larger party (and the four stand where the crown builds them, inside the fight); a pillar's
+  socket is found on its corner; a strand is walkable all the way (half a block at most from step to step, three wide,
+  walled); the Starved One hangs in the air and tells its actions and binding.
+- New screenshots: the Starved One whole, up close, and bound.
+
+## 3.17.1: Together at the Heart
+
+### Fixes
+- **One gate at the Heart, for the whole party.** While the Heart waited, everyone who stepped through the same rift
+  landed at their own random spot on the ring round it, each with a gate of their own: a party of four was split up
+  and saw several gates. Now a rift lands everyone who steps through it at one spot, at one gate; a rift torn elsewhere
+  lands elsewhere on the ring.
+- **A still altar says why.** The Starved One is fought once in a world; once slain it stays slain, and the Thread and
+  the Shears lie on its altar (offered again if they are lost). Standing on the altar after that now says so, and that
+  until one of the two is used every rift opens at the Heart.
+- **A dark pedestal says why.** Silk offered to a pedestal while nothing stands at the Heart now says that the
+  pedestals answer only while the Starved One stands (and to step onto the altar to wake it), or that it is gone.
+
+### Tests
+- Everyone through one rift lands at one spot on the ring round the Heart, and rifts torn elsewhere land elsewhere.
+
+## 3.17.0: What the Thinned Put By
+
+The Seam's buildings were shells: a tower was one tall empty room, a hall had nothing in it, of up to eight houses in a
+village only one had a barrel, and their upper floors could not be reached. A barrel held about five things, half of
+them odds and ends. Now the Seam is worth going into a building for.
+
+### Furnished buildings
+- **Towers.** Every tower's ground floor, and every floor a great tower's stair climbs through, is kept as a library
+  (shelves two high, chiseled shelves, lecterns, candles), a weavery (looms, bales of silk, candles, or cobwebs in a
+  ruin), a store (stacked barrels, pots, chests) or a shrine (candles and amethyst on plinths, soul lanterns), along
+  the walls and round a rug. Nothing stands in a doorway, on the stair or where a bridge comes in.
+- **Halls.** Pews down either side of a runner, candles between the bays, a lectern at the far end and chests by the
+  door.
+- **Houses.** Every house of the Thinned has a ladder up to the room under its roof, a loom, a table, candles and a rug
+  below; a chest, shelves and a bale of silk above.
+- **The great loom** has barrels of silk round its floor, and a ring of standing stones sometimes a cache by its fire.
+- **Storerooms** in all of them: barrels and chests of what a household put by (`chests/seam_storeroom`: thread,
+  candles, paper and books, glow berries and bread, coal and amethyst, and now and then emeralds, a Tether Fragment, a
+  page or an ender pearl). Each holds anything three times in five (`seam_storeroom_chance`); they hold no relics or
+  records, and are no plunder for the Rift Trial. `seam_interiors` at 0 leaves the walls bare. A ruin may take a
+  storeroom like any other block; only islands built from now on are furnished.
+
+### Richer barrels
+- **By a loom:** 3 to 8 silk, two to four more stacks (an enchanted book among them now and then), emeralds more often
+  than not.
+- **In a village:** 4 to 10 silk, three to five more stacks (echo shards, bread, ender pearls, gold, experience,
+  enchanted books, now and then a golden apple), emeralds four times in five.
+- **The reliquary** of a great tower: 6 to 14 silk, echo shards, three to six more stacks (diamonds, books enchanted at
+  20 to 30 levels, golden apples), plenty of emeralds, and rarely Tetherite scrap, a Mending Cloth or an enchanted
+  golden apple; its templates turn up more often.
+- **A snarl of the Fray** is the richest still, with books enchanted at 25 to 35 levels; still exactly one page.
+- About twice the stacks in every barrel, and more in each stack. The tables are written by `tools/loot/seam_chests.py`
+  and a datapack can still replace any of them.
+
+### Tests
+- A village, with interiors on, has ladders, looms and storerooms, and three colossal buildings their furnished floors
+  and storerooms; with interiors off a village stands bare.
+- A storeroom holds what was put by and never a relic or a record; a village's barrel holds silk in four stacks or more.
+
+## 3.16.1: The Road Made Plain
+
+The story's road was sound, but three places on it did not say so when it mattered. Nothing in the story changes; the
+game now tells you in time.
+
+### Signposts
+- **Before the dragon.** The Path's line on the seal, and the word beside an End portal, now say what slaying the
+  Ender Dragon does to the Seam: from then on every rift opens at its Heart until the world is chosen, so finish what
+  you still seek in the Seam first.
+- **The Ferryman and the seal.** His journal page says why he walks only once the dragon has fallen: the crack it left
+  in the world let him through.
+- **After the choice.** The world is chosen, not finished: whoever is in the world when the Thread or the Shears is used
+  is told that six threads wait on a Weaver's Loom and that the Weaving is the world's true end. The ending's page says
+  it too, and the journal's Path heads its page "The world is not finished", naming the six threads (the Matriarch,
+  the Ferryman, the Last Weaver, the Held, the Knot Mother and the Heart) until the tapestry is finished; then it says
+  the story is yours and points to New Thread+, the Rift Trials and the Unweaving.
+
+### Fixes
+- Two of the Path's lines (making a Seam Needle, and holding what decides the world) ran off the bottom of the
+  journal page and were cut short; they are shorter now, and the Path's lines sit a line apart as the game's tooltips
+  do, so the longest of them fits.
+- A Lurker or one of the Thinned looking for a place to stand at the edge of a chunk could reach into the next chunk
+  while it was still loading and make the server wait for it (the performance test caught it at 44 ms). Looking for
+  room or for the ground now reads only chunks that are loaded at that moment.
+
+### Tests
+- With the path walked and the world chosen, the Path names the six threads until the tapestry is finished, and says
+  the story is yours once it is.
+- Looking for room or for the ground in chunks that are not loaded finds none and loads nothing; on loaded ground it
+  finds room as before.
+- The spawner room test clears zombies earlier tests left near it before the spawner starts, and says what the spawner
+  saw if it spawns nothing.
+
+## 3.16.0: A Hard Bargain
+
+### Barter with the young costs dearly
+- **Dearer wares.** Every price is three times what it was on Normal (`tribe_barter_price`), twice on Easy, four times
+  on Hard and five times on Extreme: a Tether Fragment is 15 emeralds before discounts, a relic 60. The discounts for
+  the trusted and for kin are smaller (10% and 20%, were 25% and 40%).
+- **Every bargain costs standing.** The tribe resents what its young give away: each barter takes standing instead of
+  earning it (`tribe_barter_standing_cost`: 3 on Easy, 5 on Normal, 7 on Hard, 10 on Extreme), three times as much for
+  a relic, a Mending Cloth or the Blood Cord. Kin who buy their wares can buy themselves back down to trusted, and must
+  win the tribe over again before they see those wares; a player can barter themselves out of the tribe's trust.
+- **A bargain may leave a curse.** Each barter has a chance to lay a curse on the buyer, the wound's own bargain
+  (`tribe_barter_curse_chance`: 10% on Easy, 25% on Normal, 35% on Hard, 50% on Extreme), twice as likely for a relic,
+  a Mending Cloth or the Blood Cord.
+- The barter screen says what a bargain costs besides its price.
+- A world on a difficulty takes that difficulty's barter costs when it is upgraded; a world of its own rules takes the
+  new defaults where it still held the old ones, and keeps any barter settings it chose.
+
+### Tests
+- A barter costs its price, the standing it should, and (at a certain chance) lays a curse; a kin's ware costs three
+  times the standing and twice the curse chance of another.
+- A world from before 3.16 on Easy takes Easy's barter costs; one of its own rules takes the new defaults.
+
+## 3.15.1: Tetherite, the way Minecraft draws it
+
+A critical look at the Tetherite set beside vanilla's netherite, held pixel for pixel against vanilla's own icons, and
+every texture of it drawn again so it sits among them as one of them.
+
+### What was wrong
+- **Too heavy**: the heads were big and the hafts two pixels thick with an outline on each side. Vanilla's tools are
+  slim: a haft is a single line of pixels in its outline, a head a few pixels across.
+- **Neon stripes**: bright cyan bars ran the length of every blade, head, haft and plate. Vanilla's metals are a short,
+  muted ramp of one colour; an accent is a gem or a glint, not a stripe.
+- **A black line round everything**, which made the items look like stickers. Vanilla edges each part in its own
+  darkest tone.
+- **Shapes of their own**: an axe that read as a mace, a shovel like a lollipop, an ingot like a pill, scrap like a
+  lump, a cord like a magnifying glass, a helmet that was only an arch, templates like UI panels, ore in black boxes.
+- **The worn armour** was flat plates with a black frame round every face and cyan lines across them.
+
+### What it is now
+- **The tools** have vanilla netherite's proportions and silhouettes (the pick's thin arc, the small axe head, the
+  spade, the hoe's short blade, the sword's guard and pommel, the spear's leaf) on a slim dark-violet haft, as
+  netherite's tools sit on a dark wine one. The metal is netherite's dark, muted range turned a little cool and violet;
+  the Tether's thread shows only as a line of deep teal down the sword's fuller and a bead where each head meets its
+  haft.
+- **The ingot** is a cast bar laid at a slant, a lit top face over a darker front face, a thread of teal in its side;
+  **the scrap** two flat shards stacked; **the Tether Cord** a small hank of twisted thread, light and dark turns like
+  vanilla's lead.
+- **The armour pieces** have vanilla's shapes: the helmet a full dome with its dark face opening, the chestplate's
+  shoulders and neck, the leggings, the pair of boots; each with a single teal stud.
+- **The smithing templates** are tall worn slabs: the upgrade a dark slab with the Tether's knot, the Weaver a slab of
+  Seam Silk with the weave pressed in, the Fray a dark slab with threads coming loose.
+- **The ore** sits in the hush stone as vanilla's ores do: irregular clusters, lit on the upper left, no outline.
+- **The worn armour** is bevelled plate: lit top and left edges, shaded right and bottom ones, a little grain, seams
+  and rivets, the face open in the helm, a stud of teal at the brow, the heart, the belt and the boot straps.
+- The generators were rewritten (`tools/items/tetherite.py`, `tools/items/tetherite_armor.py`); the gear screenshot in
+  CI holds vanilla netherite in the row below the set, and CI keeps the set's screenshots at one pixel to the GUI pixel
+  on the `ci-shots` branch.
+
+### Fixed
+- **A Lurker at a house too low for it sometimes never sent its young.** It called them once, and if it found no room
+  beside it for them on that try (against a wall, at a corner) it never called again. It now calls again every half
+  second until they come, and looks harder for room.
+
+## 3.15.0: Voices of the Deep
+
+### The Lurkers of the deep sound like where they live
+- **The Cave Lurker** has a voice of stone. It throws dry **clicks** into the tunnels to hear what answers (they
+  quicken as it hears more, and echo off the walls), breathes in a wet **rasp**, takes a sharp **hiss** of breath
+  before it strikes, gives a hoarse **screech** that runs off down the tunnels when it starts to hunt, ticks its
+  **claws** on the rock as it comes, lands its grab with a rush of air, a **crunch** and a deep blow, and dies in a
+  rattle of slowing clicks as it settles into the stone.
+- **The Sculk Lurker** has a voice of the Deep Dark, and nothing in it is bright: low wet **croaks** with a hollow,
+  muffled ring under them like bone struck under a wet cloth, a dry **rattle** of claws on bone as it scratches at a
+  shrieker, a low double **pulse** and rising croaks when it calls the Warden, a soft pulse as it leads it,
+  **squelching** steps, and a wet crackle thinning into the sculk as it dies.
+- Sixteen new sounds (34 takes), made from noise and tones like the rest of the wound's sounds
+  (`tools/sounds/lurker_voices.py`), with subtitles in English and Dutch, on the Hostile Creatures slider.
+
+### The Sculk Lurker mocks you
+- **It sets the sensors off in your name.** Between two shriekers it scurries to a sculk sensor near you (every six
+  seconds, `sculk_lurker_sensor_seconds`, within 12 blocks of you, `sculk_lurker_sensor_range`) and sets it off as if
+  you had made the sound: the sensor clicks and glows, and a shrieker that hears it shrieks at you, so the Warden
+  draws nearer to waking for something you never did.
+- **It laughs at you**, low and wet with a deep chuckle under it (a new sound, three takes): when its rattle makes a
+  shrieker shriek, now and then when it has set a sensor off, when it catches you looking straight at it (and then it
+  skips back out of reach), and once as the Warden it leads closes in on you. Each laugh comes with a little hop of
+  glee and a pop of sculk charge, and it looks you in the eye.
+- **It stays to watch.** Once it has set the Warden on you it no longer sinks away at once: it backs off to ten
+  blocks, turns to watch what it brought on you, laughs twice, and only then sinks into the sculk.
+- The Wanderer's page on the Warden's Herald tells of the laughing.
+
+### Sculk Lurkers come in packs to an Ancient City
+- **Walk into an Ancient City and it sends its servants out**: a pack of two or three Sculk Lurkers
+  (`sculk_lurker_pack_min`, `sculk_lurker_pack_max`), one more for every further player inside
+  (`sculk_lurker_pack_per_player`), six at the most (`sculk_lurker_pack_cap`), spread over everyone in the city. Each
+  one goes about its work: rattling the shriekers, and once the Warden is up, leading it to you. A city sends a pack
+  once in twenty minutes, whoever comes (`sculk_lurker_city_cooldown_seconds`; `sculk_lurker_city_chance` to make it
+  less certain). The single Sculk Lurker of the Deep Dark outside the cities still comes as before.
+
+### Tether Fragments: a tenth of what is left
+- A Tether Fragment offered at an anchor no longer lifts a stack outright (it took one fragment per stack the curse
+  had, four per stack for an Abyssal one). Now **each fragment atones for a tenth of what the curse's next stack still
+  asks** (`fragment_atone_share`), rounded up: much when you start on a stack, little near its end. **An anchor takes
+  at most five for one stack** (`fragment_max_per_stack`); after that it refuses them (the fragment stays in your hand)
+  until that stack comes off, by atonement or a Mending Cloth, or another stack of the curse is laid on. Five fragments
+  together atone for a little over 40% of a stack: they help atonement along, they no longer stand in for it. The one
+  fragment that covers the last of what a stack asks still takes it off.
+- The action bar says what each fragment did and how far there is still to go ("fragment 2 of 5 for this stack, 97
+  still to go"), and the anchor answers with a charge instead of the bloom, which is kept for a stack coming off.
+- `fragment_cost_per_stack` and `abyssal_fragments` are gone: an Abyssal curse asks four times the atonement, so a
+  tenth of it is four times as much.
+
+### The young of a swarm may curse
+- A bite of a swarm's young that lands may now leave a curse as well (2% a bite, `hollowling_swarm_curse_chance`), at
+  most one for the whole swarm (`hollowling_swarm_curses_max`), drawn from the Extreme set as often as a Lurker's
+  curse. A raised shield turns the bite, and the curse with it, aside.
+
+### Curses without a choice are varied
+- A curse laid without a choice (a Lurker's touch, a Cave Lurker's grab, a Collapse in the Seam) was drawn evenly from
+  every curse with room left, so with thirty-odd curses a repeat within a few curses was more likely than not, and the
+  pool shrinks as curses fill up. Now **a curse you do not carry yet is three times likelier** than one you do
+  (`curse_fresh_weight`), and **the last curse so laid never comes twice in a row**.
+
+### Tests
+- A Sculk Lurker sets a sculk sensor near its player off without ever striking them, and laughs as it brings the
+  Warden on them.
+- Each Tether Fragment atones for a tenth of what is left of a stack (rounded up), five for one stack and no sixth,
+  afresh once the stack comes off; the one that covers the last point takes the stack off; on an Abyssal curse a
+  fragment gives a tenth of its fourfold atonement and lifts nothing outright.
+- A swarm's young leave exactly one curse with their bites when every landed bite may curse and one is allowed.
+- The last curse laid without a choice never comes again next; a curse not yet carried is three times likelier (about
+  one in seven for the carried one of three); every new voice is registered and on Hostile Creatures; a city's pack is
+  two or three for one player, one more per further player, never past its cap.
+
 ## 3.14.0: The Seam Pass
 
 A critical look at what the Seam asks of a player, and everything it turned up that could leave one stuck, lost or

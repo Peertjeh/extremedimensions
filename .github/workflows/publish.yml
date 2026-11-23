@@ -1,0 +1,47 @@
+name: publish
+# 3.56: put a version that is already released on GitHub up on Modrinth and CurseForge by hand (the release job does it
+# by itself for a new version). Actions, publish, Run workflow.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish, e.g. 3.56.0 (empty: the latest GitHub release)'
+        required: false
+        default: ''
+      only:
+        description: 'Only one store'
+        type: choice
+        options: [both, modrinth, curseforge]
+        default: both
+
+jobs:
+  publish:
+    name: publish a released version
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          MODRINTH_PROJECT: ${{ secrets.MODRINTH_PROJECT }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          CURSEFORGE_PROJECT: ${{ secrets.CURSEFORGE_PROJECT }}
+          IN_VERSION: ${{ inputs.version }}
+          IN_ONLY: ${{ inputs.only }}
+        run: |
+          version="$IN_VERSION"
+          [ -n "$version" ] || version=$(gh release view --json tagName -q .tagName | sed 's/^v//')
+          case "$version" in *[!0-9.]*|'') echo "not a version: $version"; exit 1;; esac
+          gh release download "v$version" -p "extremedimensions-$version.jar" -D dist
+          gh release view "v$version" --json body -q .body > notes.md
+          title=$(gh release view "v$version" --json name -q .name)
+          mc=$(git show "v$version:gradle.properties" | sed -n 's/^minecraft_version=//p')
+          only=""; [ "$IN_ONLY" = both ] || only="--only $IN_ONLY"
+          python3 tools/release/publish.py --version "$version" --mc "$mc" --jar "dist/extremedimensions-$version.jar" \
+            --notes notes.md --title "$title" --body docs/modrinth/description.md $only

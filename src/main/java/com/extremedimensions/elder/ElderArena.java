@@ -24,6 +24,7 @@ import it.unimi.dsi.fastutil.longs.LongSet;
 import com.extremedimensions.config.Config;
 import com.extremedimensions.mixin.DisplayAccess;
 import com.extremedimensions.server.BlockFlight;
+import com.extremedimensions.server.FightBlocks;
 import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.TickProfile;
 import com.extremedimensions.server.WorldFx;
@@ -53,12 +54,15 @@ import net.minecraft.world.phys.AABB;
  * <p>Blocks are only built into air and plants; the ground is only inlaid where the world may be torn up
  * ({@code elder_griefing} and the mobGriefing rule), and never where a block holds data. A block of an arena a player
  * breaks drops nothing, and nothing an Elder tears out of one is thrown about. On stopping, everything is put back at
- * once. The blocks fly as {@link BlockFlight}s, as many at once as {@code elder_arena_fly_max} allows and only where a
- * player is near enough to see them; the rest simply appear (and vanish) in their places. A block whose part of the
- * world is not loaded when its turn comes (no one near; a great arena reaches past the view) waits until it is, so the
- * far towers and islands go up as someone comes near them; the world is never loaded just to put a block up or take
- * one down. A great arena's design is drawn up a little each tick ({@code elder_arena_design_budget_ms}) while its
- * Elder forms, so calling an Elder never holds the server up; it rises once its design is whole.
+ * once (and every block it put down is held by {@link FightBlocks} meanwhile, so even a crash leaves none of them behind).
+ * Nothing it builds grows, spreads, decays, falls or burns of itself, so what comes down is exactly what it put up, and
+ * it comes down without a drop. The blocks fly as {@link BlockFlight}s, as many at once as {@code elder_arena_fly_max}
+ * allows and only where a player is near enough to see them; the rest simply appear (and vanish) in their places. A
+ * block whose part of the world is not loaded when its turn comes (no one near; a great arena reaches past the view)
+ * waits until it is, so the far towers and islands go up as someone comes near them; the world is never loaded just to
+ * put a block up or take one down. A great arena's design is drawn up a little each tick
+ * ({@code elder_arena_design_budget_ms}) while its Elder forms, so calling an Elder never holds the server up; it rises
+ * once its design is whole.
  */
 public final class ElderArena {
 	private ElderArena() {}
@@ -221,8 +225,13 @@ public final class ElderArena {
 		Piece was = standing(a.level, pos);
 		Piece p = new Piece(pos.immutable(), state, AIR, null);
 		p.original = was != null && was.placed && was.original != null ? was.original : Blocks.AIR.defaultBlockState();
+		// (that one's hold on the place is the rubble's now; elsewhere the rubble takes a hold of its own)
+		boolean held = was != null && was.placed;
 		if (was != null) {
 			was.placed = false;
+		}
+		if (!held) {
+			FightBlocks.hold(a.level, p.pos, Blocks.AIR.defaultBlockState());
 		}
 		p.placed = true;
 		a.claimed.add(p.pos.asLong());
@@ -232,10 +241,15 @@ public final class ElderArena {
 
 	/** A block of an arena that came down (fell as rubble or crumbled): it no longer stands. */
 	static void fell(Arena a, Piece p) {
+		boolean held = p.placed;
 		p.placed = false;
 		Long2ObjectMap<Piece> m = STANDING.get(a.level);
 		if (m != null) {
 			m.remove(p.pos.asLong());
+		}
+		if (held) {
+			// (it is let go: what the world had there is back once nothing else holds the place)
+			FightBlocks.release(a.level, p.pos);
 		}
 	}
 
@@ -362,11 +376,19 @@ public final class ElderArena {
 		if (Config.ELDER_ARENA <= 0 || b instanceof KnotMother) {
 			return;
 		}
+		raise(b, ElderFx.index(b), centre);
+	}
+
+	/**
+	 * An arena of a style begins to rise round {@code centre} for a boss, whatever it is (the Heart's for the Starved
+	 * One, see {@link HeartArena}): designed a little each tick, then built, fought on and taken down as an Elder's.
+	 */
+	static void raise(Entity boss, int style, BlockPos centre) {
 		long start = System.nanoTime();
 		Drafting d = new Drafting();
-		d.boss = b.getUUID();
-		d.level = (ServerLevel) b.level();
-		d.style = ElderFx.index(b);
+		d.boss = boss.getUUID();
+		d.level = (ServerLevel) boss.level();
+		d.style = style;
 		d.centre = centre.immutable();
 		d.draft = new ArenaDesign.Draft(d.level, d.style, d.centre, ElderTerrain.griefing(d.level), ThreadLocalRandom.current().nextLong());
 		// As much of its design as this tick's budget allows (a small arena is drawn up whole here and rises at once);
@@ -406,6 +428,42 @@ public final class ElderArena {
 					+ bit.isles.size() + " islands, " + whole.lines.size() + " and " + bit.lines.size() + " lines)";
 		}
 		return whole.pieces.isEmpty() ? "no blocks were designed" : null;
+	}
+
+	/**
+	 * Whether an arena's design leaves its Elder room in the middle, where it stands (for tests): null if nothing of the
+	 * design stands within three blocks of the middle from two blocks over the floor up to where a great piece may first
+	 * cross it ({@link ArenaDesign#OVER_ELDER}), else the first block that does.
+	 */
+	public static String crowdsElder(ServerLevel level, int style, BlockPos centre, long seed) {
+		ArenaDesign.Blueprint bp = ArenaDesign.design(level, style, centre, ElderTerrain.griefing(level), seed);
+		for (Piece p : bp.pieces) {
+			int dx = p.pos.getX() - bp.cx, dz = p.pos.getZ() - bp.cz, dy = p.pos.getY() - bp.gy;
+			if (dx * dx + dz * dz <= 9 && dy >= 2 && dy < ArenaDesign.OVER_ELDER) {
+				return p.state + " " + dy + " blocks over the floor, " + dx + " " + dz + " from the middle (group " + p.group + ")";
+			}
+		}
+		return bp.pieces.isEmpty() ? "no blocks were designed" : null;
+	}
+
+	/**
+	 * The first block of an arena's design that would change of itself while the arena stands (for tests): one that grows,
+	 * spreads, decays or burns (the game ticks it at random, as a chorus flower or nylium), or one that falls; such a block
+	 * would leave what it became behind when the arena comes apart. Null if there is none.
+	 */
+	public static String changesOfItself(ServerLevel level, int style, BlockPos centre, long seed) {
+		ArenaDesign.Blueprint bp = ArenaDesign.design(level, style, centre, ElderTerrain.griefing(level), seed);
+		java.util.Set<BlockState> seen = new HashSet<>();
+		for (Piece p : bp.pieces) {
+			if (!seen.add(p.state)) {
+				continue;
+			}
+			if (p.state.isRandomlyTicking() || p.state.getBlock() instanceof net.minecraft.world.level.block.FallingBlock
+					|| p.state.is(net.minecraft.tags.BlockTags.FIRE)) {
+				return p.state + " (group " + p.group + ")";
+			}
+		}
+		return bp.pieces.isEmpty() ? "no blocks were designed" : null;
 	}
 
 	private static long designBudget() {
@@ -529,8 +587,7 @@ public final class ElderArena {
 		}
 		Arena a = open(b.getUUID(), level, bp.style, centre, bp);
 		for (Piece p : a.pieces) {
-			p.original = level.getBlockState(p.pos);
-			level.setBlock(p.pos, p.state, 2 | 16);
+			p.original = FightBlocks.place(level, p.pos, p.state, 2 | 16);
 			p.placed = true;
 			STANDING.computeIfAbsent(level, k -> new Long2ObjectOpenHashMap<>()).put(p.pos.asLong(), p);
 		}
@@ -551,8 +608,86 @@ public final class ElderArena {
 		}
 	}
 
+	/**
+	 * This boss's fight is over and its arena comes apart now, not after a while (the Heart's, as the Starved One dies or
+	 * sinks back): what is in the air still lands first, then it flies off block by block.
+	 */
+	static void dissolveNow(UUID boss) {
+		// (an arena still being designed never rises)
+		DRAFTS.removeIf(d -> d.boss.equals(boss));
+		for (Arena a : ARENAS) {
+			if (a.boss.equals(boss) && !a.dissolving) {
+				end(a);
+				if (a.linger >= 0) {
+					a.linger = 0;
+				}
+			}
+		}
+	}
+
+	/** A new group of an arena's blocks (the spikes of an upheaval in its fight), of a kind; its index. */
+	static int group(Arena a, int kind) {
+		a.bp.kinds.add(kind);
+		a.groups.add(new ArrayList<>());
+		return a.groups.size() - 1;
+	}
+
+	/**
+	 * A block bursts up into an arena at once, in a group of its own (see {@link #group}): it is the arena's, held by
+	 * {@link FightBlocks}, and goes when the arena goes. False where it may not go in now (not loaded, not open air, held
+	 * by something else, someone standing there), or once the arena is coming apart.
+	 */
+	static boolean burst(Arena a, int group, Piece p) {
+		if (a.dissolving || a.linger >= 0 || group < 0 || group >= a.groups.size() || !Loaded.ready(a.level, p.pos) || !free(a.level, p.pos)
+				|| !fits(a.level, p) || blocked(a.level, p.pos)) {
+			return false;
+		}
+		p.group = group;
+		a.claimed.add(p.pos.asLong());
+		a.pieces.add(p);
+		a.groups.get(group).add(p);
+		place(a, p, true);
+		return true;
+	}
+
+	/** Where every block of a boss's arena that stands now is (for tests); empty with no arena. */
+	public static List<BlockPos> placedBy(Entity boss) {
+		List<BlockPos> out = new ArrayList<>();
+		for (Arena a : ARENAS) {
+			if (a.boss.equals(boss.getUUID())) {
+				for (Piece p : a.pieces) {
+					if (p.placed) {
+						out.add(p.pos);
+					}
+				}
+			}
+		}
+		return out;
+	}
+
+	/** Whether a boss has an arena standing, on its way or still being designed (for tests). */
+	public static boolean has(Entity boss) {
+		for (Arena a : ARENAS) {
+			if (a.boss.equals(boss.getUUID())) {
+				return true;
+			}
+		}
+		for (Drafting d : DRAFTS) {
+			if (d.boss.equals(boss.getUUID())) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** This Elder's fight is over (slain or gone): its arena stands a while, then comes apart. */
 	public static void release(Entity boss) {
+		// The ground its ultimate broke sinks back first, the arena's own floor in it among the rest (3.41)
+		ElderUpheaval.release(boss);
+		// ... and what its blows marked or raised round it goes back now
+		if (boss.level() instanceof ServerLevel level) {
+			ElderTerrain.release(level, boss.getX(), boss.getZ(), ElderTerrain.SWEEP);
+		}
 		// (an arena still being designed never rises)
 		DRAFTS.removeIf(d -> d.boss.equals(boss.getUUID()));
 		for (Arena a : ARENAS) {
@@ -566,6 +701,8 @@ public final class ElderArena {
 		if (a.linger >= 0 || a.dissolving) {
 			return;
 		}
+		// (its Elder may be gone without a word: what its blows marked or raised round the arena goes back now)
+		ElderTerrain.release(a.level, a.cx, a.cz, ElderTerrain.SWEEP);
 		// Nothing more comes in (nor what waits for its part of the world); what is in the air still lands
 		a.next = a.pieces.size();
 		a.waiting.clear();
@@ -582,7 +719,7 @@ public final class ElderArena {
 			while (dit.hasNext()) {
 				Drafting d = dit.next();
 				Entity boss = d.level.getEntity(d.boss);
-				if (boss instanceof ElderBoss e && e.isAlive()) {
+				if (boss instanceof LivingEntity e && e.isAlive()) {
 					d.missing = 0;
 				} else if (boss != null || ++d.missing > 60) {
 					// Slain or gone before its arena rose: it never does
@@ -612,7 +749,7 @@ public final class ElderArena {
 		long lap = TickProfile.start();
 		a.bornThisTick = 0;
 		Entity boss = a.level.getEntity(a.boss);
-		if (boss instanceof ElderBoss e && e.isAlive()) {
+		if (boss instanceof LivingEntity e && e.isAlive()) {
 			a.missing = 0;
 		} else if (boss != null || ++a.missing > 60) {
 			// Slain, or gone for three seconds (not merely not yet found in a chunk that is still loading)
@@ -677,6 +814,8 @@ public final class ElderArena {
 				return true;
 			}
 			if (a.linger-- <= 0) {
+				// (whatever of its ultimate's broken ground has not sunk back yet goes back now, before its floor goes)
+				ElderUpheaval.finish(a.level, a.boss);
 				a.dissolving = true;
 				a.out = a.pieces.size();
 				a.credit = 0;
@@ -795,15 +934,18 @@ public final class ElderArena {
 			return;
 		}
 		BlockState now = level.getBlockState(p.pos);
-		boolean whole = now == p.state;
+		// Its own block in whatever shape it has come to (a wall joined to a neighbour, a lantern under water), or nothing
+		boolean whole = now.is(p.state.getBlock());
 		if (whole || now.isAir()) {
-			level.setBlock(p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
+			FightBlocks.put(level, p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
 		}
 		p.placed = false;
 		Long2ObjectMap<Piece> m = STANDING.get(level);
 		if (m != null) {
 			m.remove(p.pos.asLong());
 		}
+		// (and with nothing else of a fight holding the place, the world's own block is back, whatever of the fight's stands there)
+		FightBlocks.release(level, p.pos);
 		if (!whole || !Loaded.ready(level, p.pos) || !roomToFly(a) || !watched(level, p.pos)) {
 			return;
 		}
@@ -847,7 +989,7 @@ public final class ElderArena {
 			}
 		}
 		// No neighbour updates: a lantern hung before its chain, or a wall beside air, stays as designed
-		level.setBlock(p.pos, p.state, 2 | 16);
+		FightBlocks.place(level, p.pos, p.state, 2 | 16);
 		p.placed = true;
 		STANDING.computeIfAbsent(level, k -> new Long2ObjectOpenHashMap<>()).put(p.pos.asLong(), p);
 		ThreadLocalRandom rnd = ThreadLocalRandom.current();
@@ -868,7 +1010,8 @@ public final class ElderArena {
 	/** Whether a piece may still go in: its place is free air (or plants), or the ground it inlays is unchanged. */
 	private static boolean fits(ServerLevel level, Piece p) {
 		BlockState s = level.getBlockState(p.pos);
-		if (holds(level, p.pos)) {
+		// (nor into ground an ultimate broke: it goes back as it was, see ElderUpheaval)
+		if (holds(level, p.pos) || ElderUpheaval.holds(level, p.pos)) {
 			return false;
 		}
 		if (p.kind == GROUND) {
@@ -905,6 +1048,11 @@ public final class ElderArena {
 			case 1 -> {
 				az = round + (out ? -1 : 1) * (Math.PI / 2 + rnd.nextDouble(0.1, 0.5));
 				el = rnd.nextDouble(0.05, 0.45);
+			}
+			case ArenaDesign.HEART -> {
+				// The Heart's come up out of the dark under the islands, turning in towards it (and sink back into it)
+				az = round + (out ? 1 : -1) * rnd.nextDouble(0.3, 0.9);
+				el = rnd.nextDouble(-1.35, -0.8);
 			}
 			default -> {
 				az = rnd.nextDouble(Math.PI * 2);
@@ -982,6 +1130,12 @@ public final class ElderArena {
 				m.remove(p.pos.asLong());
 			}
 		}
+		for (Piece p : a.pieces) {
+			if (p.placed) {
+				p.placed = false;
+				FightBlocks.keep(a.level, p.pos);
+			}
+		}
 	}
 
 	// ------------------------------------------------------------------ the rest of the world
@@ -1011,6 +1165,7 @@ public final class ElderArena {
 
 	/** An arena is taken down at once, the ground put back. */
 	private static void takeDown(Arena a) {
+		ElderUpheaval.finish(a.level, a.boss);
 		a.flights.forEach(BlockFlight::cancel);
 		a.strands.forEach(s -> BlockFlight.drop(s.display));
 		Long2ObjectMap<Piece> m = STANDING.get(a.level);
@@ -1020,13 +1175,14 @@ public final class ElderArena {
 				continue;
 			}
 			BlockState now = a.level.getBlockState(p.pos);
-			if (now == p.state || now.isAir()) {
-				a.level.setBlock(p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
+			if (now.is(p.state.getBlock()) || now.isAir()) {
+				FightBlocks.put(a.level, p.pos, p.original == null ? Blocks.AIR.defaultBlockState() : p.original, 2 | 16);
 			}
 			p.placed = false;
 			if (m != null) {
 				m.remove(p.pos.asLong());
 			}
+			FightBlocks.release(a.level, p.pos);
 		}
 	}
 }

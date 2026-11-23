@@ -43,6 +43,13 @@ public final class ModItems {
 	/** The Weavers' own work: slowest drain, and once per expedition it unravels you home instead of collapsing. */
 	public static final Item SEAM_WOVEN_TETHER = tether("seam_woven_tether", Rarity.EPIC);
 
+	/** The Pale Mason's (3.40): used out in the End on an expedition, it takes you home to your Void Anchor at once. */
+	public static final Item HOMING_PEARL = register("homing_pearl", 16, Rarity.EPIC);
+	/** The Pale Mason's (3.44): set in an attuned fitting, the Endermen's anchor is finished and they go home. */
+	public static final Item HOMEWARD_KEYSTONE = registerFireproof("homeward_keystone", 1, Rarity.EPIC);
+	/** The Pale Mason's (3.44): set in an attuned fitting, the Endermen's anchor is sealed for good, and their hoard is yours. */
+	public static final Item PALE_LOCK = registerFireproof("pale_lock", 1, Rarity.EPIC);
+
 	/** A wing of a Veil Ray, still glowing along its seams. */
 	public static final Item VEIL_WING = register("veil_wing", 16, Rarity.UNCOMMON);
 	/** Silk woven around a Veil Wing and a fragment: pressed to the skin, it takes one curse stack off. */
@@ -105,6 +112,12 @@ public final class ModItems {
 	public static final Item VEIL_LANTERN = block(ModBlocks.VEIL_LANTERN);
 	/** The Weaver's Loom as an item. */
 	public static final Item WEAVERS_LOOM = block(ModBlocks.WEAVERS_LOOM);
+	/** The Seam's cloth, glass and lamp for builders (see ModBlocks), as items. */
+	public static final Item SEAM_SILK_BLOCK = block(ModBlocks.SEAM_SILK_BLOCK);
+	public static final Item SEAM_SILK_CARPET = block(ModBlocks.SEAM_SILK_CARPET);
+	public static final Item NEBULA_GLASS = block(ModBlocks.NEBULA_GLASS);
+	public static final Item NEBULA_GLASS_PANE = block(ModBlocks.NEBULA_GLASS_PANE);
+	public static final Item VEIL_LAMP = block(ModBlocks.VEIL_LAMP);
 
 	private static Item block(Block block) {
 		return block(block, false);
@@ -135,6 +148,7 @@ public final class ModItems {
 
 	public static final Item TETHERITE_ORE = block(ModBlocks.TETHERITE_ORE, true);
 	public static final Item SPINDLE = block(ModBlocks.SPINDLE);
+	public static final Item KINDLED_SEAM_LANTERN = block(ModBlocks.KINDLED_SEAM_LANTERN);
 	/** Smelted from Tetherite ore. */
 	public static final Item TETHERITE_SCRAP = Registry.register(BuiltInRegistries.ITEM, key("tetherite_scrap"),
 			new Item(new Item.Properties().rarity(Rarity.RARE).fireResistant().setId(key("tetherite_scrap"))));
@@ -228,7 +242,14 @@ public final class ModItems {
 	private static java.util.Map<com.extremedimensions.relic.Relic, Item> relics() {
 		java.util.Map<com.extremedimensions.relic.Relic, Item> out = new java.util.EnumMap<>(com.extremedimensions.relic.Relic.class);
 		for (com.extremedimensions.relic.Relic r : com.extremedimensions.relic.Relic.values()) {
-			out.put(r, register(r.id, 1, Rarity.EPIC));
+			// The name's colour follows the relic's tier
+			Rarity rarity = switch (r.tier) {
+				case COMMON -> Rarity.COMMON;
+				case UNCOMMON -> Rarity.UNCOMMON;
+				case RARE -> Rarity.RARE;
+				case EPIC -> Rarity.EPIC;
+			};
+			out.put(r, register(r.id, 1, rarity));
 		}
 		return java.util.Collections.unmodifiableMap(out);
 	}

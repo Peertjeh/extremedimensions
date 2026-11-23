@@ -26,7 +26,7 @@ public final class WorldEvents {
 	private WorldEvents() {}
 
 	/** The events an operator can start ({@code /tether event <id>}). */
-	public static final List<String> IDS = List.of("storm", "echo", "unstable", "unanchored", "frayed");
+	public static final List<String> IDS = List.of("storm", "echo", "unstable", "unanchored", "frayed", "squall");
 
 	/** When each player's last event began (server ticks), and which is under way for them. */
 	private static final Map<UUID, Long> LAST = new HashMap<>();
@@ -37,6 +37,7 @@ public final class WorldEvents {
 		UnstableAnchors.tick(s);
 		Unanchored.tick(s);
 		FrayedSeam.tick(s);
+		PaleSquall.tick(s);
 	}
 
 	/** Whether a new event may begin for a player now. */
@@ -107,6 +108,7 @@ public final class WorldEvents {
 			case "unstable" -> UnstableAnchors.force(p);
 			case "unanchored" -> Unanchored.force(p, now);
 			case "frayed" -> FrayedSeam.force(p, now);
+			case "squall" -> PaleSquall.force(p, now);
 			default -> "commands.extremedimensions.event.unknown";
 		};
 	}
@@ -117,6 +119,7 @@ public final class WorldEvents {
 		ACTIVE.clear();
 		Unanchored.clear();
 		FrayedSeam.clear();
+		PaleSquall.clear();
 		Echoes.clear();
 	}
 }

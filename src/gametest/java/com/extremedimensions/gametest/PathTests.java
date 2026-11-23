@@ -46,6 +46,45 @@ public class PathTests {
 		helper.succeed();
 	}
 
+	/**
+	 * The whole path walked, the world chosen: the journal says the world is not finished and names the six threads and
+	 * the Weaving, until the tapestry is; then it says so. (Alone: the seal, the Starved One and the ending are the
+	 * world's, and other tests read them.)
+	 */
+	@GameTest(environment = Alone.PATH_ENDING)
+	public void afterTheChoiceTheWorldIsNotYetFinished(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "path-chooser");
+		PlayerData d = DataStore.get(p.getUUID());
+		boolean seal = DataStore.sealBroken(), starved = DataStore.starvedSlain(), woven = DataStore.tapestryDone();
+		String ending = DataStore.ending();
+		try {
+			d.guide = Guide.STEPS;
+			d.seamVisits = 1;
+			Advancements.grant(p, Advancements.SEAM_RETURNED);
+			DataStore.setSealBroken(true);
+			DataStore.setStarvedSlain(true);
+			DataStore.setTapestryDone(false);
+			DataStore.setEnding("");
+			check(helper, Path.current(p, d) == Path.Step.CHOOSE, "with the Starved One slain the next step is %s", Path.current(p, d));
+			DataStore.setEnding("mended");
+			check(helper, Path.current(p, d) == null, "with the world chosen the path still names %s", Path.current(p, d));
+			check(helper, "gui.extremedimensions.path.beyond".equals(Path.hint(p, d)), "with the world chosen the player is told %s", Path.hint(p, d));
+			int tapestry = 1 << Path.Side.TAPESTRY.ordinal();
+			String[] sent = Path.encode(p, d).split(";");
+			check(helper, (Integer.parseInt(sent[1]) & tapestry) == 0, "the tapestry counts as finished before it is (%s)", String.join(";", sent));
+			DataStore.setTapestryDone(true);
+			check(helper, "gui.extremedimensions.path.finished".equals(Path.hint(p, d)), "with the tapestry finished the player is told %s", Path.hint(p, d));
+			sent = Path.encode(p, d).split(";");
+			check(helper, (Integer.parseInt(sent[1]) & tapestry) != 0, "the finished tapestry is not sent to the journal (%s)", String.join(";", sent));
+		} finally {
+			DataStore.setSealBroken(seal);
+			DataStore.setStarvedSlain(starved);
+			DataStore.setTapestryDone(woven);
+			DataStore.setEnding(ending);
+		}
+		helper.succeed();
+	}
+
 	@GameTest
 	public void besideThePathOnceItsPageIsKnown(GameTestHelper helper) {
 		ServerPlayer p = TestPlayers.survivor(helper, "path-beside");
@@ -69,23 +108,63 @@ public class PathTests {
 		ServerPlayer p = TestPlayers.survivor(helper, "hint-once");
 		PlayerData d = DataStore.get(p.getUUID());
 		d.hints.clear();
+		d.hintsOffered.clear();
 		d.hintsChecked = true;
 		Hints.meet(p, Hints.Hint.ELDER);
 		Hints.meet(p, Hints.Hint.ELDER);
+		check(helper, d.hintsOffered.size() == 1 && d.hintsOffered.contains("elder"), "the Elder's hint was sent as %s", d.hintsOffered);
+		Hints.shown(p, Hints.Hint.ELDER.ordinal());
 		check(helper, d.hints.size() == 1 && d.hints.contains("elder"), "the Elder's hint was kept as %s", d.hints);
 		// Turned off for the world, none comes
 		int was = Config.HINTS;
 		Config.HINTS = 0;
 		Hints.meet(p, Hints.Hint.STORM);
 		Config.HINTS = was;
-		check(helper, !d.hints.contains("storm"), "a hint came while hints were off");
+		check(helper, !Hints.offered(p, Hints.Hint.STORM), "a hint came while hints were off");
 		// Something held for the first time, and an advancement's moment
 		p.getInventory().clearContent();
 		p.getInventory().add(new ItemStack(ModItems.TETHER_FRAGMENT));
 		Hints.look(p, d);
-		check(helper, d.hints.contains("fragment"), "a fragment in hand brought no hint (%s)", d.hints);
+		check(helper, Hints.offered(p, Hints.Hint.FRAGMENT), "a fragment in hand brought no hint (%s)", d.hintsOffered);
 		Advancements.grant(p, Advancements.WATCHED);
-		check(helper, d.hints.contains("lurker"), "being watched brought no hint (%s)", d.hints);
+		check(helper, Hints.offered(p, Hints.Hint.LURKER), "being watched brought no hint (%s)", d.hintsOffered);
+		helper.succeed();
+	}
+
+	/**
+	 * A hint counts as told only once the player's game showed it (3.55.0): sent and not shown (hints off in the player's
+	 * own settings), it is not sent again that visit, nor told, and comes again on the next visit; a hint never sent
+	 * cannot be marked as shown; and the journal is sent the hints told, in the order they came.
+	 */
+	@GameTest
+	public void aHintIsToldOnlyOnceShown(GameTestHelper helper) {
+		ServerPlayer p = TestPlayers.survivor(helper, "hint-shown");
+		PlayerData d = DataStore.get(p.getUUID());
+		d.hints.clear();
+		d.hintsOffered.clear();
+		d.hintsChecked = true;
+		Hints.meet(p, Hints.Hint.SILK);
+		check(helper, !d.hints.contains("silk") && d.hintsOffered.contains("silk"), "a hint sent was told before it was shown (%s)", d.hints);
+		// never shown (hints off on the player's side): not sent again this visit
+		Hints.meet(p, Hints.Hint.SILK);
+		check(helper, d.hintsOffered.size() == 1 && d.hints.isEmpty(), "a hint not shown was sent again or told (%s / %s)", d.hintsOffered, d.hints);
+		// a hint the server never sent is not told because the game says so
+		Hints.shown(p, Hints.Hint.STORM.ordinal());
+		Hints.shown(p, -1);
+		Hints.shown(p, Hints.Hint.values().length);
+		check(helper, d.hints.isEmpty(), "a hint never sent was marked as told (%s)", d.hints);
+		// the next visit: what was never shown comes again, and once shown it is told for good
+		Hints.known(p, d);
+		check(helper, !Hints.offered(p, Hints.Hint.SILK), "a hint never shown still counts as sent after joining again");
+		Hints.meet(p, Hints.Hint.SILK);
+		Hints.meet(p, Hints.Hint.NEEDLE);
+		Hints.shown(p, Hints.Hint.NEEDLE.ordinal());
+		Hints.shown(p, Hints.Hint.SILK.ordinal());
+		check(helper, d.hints.contains("silk") && d.hints.contains("needle") && d.hintsOffered.isEmpty(), "shown hints were not told (%s)", d.hints);
+		Hints.known(p, d);
+		Hints.meet(p, Hints.Hint.SILK);
+		check(helper, d.hintsOffered.isEmpty(), "a hint told was sent again");
+		check(helper, "needle,silk".equals(Hints.told(d)), "the journal is sent the hints as %s", Hints.told(d));
 		helper.succeed();
 	}
 

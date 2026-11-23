@@ -32,6 +32,12 @@ public class Anchor {
 	public transient List<double[]> path = new ArrayList<>();
 	/** No free path to the portal: the anchor leaks charge. */
 	public transient boolean blocked = false;
+	/**
+	 * Path checks in a row that found it blocked, and when (server tick) its owners were last told it is (3.55.0: they
+	 * hear once it stays blocked, not for a mob walking through, and not more than every few minutes).
+	 */
+	public transient int blockedLooks = 0;
+	public transient long blockedToldAt = 0;
 	/** Whether the path was checked at least once since loading. */
 	public transient boolean checked = false;
 	public transient int portalCheck = 0;
@@ -105,7 +111,24 @@ public class Anchor {
 		return sum;
 	}
 
-	private static boolean lends(String owner, String uid) {
+	/** The allies (by UUID) whose charge here this player may draw on, each keeping a second of it at least. */
+	public List<String> lenders(String uid) {
+		List<String> out = new ArrayList<>();
+		for (Map.Entry<String, Double> e : owners.entrySet()) {
+			if (e.getValue() >= 1 && lends(e.getKey(), uid)) {
+				out.add(e.getKey());
+			}
+		}
+		return out;
+	}
+
+	/** Whether charge from before 2.17 is kept here, which anyone may use. */
+	public boolean keptForAll() {
+		return owners.getOrDefault(SHARED, 0.0) >= 1;
+	}
+
+	/** Whether this owner's charge here may be drawn on by that player (an ally they opened their anchors to). */
+	public static boolean lends(String owner, String uid) {
 		return !owner.equals(uid) && !owner.equals(SHARED) && open.test(owner) && allied.test(uid, owner);
 	}
 

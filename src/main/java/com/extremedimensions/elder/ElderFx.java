@@ -17,14 +17,26 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-/** What the Elders share: ground under a giant, gliding and turning, a roar, a pull, and their music. */
-final class ElderFx {
+/**
+ * What the Elders share: ground under a giant, gliding and turning, a roar, a pull, and their music. The Starved One,
+ * which is no Elder, has its music, its cinema and its shaking ground from here too (see the overloads that take the
+ * players they are for).
+ */
+public final class ElderFx {
 	private ElderFx() {}
 
 	/** The fight's music, by track: the Matriarch, the Ferryman, the Last Weaver. */
 	static final int MUSIC_MATRIARCH = 0;
 	static final int MUSIC_FERRYMAN = 1;
 	static final int MUSIC_WEAVER = 2;
+	/** The Knot Mother's own theme, "Mother of Knots". */
+	static final int MUSIC_KNOT_MOTHER = 3;
+	/** The Pale Mason's own theme (3.40). */
+	static final int MUSIC_PALE_MASON = 4;
+	/** The Starved One's own theme, at the Heart (3.48). */
+	public static final int MUSIC_STARVED_ONE = 5;
+	/** The Starved One in the client's cinema (its title card, its colour), after the Elders'. */
+	public static final int CINEMA_STARVED_ONE = 5;
 
 	static String dim(Entity e) {
 		return e.level().dimension().identifier().toString();
@@ -100,7 +112,7 @@ final class ElderFx {
 
 	static void roar(Entity e, float volume, float pitch) {
 		// Each Elder roars with its own voice (pitched about its own, not the Keeper's)
-		String voice = e instanceof ElderBoss b ? "extremedimensions:elder." + NAMES[index(b)] + ".roar" : "extremedimensions:keeper_roar";
+		String voice = e instanceof ElderBoss b ? "extremedimensions:elder." + name(b) + ".roar" : "extremedimensions:keeper_roar";
 		float tuned = e instanceof ElderBoss ? 0.75f + 0.5f * pitch : pitch;
 		WorldFx.soundIn(dim(e), voice, "hostile", e.getX(), e.getY() + 6, e.getZ(), volume, tuned);
 		WorldFx.particleIn(dim(e), "extremedimensions:lurker_wisp", e.getX(), e.getY() + 7, e.getZ(), 2.5, 4.0, 2.5, 0.0, 80);
@@ -193,7 +205,7 @@ final class ElderFx {
 		double dx = p.getX() - fromX, dz = p.getZ() - fromZ;
 		double d = Math.max(0.3, Math.sqrt(dx * dx + dz * dz));
 		p.setDeltaMovement(dx / d * horiz, up, dz / d * horiz);
-		p.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(p);
 	}
 
 	/** Drags a player towards an Elder: a hard yank that carries them part of the way (at most about {@code max} blocks). */
@@ -219,21 +231,32 @@ final class ElderFx {
 	static final String[] NAMES = {"matriarch", "ferryman", "weaver"};
 
 	static int index(ElderBoss b) {
-		return b instanceof Matriarch ? 0 : b instanceof Ferryman ? 1 : 2;
+		// (the Pale Mason is a fourth: his arena, the colours of his blows and the air of his fight are his own)
+		return b instanceof Matriarch ? 0 : b instanceof Ferryman ? 1 : b instanceof PaleMason ? 3 : 2;
 	}
 
 	/**
-	 * Its name in texts: as {@link #index}, but the Knot Mother is her own (she has the Last Weaver's shape, voice and
-	 * blows, and her own name, title and ultimate).
+	 * Its name in texts and sounds: as {@link #index}, but the Knot Mother is her own (she has the Last Weaver's machinery,
+	 * and her own name, title, voice and sounds).
 	 */
 	static String name(ElderBoss b) {
-		return b instanceof KnotMother ? "knot_mother" : NAMES[index(b)];
+		return b instanceof KnotMother ? "knot_mother" : b instanceof PaleMason ? "pale_mason" : NAMES[index(b)];
+	}
+
+	/** Whose voice and body it sounds with: as {@link #index}, but the Knot Mother has her own (3; see ModSounds). */
+	static int voice(ElderBoss b) {
+		return b instanceof KnotMother ? 3 : b instanceof PaleMason ? 4 : index(b);
+	}
+
+	/** Which Elder this is to the client's cinema (its title card): as {@link #voice}. */
+	static int cinemaIndex(ElderBoss b) {
+		return voice(b);
 	}
 
 	/** Sends a piece of the fight's cinema to everyone within {@code radius} blocks (see BossFxPayload). */
 	static void cinema(ElderBoss b, double radius, int kind, int value, float strength, String key) {
 		// (the client's cinema knows the Knot Mother as a fourth, for her own title card)
-		ModPackets.BossFxPayload fx = new ModPackets.BossFxPayload(kind, b instanceof KnotMother ? 3 : index(b), value, strength, key);
+		ModPackets.BossFxPayload fx = new ModPackets.BossFxPayload(kind, cinemaIndex(b), value, strength, key);
 		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
 			if (p.distanceToSqr(b) <= radius * radius) {
 				ServerPlayNetworking.send(p, fx);
@@ -241,20 +264,38 @@ final class ElderFx {
 		}
 	}
 
-	/** The ground shakes around a point: the screen of everyone near shakes, less the further away they are. */
+	/**
+	 * The ground shakes around a point: the screen of everyone near shakes, less the further away they are. A shake
+	 * the size of a blow (not a footstep, not the long rumble of an ultimate) lands with weight as well: the view jolts,
+	 * the Elder holds still for an impact frame, and dust bursts up off the ground where it struck.
+	 */
 	static void shake(ElderBoss b, double x, double z, double radius, float strength, int ticks) {
+		boolean blow = ticks >= 8 && ticks <= 25 && strength >= 0.4f;
 		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
 			double dx = p.getX() - x, dz = p.getZ() - z;
 			double d = Math.sqrt(dx * dx + dz * dz);
 			if (d < radius) {
 				float s = (float) (strength * (1 - d / radius * 0.75));
 				ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.SHAKE, index(b), ticks, s, ""));
+				if (blow) {
+					ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.PUNCH, index(b), b.getId(), s, ""));
+				}
+			}
+		}
+		if (blow) {
+			ServerLevel level = (ServerLevel) b.level();
+			double y = surface(level, x, b.getY() + 3, z, 6, 24);
+			if (!Double.isNaN(y)) {
+				double r = 2.0 + strength * 3.0;
+				ring(level, "minecraft:poof", x, y + 0.2, z, r, 18, 0);
+				ring(level, "minecraft:campfire_cosy_smoke", x, y + 0.3, z, r * 0.7, 8, 0.4);
+				WorldFx.particleIn(level, "minecraft:cloud", x, y + 0.6, z, r * 0.4, 0.3, r * 0.4, 0.05, 10);
 			}
 		}
 	}
 
 	/** A ring of particles on the ground. */
-	static void ring(Level level, String particle, double x, double y, double z, double r, int n, double phase) {
+	public static void ring(Level level, String particle, double x, double y, double z, double r, int n, double phase) {
 		for (int i = 0; i < n; i++) {
 			double a = 2 * Math.PI * i / n + phase;
 			WorldFx.particleIn(level, particle, x + Math.cos(a) * r, y, z + Math.sin(a) * r, 0, 0.02, 0, 0, 1);
@@ -264,7 +305,7 @@ final class ElderFx {
 	/** A heavy step: the ground thuds and dusts up under a walking giant, and shakes a little for those close. */
 	static void step(ElderBoss b, float volume) {
 		Level level = b.level();
-		WorldFx.soundIn(dim(b), "extremedimensions:elder." + NAMES[index(b)] + ".step", "hostile", b.getX(), b.getY(), b.getZ(), volume,
+		WorldFx.soundIn(dim(b), "extremedimensions:elder." + name(b) + ".step", "hostile", b.getX(), b.getY(), b.getZ(), volume,
 				(float) (0.9 + ThreadLocalRandom.current().nextDouble(0.2)));
 		WorldFx.particleIn(level, "minecraft:campfire_cosy_smoke", b.getX(), b.getY() + 0.3, b.getZ(), b.getBbWidth() * 0.5, 0.1, b.getBbWidth() * 0.5, 0.01, 4);
 		WorldFx.particleIn(level, "minecraft:poof", b.getX(), b.getY() + 0.2, b.getZ(), b.getBbWidth() * 0.6, 0.1, b.getBbWidth() * 0.6, 0.03, 12);
@@ -289,6 +330,9 @@ final class ElderFx {
 					case 0 -> WorldFx.particleIn(level, i == 0 ? "minecraft:spore_blossom_air" : i == 1 ? "minecraft:falling_spore_blossom" : "minecraft:ash",
 							x, y, z, 0.5, 0.5, 0.5, 0, 1);
 					case 1 -> WorldFx.particleIn(level, i == 0 ? "minecraft:soul" : "minecraft:white_ash", x, y, z, 0.5, 0.5, 0.5, 0.01, i == 0 ? 1 : 3);
+					// the Pale Mason's: the motes of the void, and loose grit of end stone drifting up
+					case 3 -> WorldFx.particleIn(level, i == 0 ? "minecraft:portal" : i == 1 ? "minecraft:reverse_portal" : "minecraft:white_ash", x, y, z, 0.5,
+							0.5, 0.5, 0.02, i == 2 ? 3 : 2);
 					default -> WorldFx.particleIn(level, i == 0 ? "minecraft:end_rod" : "extremedimensions:soul_mote", x, y, z, 0.5, 0.5, 0.5, 0.005, 1);
 				}
 			}
@@ -296,7 +340,7 @@ final class ElderFx {
 	}
 
 	/** A line of particles between two points (a chain, a thread). */
-	static void line(String dim, String particle, double x0, double y0, double z0, double x1, double y1, double z1, int points) {
+	public static void line(String dim, String particle, double x0, double y0, double z0, double x1, double y1, double z1, int points) {
 		for (int i = 0; i <= points; i++) {
 			double k = i / (double) points;
 			WorldFx.particleIn(dim, particle, x0 + (x1 - x0) * k, y0 + (y1 - y0) * k, z0 + (z1 - z0) * k, 0, 0, 0, 0, 1);
@@ -317,6 +361,52 @@ final class ElderFx {
 		for (ServerPlayer p : ((ServerLevel) b.level()).players()) {
 			if (p.distanceToSqr(b) < 160 * 160) {
 				ServerPlayNetworking.send(p, new ModPackets.BossMusicPayload(track, true));
+			}
+		}
+	}
+
+	/**
+	 * A fight's music for the players of a level it is for (a fight that is no Elder's, as the Starved One's at the Heart,
+	 * says who): asked for again every couple of seconds, it crossfades in and plays on as the Elders' does.
+	 */
+	public static void music(ServerLevel level, java.util.function.Predicate<ServerPlayer> who, int track) {
+		for (ServerPlayer p : level.players()) {
+			if (who.test(p)) {
+				ServerPlayNetworking.send(p, new ModPackets.BossMusicPayload(track, false));
+			}
+		}
+	}
+
+	/** That fight's music ends for the players of a level it was for. */
+	public static void silence(ServerLevel level, java.util.function.Predicate<ServerPlayer> who, int track) {
+		for (ServerPlayer p : level.players()) {
+			if (who.test(p)) {
+				ServerPlayNetworking.send(p, new ModPackets.BossMusicPayload(track, true));
+			}
+		}
+	}
+
+	/** A piece of a fight's cinema for the players of a level it is for, as the client knows that boss by {@code index}. */
+	public static void cinema(ServerLevel level, java.util.function.Predicate<ServerPlayer> who, int index, int kind, int value, float strength, String key) {
+		ModPackets.BossFxPayload fx = new ModPackets.BossFxPayload(kind, index, value, strength, key);
+		for (ServerPlayer p : level.players()) {
+			if (who.test(p)) {
+				ServerPlayNetworking.send(p, fx);
+			}
+		}
+	}
+
+	/**
+	 * The ground rumbles round a point for the players of a level it is for, less the further away they are: a long
+	 * shake only (a blow that lands with weight is {@link WorldFx#punch}).
+	 */
+	public static void rumble(ServerLevel level, java.util.function.Predicate<ServerPlayer> who, double x, double z, double radius, float strength, int ticks) {
+		for (ServerPlayer p : level.players()) {
+			double dx = p.getX() - x, dz = p.getZ() - z;
+			double d = Math.sqrt(dx * dx + dz * dz);
+			if (d < radius && who.test(p)) {
+				float s = (float) (strength * (1 - d / radius * 0.75));
+				ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.SHAKE, CINEMA_STARVED_ONE, ticks, s, ""));
 			}
 		}
 	}

@@ -27,6 +27,8 @@ import net.minecraft.world.phys.Vec3;
 public final class Loot {
 	private Loot() {}
 
+	/** A storeroom's barrel or chest in a furnished building of the Seam. */
+	public static final String SEAM_STOREROOM = "chests/seam_storeroom";
 	public static final String SEAM_LOOM = "chests/seam_loom";
 	public static final String SEAM_VILLAGE = "chests/seam_village";
 	public static final String SEAM_RELIQUARY = "chests/seam_reliquary";
@@ -47,10 +49,25 @@ public final class Loot {
 	public static final String FRAYED_RAY = "gameplay/frayed_ray";
 	public static final String THINNED = "gameplay/thinned";
 	public static final String THINNED_FRAY = "gameplay/thinned_fray";
+	public static final String TIDEWALKER = "gameplay/tidewalker_haul";
+	public static final String GATEBREAKER = "gameplay/gatebreaker_spoils";
+	public static final String LOCKWARDEN = "gameplay/lockwarden_spoils";
+	public static final String EDGECRAWLER = "gameplay/edgecrawler_spoils";
+	public static final String CRAGBACK = "gameplay/cragback_spoils";
 	/** What a first gold medal of the week brings besides its fragments and relic (a Homebound book, sometimes). */
 	public static final String TRIAL_GOLD = "gameplay/trial_gold";
 	/** What the Endermen leave when they finish a ring unwatched. */
 	public static final String UNANCHORED = "gameplay/unanchored";
+	/** What the builders of an Unfinished Anchor put by in its barrels (3.39). */
+	public static final String PALE_ANCHOR = "gameplay/pale_anchor";
+	/** What the Pale Mason leaves when he falls: the Homing Pearl among his spoils (3.40). */
+	public static final String PALE_MASON = "gameplay/pale_mason_spoils";
+	/** What the Endermen leave at the fitting in thanks as they go home (3.44). */
+	public static final String PALE_THANKS = "gameplay/pale_thanks";
+	/** What they put by for the way home, spilled when their anchor is locked (3.44). */
+	public static final String PALE_HOARD = "gameplay/pale_hoard";
+	/** What a slain Pale Hauler leaves besides the blocks it took. */
+	public static final String PALE_HAULER = "gameplay/pale_hauler_spoils";
 
 	/**
 	 * Now and then the wound's own record, "What the Wound Remembers", among what a Fray tangle or a hoard holds. Like the
@@ -65,9 +82,25 @@ public final class Loot {
 		if (!woundDisc()) {
 			return;
 		}
+		put(c, new ItemStack(com.extremedimensions.registry.ModItems.MUSIC_DISC_WOUND_REMEMBERS));
+	}
+
+	/**
+	 * Puts a rare find into a chest that has just been filled: in the first empty slot, or (the loot spread over every
+	 * slot, as a table can) in place of the last ordinary thing in it, so a full chest does not swallow it.
+	 */
+	public static void put(Container c, ItemStack find) {
 		for (int slot = 0; slot < c.getContainerSize(); slot++) {
 			if (c.getItem(slot).isEmpty()) {
-				c.setItem(slot, new ItemStack(com.extremedimensions.registry.ModItems.MUSIC_DISC_WOUND_REMEMBERS));
+				c.setItem(slot, find);
+				return;
+			}
+		}
+		for (int slot = c.getContainerSize() - 1; slot >= 0; slot--) {
+			ItemStack there = c.getItem(slot);
+			if (!there.is(com.extremedimensions.registry.ModItems.MUSIC_DISC_WOUND_REMEMBERS) && !there.is(com.extremedimensions.registry.ModItems.DISC_FRAGMENT_ABYSS)
+					&& !there.is(com.extremedimensions.registry.ModItems.MUSIC_DISC_TICK_OF_THE_BOUNDARY)) {
+				c.setItem(slot, find);
 				return;
 			}
 		}

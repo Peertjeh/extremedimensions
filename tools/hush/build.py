@@ -11,17 +11,18 @@ the halves of a block, its slabs and the blocks above and below all meet on a jo
 The tones climb in a ladder from the darkest foot of a building to its palest crown (cobbled, stone, bricks, polished,
 tiles, pale bricks, polished pale); the Seam's builders pick from it by height (see SeamArchitect's gradients).
 
+Retired: tools/items/after_vanilla.py draws the family (and the Seam Vein) now, after vanilla's stone, deepslate and
+stone bricks, keeping this ladder. This script no longer writes them; given a path it previews these old drawings there,
+each as a little build.
+
 usage: python3 tools/hush/build.py [preview.png]
 """
 import math
-import os
 import sys
 
 import numpy as np
 from PIL import Image
 
-ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
-TEX = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textures/block")
 N = 16
 
 # ----------------------------------------------------------------------------- colour ramps
@@ -189,10 +190,9 @@ def colour(field, colors, lift=0.0, steps=10):
 
 
 def save(name, rgb):
+    """The drawing as an image (no longer written to the mod's textures)."""
     a = np.clip(np.round(rgb), 0, 255).astype(np.uint8)
-    img = Image.fromarray(a, "RGB").convert("RGBA")
-    img.save(os.path.join(TEX, name + ".png"))
-    return img
+    return Image.fromarray(a, "RGB").convert("RGBA")
 
 
 def cracks(rng, f, mortar, count):

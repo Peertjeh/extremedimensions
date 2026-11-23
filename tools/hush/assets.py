@@ -1,5 +1,5 @@
 """Hush masonry: the JSON for every block of the family (blockstates, models, item models, loot tables, recipes, tags),
-written from one table so the family stays consistent. Textures come from build.py.
+written from one table so the family stays consistent. The textures are drawn by tools/items/after_vanilla.py.
 
 usage: python3 tools/hush/assets.py
 """

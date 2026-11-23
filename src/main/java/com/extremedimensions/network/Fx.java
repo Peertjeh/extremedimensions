@@ -33,4 +33,9 @@ public final class Fx {
 	public static final int FRAYED_SEAM = 19;
 	/** The first time a player meets a part of the mod: a hint as a toast. Value: the hint's ordinal. */
 	public static final int HINT = 20;
+	/**
+	 * A curse laid without a choice (a Lurker's touch, a swarm...): a toast naming it and where it came from. Value: the
+	 * curse's ordinal, the stacks shifted 10 bits, the source's ordinal (CurseLog.Source) shifted 16.
+	 */
+	public static final int CURSE_TOAST = 21;
 }

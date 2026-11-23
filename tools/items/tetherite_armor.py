@@ -1,8 +1,9 @@
 """Tetherite worn, and the Seam's armor trims, drawn on the humanoid armor layout (64 x 32).
 
-The armor: each face of the head, body, arms and legs filled with the dark violet metal, lit from above, edged, the
-Tether's cyan run down its seams (a fuller down the breastplate, bands round the arms, a band round the helm, straps
-on the boots). The leggings layer carries the belt and the legs.
+The armor, in vanilla's manner: every face a bevelled plate (a lit top and left edge, the right and bottom edges in
+shadow, a little grain, darker toward the foot), plates joined at seams (a dark line with a lit line under it) and held
+with rivets; the Tether's cyan only as a stud here and there (at the brow, over the heart, on the belt buckle, at the
+boot straps). The helm leaves the face open; the leggings layer carries the belt and the legs.
 
 The trims are drawn in the eight greys of vanilla's trim key (textures/palettes/trim_base, light to dark) and the
 game colours them in whatever material they are put on with; the palettes for the Seam's two materials are written
@@ -14,6 +15,7 @@ here too, light to dark like vanilla's, and Tetherite's darker one for Tetherite
 usage: python3 tools/items/tetherite_armor.py [preview.png]
 """
 import os
+import random
 import sys
 
 from PIL import Image
@@ -21,8 +23,9 @@ from PIL import Image
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 TEX = os.path.join(ROOT, "src/client/resources/assets/extremedimensions/textures")
 
-METAL = [(14, 9, 22), (36, 26, 54), (58, 45, 86), (88, 72, 124), (146, 132, 190)]
-THREAD = [(14, 84, 96), (30, 160, 168), (70, 226, 214), (196, 255, 246)]
+# the metal, dark to light (the same ramp as the items), and the thread
+M = [(22, 19, 27), (35, 31, 43), (49, 44, 60), (64, 58, 78), (82, 75, 98), (106, 99, 124), (140, 133, 158)]
+A = [(27, 86, 92), (42, 140, 142), (96, 200, 190)]
 
 # vanilla's trim key (textures/palettes/trim_base), light to dark, as the game reads it (a grey PNG: read through a
 # colour-managed decoder its greys come out brighter, 241, 225, 208..., and no longer match), and the Seam's palettes
@@ -50,93 +53,141 @@ ARM = faces(40, 16, 4, 12, 4)
 LEG = faces(0, 16, 4, 12, 4)
 
 
-def metal(px, x0, y0, w, h, rows=None, light=True):
-    """A face of plate: lit from the top, edged, the lower rows in shadow."""
-    rows = rows or (0, h)
-    for y in range(rows[0], rows[1]):
+def plate(px, x0, y0, w, h, rows=(0, None), seams=(), rnd=None, top_lit=True):
+    """A face of plate: a lit top edge and left edge, the right and bottom edges in shadow, the body a little grained,
+    darker toward the bottom; seams are a dark line with a lit line under it."""
+    rnd = rnd or random.Random(x0 * 131 + y0)
+    r0, r1 = rows[0], (rows[1] if rows[1] is not None else h)
+    for y in range(r0, r1):
         for x in range(w):
-            t = y / max(1, h - 1)
-            c = 3 if t < 0.25 and light else 2 if t < 0.75 else 1
-            if x == 0 or x == w - 1 or y == rows[0] or y == rows[1] - 1:
-                c = 0 if (y == rows[1] - 1 or x == w - 1) else max(1, c - 1)
-            if y == rows[0] + 1 and 0 < x < w - 1 and light:
-                c = 4 if (x + y) % 5 == 1 else 3
-            px[x0 + x, y0 + y] = METAL[c] + (255,)
+            t = (y - r0) / max(1, r1 - r0 - 1)
+            c = 4 if t < 0.2 else 3 if t < 0.6 else 2
+            if rnd.random() < 0.18:
+                c += rnd.choice((-1, 1))
+            if y in seams:
+                c = 1
+            elif y - 1 in seams:
+                c = 4
+            if y == r0 and top_lit:
+                c = 5
+            if x == 0 and y > r0:
+                c = max(c, 4) if t < 0.5 else 3
+            if x == w - 1 or y == r1 - 1:
+                c = 1
+            px[x0 + x, y0 + y] = M[max(1, min(6, c))] + (255,)
 
+def stud(px, x, y, k=2):
+    px[x, y] = A[k] + (255,)
 
-def thread(px, x, y, k=2):
-    px[x, y] = THREAD[k] + (255,)
+def rivet(px, x, y):
+    px[x, y] = M[5] + (255,)
+    px[x, y + 1] = M[1] + (255,)
+
+# The armor layer follows vanilla's netherite armor pixel for pixel (3.49.5), in the metal's ramp (0 dark .. 6 light,
+# and m between 2 and 3 for the one more tone vanilla's plates have), with a stud of the thread at the brow, over the
+# heart and on the boots' straps
+ARMOR = [
+    "........22m64m22................................................",
+    "........2m3553m2................................................",
+    "........12m65m21................................................",
+    "........12265221................................................",
+    "........m3m54m3m................................................",
+    "........m336533m................................................",
+    "........13465431................................................",
+    "........24455442................................................",
+    "m33m34mmm456554mmm43m33m11145111................................",
+    "45555665556b665556655554m3556543................................",
+    "2m4m45542m3663m24554m4m22m4554mm................................",
+    "2mm2m3mm2..65..2mm3m2mm22mm33mm2................................",
+    "1111..2mm..53..mm2..111122mmmm22................................",
+    ".......33......33.......11222211................................",
+    ".......m45....54m.........1111..................................",
+    ".......034....430...............................................",
+    "........1111................................55m5................",
+    "........1001................................6635................",
+    "........1001................................3435................",
+    "........1111................................55m5................",
+    "................343m1m....m134331m4554m1564555m511115m55........",
+    "................4543m1....1m4543m166661m463554m411114m45........",
+    "................343m43m..m34343m445665444544432411114234........",
+    "................m33m34544b43m33m354554533443m2151111512m........",
+    "................2mm2m566665m2mm2m566665m5665545511115545........",
+    "................343mm356653m343mm356653m121121211..11211........",
+    "...212m22.......2mm2354554532mm234455443.2m.2.2......2..........",
+    "m3mmm442m3mmm3mmm33mmm5665mmm33mmm3443mm........................",
+    "343m4b4m343m343m2mm233mmmm332mm233mmmm33........................",
+    "2m2146532m212m21....m356653m....m344443m........................",
+    "1221255212211221.....235532......234432.........................",
+    "1111122111111111......2mm2........2mm2..........................",
+]
 
 
 def armor():
-    """Layer one: the helm, the breastplate with its arms, and the boots."""
+    return layer(ARMOR)
+
+
+def layer(rows):
     im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
     px = im.load()
-    # the helm: plates all round, a cyan band at the brow, the face left open
-    for name, (x, y, w, h) in HEAD.items():
-        metal(px, x, y, w, h)
-        if name in ("front", "right", "left", "back"):
-            for i in range(1, w - 1):
-                thread(px, x + i, y + 3, 2 if i % 3 else 3)
-        if name == "front":
-            for yy in range(4, 8):
-                for xx in range(2, 6):
-                    px[x + xx, y + yy] = (0, 0, 0, 0)
-    # the breastplate: a cyan fuller down the front, a thread at the collar
-    for name, (x, y, w, h) in BODY.items():
-        metal(px, x, y, w, h)
-        if name == "front":
-            for yy in range(1, h - 1):
-                thread(px, x + 3, y + yy, 1)
-                thread(px, x + 4, y + yy, 2 if yy % 4 else 3)
-            for xx in range(1, w - 1):
-                thread(px, x + xx, y + 1, 1)
-        if name == "back":
-            for yy in range(2, h - 2, 3):
-                thread(px, x + 3, y + yy, 1)
-                thread(px, x + 4, y + yy, 1)
-    # the arms: pauldrons on top, two bands of thread
-    for name, (x, y, w, h) in ARM.items():
-        metal(px, x, y, w, h)
-        if name not in ("top", "bottom"):
-            for xx in range(w):
-                thread(px, x + xx, y + 3, 1)
-                thread(px, x + xx, y + 7, 2)
-    # the boots: the lower rows of the legs, a strap across
-    for name, (x, y, w, h) in LEG.items():
-        if name in ("top",):
-            continue
-        if name == "bottom":
-            metal(px, x, y, w, h, light=False)
-            continue
-        metal(px, x, y, w, h, rows=(h - 5, h))
-        for xx in range(w):
-            thread(px, x + xx, y + h - 3, 2 if xx % 2 else 1)
+    colours = {str(k): c for k, c in enumerate(M)}
+    colours.update({"m": (56, 51, 69), "a": A[0], "b": A[1], "c": A[2]})
+    for y, r in enumerate(rows):
+        for x, ch in enumerate(r):
+            if ch != ".":
+                px[x, y] = colours[ch] + (255,)
     return im
+
+# The leggings layer follows vanilla's netherite leggings pixel for pixel (3.49.4), in the metal's ramp (0 dark .. 6
+# light), with a buckle of the thread at the front of the belt
+LEGGINGS = [
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "................................................................",
+    "....2222........................................................",
+    "....2222........................................................",
+    "....2222........................................................",
+    "....2222........................................................",
+    "1200521012001125................................................",
+    "2221562122212265................................................",
+    "4522256245224652................................................",
+    "2454356424542653................................................",
+    "2442335224422533................................................",
+    "2242334222422433................................................",
+    "1222122212221222................................................",
+    "022102210221022166....6666....6666666666........................",
+    "0110011001100110456666544566665423444432........................",
+    "................4222234ba432222422344322........................",
+    "................222222344322222212222221........................",
+    "................110011000011001101111110........................",
+]
 
 
 def leggings():
-    """Layer two: the belt round the body and the legs."""
-    im = Image.new("RGBA", (64, 32), (0, 0, 0, 0))
-    px = im.load()
-    for name, (x, y, w, h) in BODY.items():
-        if name in ("top",):
-            continue
-        if name == "bottom":
-            metal(px, x, y, w, h, light=False)
-            continue
-        metal(px, x, y, w, h, rows=(h - 5, h))
-        for xx in range(w):
-            thread(px, x + xx, y + h - 4, 3 if xx == w // 2 else 2)
-    for name, (x, y, w, h) in LEG.items():
-        if name in ("top", "bottom"):
-            continue
-        metal(px, x, y, w, h, rows=(0, h - 2))
-        for yy in range(1, h - 3, 3):
-            thread(px, x + (1 if name in ("front", "back") else 2), y + yy, 1)
-        thread(px, x + 1, y + 6, 2)
-    return im
+    return layer(LEGGINGS)
 
+
+def covered(trim, base):
+    """A trim drawn only where the layer under it is: none of it floats over a bare leg."""
+    out = trim.copy()
+    tp, bp = out.load(), base.load()
+    for y in range(base.height):
+        for x in range(base.width):
+            if bp[x, y][3] == 0:
+                tp[x, y] = (0, 0, 0, 0)
+    return out
 
 # --------------------------------------------------------------------------- trims (key levels 0 light .. 7 dark)
 
@@ -256,10 +307,10 @@ def main():
     files = {
         "entity/equipment/humanoid/tetherite": armor(),
         "entity/equipment/humanoid_leggings/tetherite": leggings(),
-        "trims/entity/humanoid/weaver": weaver(False),
-        "trims/entity/humanoid_leggings/weaver": weaver(True),
-        "trims/entity/humanoid/fray": fray(False),
-        "trims/entity/humanoid_leggings/fray": fray(True),
+        "trims/entity/humanoid/weaver": covered(weaver(False), armor()),
+        "trims/entity/humanoid_leggings/weaver": covered(weaver(True), leggings()),
+        "trims/entity/humanoid/fray": covered(fray(False), armor()),
+        "trims/entity/humanoid_leggings/fray": covered(fray(True), leggings()),
     }
     for name, colors in PALETTES.items():
         files["palettes/trim/" + name] = palette(colors)

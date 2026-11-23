@@ -58,6 +58,12 @@ public final class Tooltips {
 			key = "seam_needle";
 		} else if (item == ModItems.VEIL_WING) {
 			key = "veil_wing";
+		} else if (item == ModItems.HOMING_PEARL) {
+			key = "homing_pearl";
+		} else if (item == ModItems.HOMEWARD_KEYSTONE) {
+			key = "homeward_keystone";
+		} else if (item == ModItems.PALE_LOCK) {
+			key = "pale_lock";
 		} else if (item == ModItems.MENDING_CLOTH) {
 			key = "mending_cloth";
 		} else if (item == ModItems.BLOOD_CORD) {
@@ -95,11 +101,30 @@ public final class Tooltips {
 		} else if (item == ModItems.TETHERITE_INGOT) {
 			key = "tetherite_ingot";
 		}
+		if ((item == ModItems.TETHERITE_INGOT || item == ModItems.TETHERITE_UPGRADE_SMITHING_TEMPLATE) && Config.TETHERITE_BIND_WHERE > 0) {
+			// Where the metal binds to netherite (3.26.1)
+			lines.add(Component.translatable("tooltip.extremedimensions.tetherite.where." + Math.min(2, Config.TETHERITE_BIND_WHERE))
+					.withStyle(ChatFormatting.DARK_PURPLE));
+		}
 		if (com.extremedimensions.tetherite.Tetherite.isGear(stack)) {
 			// Tetherite gear: tethered, and what the whole set does
 			lines.add(Component.translatable("tooltip.extremedimensions.tetherite.tethered").withStyle(ChatFormatting.DARK_AQUA));
 			lines.add(Component.translatable("tooltip.extremedimensions.tetherite.set", Math.round(Config.TETHERITE_SET_DRAIN * 100))
 					.withStyle(ChatFormatting.DARK_GRAY));
+			// ... and the price the metal asks of whoever bears it
+			// (none while the world has them switched off)
+			double weight = com.extremedimensions.tetherite.Tetherite.drawback(Config.TETHERITE_WEIGHT);
+			double hunger = com.extremedimensions.tetherite.Tetherite.drawback(Config.TETHERITE_HUNGER);
+			double lure = com.extremedimensions.tetherite.Tetherite.drawback(Config.TETHERITE_LURE);
+			if (weight > 0 && stack.is(net.minecraft.tags.ItemTags.TRIMMABLE_ARMOR)) {
+				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.weight", pct(weight)).withStyle(ChatFormatting.RED));
+			}
+			if (hunger > 0) {
+				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.hunger", pct(hunger)).withStyle(ChatFormatting.RED));
+			}
+			if (lure > 0) {
+				lines.add(Component.translatable("tooltip.extremedimensions.tetherite.lure", pct(lure)).withStyle(ChatFormatting.RED));
+			}
 		}
 		com.extremedimensions.tapestry.Tapestry.Panel panel = com.extremedimensions.tapestry.Tapestry.Panel.of(stack);
 		if (panel != null) {
@@ -115,14 +140,24 @@ public final class Tooltips {
 		charms(stack, lines);
 		com.extremedimensions.relic.Relic relic = com.extremedimensions.relic.RelicService.of(stack);
 		if (relic != null) {
-			// A relic: its gift, its price (both with the server's numbers) and how to bind it
+			// A relic: its tier right under its name, its gift, its price (both with the server's numbers) and how to bind it
+			lines.add(Math.min(1, lines.size()), Component.translatable(relic.tier.nameKey()).withStyle(relic.tier.colour));
 			lines.add(Component.literal("+ ").append(Component.translatable(relic.giftKey(), relic.giftArgs())).withStyle(ChatFormatting.GREEN));
 			lines.add(Component.literal("- ").append(Component.translatable(relic.priceKey(), relic.priceArgs())).withStyle(ChatFormatting.RED));
-			lines.add(Component.translatable("tooltip.extremedimensions.relic.bind").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+			lines.add(Component.translatable(Config.RELIC_SINGLE_USE > 0 ? "tooltip.extremedimensions.relic.bind" : "tooltip.extremedimensions.relic.bind_kept")
+					.withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+			return;
+		}
+		if (item == ModItems.MENDING_CLOTH) {
+			cloth(lines);
 			return;
 		}
 		if (key != null) {
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".1").withStyle(ChatFormatting.GRAY));
+			if (item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER) {
+				// (what it charges for this player, where a curse or a relic makes that more or less)
+				yours(lines, Config.TETHER_ITEM_CHARGE, 1, item == ModItems.EMBER_TETHER ? ChatFormatting.GOLD : ChatFormatting.LIGHT_PURPLE);
+			}
 			lines.add(Component.translatable("tooltip.extremedimensions." + key + ".2").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
 			return;
 		}
@@ -133,9 +168,33 @@ public final class Tooltips {
 		double end = FuelValues.of(Dims.END, item);
 		if (nether > 0) {
 			lines.add(Component.translatable("tooltip.extremedimensions.fuel.nether", Ui.time(nether)).withStyle(ChatFormatting.GOLD));
+			fuel(lines, nether, stack.getCount(), ChatFormatting.GOLD);
 		} else if (end > 0) {
 			lines.add(Component.translatable("tooltip.extremedimensions.fuel.end", Ui.time(end)).withStyle(ChatFormatting.LIGHT_PURPLE));
+			fuel(lines, end, stack.getCount(), ChatFormatting.LIGHT_PURPLE);
 		}
+	}
+
+	/**
+	 * Under a fuel's worth (3.55.0): what the whole stack is worth, and what it is worth to this player where a curse
+	 * (Debt) or a relic (the Anchor Rivet) makes their fuel worth more or less than its face.
+	 */
+	private static void fuel(List<Component> lines, double each, int count, ChatFormatting colour) {
+		if (count > 1) {
+			lines.add(Component.translatable("tooltip.extremedimensions.fuel.stack", count, Ui.time(each * count)).withStyle(colour));
+		}
+		yours(lines, each, count, colour);
+	}
+
+	/** What fuel worth {@code each} a piece is worth to this player, a piece and (with more than one) the stack; nothing at face value. */
+	private static void yours(List<Component> lines, double each, int count, ChatFormatting colour) {
+		double worth = com.extremedimensions.client.state.ClientState.fuelWorth;
+		if (Math.abs(worth - 1) < 0.001) {
+			return;
+		}
+		String factor = com.extremedimensions.penalty.CurseTotals.format(worth * 100) + "%";
+		lines.add((count > 1 ? Component.translatable("tooltip.extremedimensions.fuel.yours_stack", Ui.time(each * worth), Ui.time(each * worth * count), factor)
+				: Component.translatable("tooltip.extremedimensions.fuel.yours", Ui.time(each * worth), factor)).withStyle(colour, ChatFormatting.ITALIC));
 	}
 
 	/**
@@ -164,5 +223,29 @@ public final class Tooltips {
 				});
 			}
 		}
+	}
+
+	/**
+	 * The Mending Cloth by the world's numbers (3.49): the share of a stack it pays, how often one may be used, and what it
+	 * will not do.
+	 */
+	private static void cloth(List<Component> lines) {
+		lines.add(Component.translatable("tooltip.extremedimensions.mending_cloth.1", pct(Math.max(0.01, Math.min(1, Config.CLOTH_SHARE))))
+				.withStyle(ChatFormatting.GRAY));
+		if (Config.CLOTH_COOLDOWN_MINUTES > 0) {
+			lines.add(Component.translatable("tooltip.extremedimensions.mending_cloth.wait", Config.CLOTH_COOLDOWN_MINUTES).withStyle(ChatFormatting.GRAY));
+		}
+		if (Config.CLOTH_EXTREME <= 0) {
+			lines.add(Component.translatable("tooltip.extremedimensions.mending_cloth.extreme").withStyle(ChatFormatting.DARK_GRAY));
+		}
+		if (Config.CLOTH_SCARS <= 0) {
+			lines.add(Component.translatable("tooltip.extremedimensions.mending_cloth.unscarred").withStyle(ChatFormatting.DARK_GRAY));
+		}
+		lines.add(Component.translatable("tooltip.extremedimensions.mending_cloth.2").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+	}
+
+	/** A share as a whole percentage, as text (0.03 gives "3"). */
+	private static String pct(double share) {
+		return Config.format(Math.round(share * 1000) / 10.0);
 	}
 }

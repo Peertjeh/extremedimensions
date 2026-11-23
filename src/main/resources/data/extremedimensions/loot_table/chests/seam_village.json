@@ -11,8 +11,8 @@
             "type": "minecraft:set_count",
             "count": {
               "type": "minecraft:uniform",
-              "min": 2,
-              "max": 8
+              "min": 4,
+              "max": 10
             }
           }
         }
@@ -28,7 +28,7 @@
       ],
       "condition": {
         "type": "minecraft:random_chance",
-        "chance": 0.75
+        "chance": 0.8
       }
     },
     {
@@ -36,16 +36,28 @@
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "extremedimensions:tether_fragment"
+          "name": "extremedimensions:tether_fragment",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 1,
+              "max": 2
+            }
+          }
         }
       ],
       "condition": {
         "type": "minecraft:random_chance",
-        "chance": 0.45
+        "chance": 0.55
       }
     },
     {
-      "rolls": 1,
+      "rolls": {
+        "type": "minecraft:uniform",
+        "min": 3,
+        "max": 5
+      },
       "entries": [
         {
           "type": "minecraft:item",
@@ -57,7 +69,8 @@
               "min": 1,
               "max": 3
             }
-          }
+          },
+          "weight": 3
         },
         {
           "type": "minecraft:item",
@@ -66,22 +79,24 @@
             "type": "minecraft:set_count",
             "count": {
               "type": "minecraft:uniform",
-              "min": 1,
-              "max": 3
+              "min": 2,
+              "max": 8
             }
-          }
+          },
+          "weight": 3
         },
         {
           "type": "minecraft:item",
-          "name": "minecraft:bone",
+          "name": "minecraft:bread",
           "modifier": {
             "type": "minecraft:set_count",
             "count": {
               "type": "minecraft:uniform",
-              "min": 1,
-              "max": 3
+              "min": 2,
+              "max": 5
             }
-          }
+          },
+          "weight": 3
         },
         {
           "type": "minecraft:item",
@@ -90,10 +105,11 @@
             "type": "minecraft:set_count",
             "count": {
               "type": "minecraft:uniform",
-              "min": 1,
-              "max": 3
+              "min": 2,
+              "max": 6
             }
-          }
+          },
+          "weight": 2
         },
         {
           "type": "minecraft:item",
@@ -102,10 +118,11 @@
             "type": "minecraft:set_count",
             "count": {
               "type": "minecraft:uniform",
-              "min": 1,
-              "max": 3
+              "min": 2,
+              "max": 6
             }
-          }
+          },
+          "weight": 2
         },
         {
           "type": "minecraft:item",
@@ -115,11 +132,142 @@
             "count": {
               "type": "minecraft:uniform",
               "min": 1,
+              "max": 4
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:glow_berries",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 2,
+              "max": 8
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:book",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 1,
               "max": 3
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:ender_pearl",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 1,
+              "max": 2
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:coal",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 3,
+              "max": 10
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:experience_bottle",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 1,
+              "max": 4
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:gold_ingot",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 1,
+              "max": 4
+            }
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:book",
+          "modifier": {
+            "type": "minecraft:enchant_randomly",
+            "options": "#minecraft:on_random_loot"
+          },
+          "weight": 2
+        },
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:golden_apple",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": 1
+          },
+          "weight": 1
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:emerald",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 3,
+              "max": 10
             }
           }
         }
-      ]
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.8
+      }
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:veil_wing"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.04
+      }
     },
     {
       "rolls": 1,

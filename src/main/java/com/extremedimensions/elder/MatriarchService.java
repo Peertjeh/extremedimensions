@@ -98,6 +98,12 @@ public final class MatriarchService {
 			f.bar.removeAllPlayers();
 		}
 		FIGHTS.clear();
+		MatriarchSky.clear();
+	}
+
+	/** How many lanterns hang in her Requiem's sky now (for tests). */
+	public static int lanterns(Entity e) {
+		return MatriarchSky.lanterns(e.getUUID());
 	}
 
 	public static boolean hunting(ServerPlayer p) {
@@ -173,6 +179,7 @@ public final class MatriarchService {
 			if (!(ent instanceof Matriarch m) || !m.isAlive()) {
 				f.bar.removeAllPlayers();
 				FIGHTS.remove(e.getKey());
+				MatriarchSky.end(e.getKey());
 				continue;
 			}
 			f.ticks++;
@@ -284,7 +291,13 @@ public final class MatriarchService {
 		Beat b = f.beat;
 		if (f.action != Matriarch.RUSH && f.action != ElderBoss.ULTIMATE) {
 			m.motion.turn(m, yaw, 1.8f);
-			m.motion.brake(m, 0.025, 0);
+			if (f.action == Matriarch.SWEEP && b.between(6, 18) && dist > 7) {
+				// She steps in to her blow, and plants her feet as it falls
+				double ry = Math.toRadians(m.getYRot());
+				m.motion.drive(m, -Math.sin(ry) * 0.3, Math.cos(ry) * 0.3, 0.06, 0);
+			} else {
+				m.motion.brake(m, f.action == Matriarch.SWEEP ? 0.1 : 0.025, 0);
+			}
 		}
 		switch (f.action) {
 			case Matriarch.SWEEP -> {
@@ -540,9 +553,11 @@ public final class MatriarchService {
 			ElderFx.shake(m, m.getX(), m.getZ(), 64, (float) (0.15 + 0.5 * k), 4);
 		}
 		if (b.at(1)) {
-			// Her roots go down: a slow ring of torn earth runs out from her
+			// Her roots go down: a slow ring of torn earth runs out from her, and the sky opens over her (3.42)
 			AttackFx.wave(level, 0, true, m.getX(), m.getY(), m.getZ(), 2, 0.6, 2 + length * 0.15 * 0.6);
+			MatriarchSky.begin(m);
 		}
+		MatriarchSky.tick(m, b.t, length);
 		if (b.between(0, length * 0.15)) {
 			WorldFx.particleIn(level, "minecraft:large_smoke", m.getX(), m.getY() + 0.5, m.getZ(), 4, 0.4, 4, 0.03, 3);
 		}
@@ -597,6 +612,7 @@ public final class MatriarchService {
 			f.breakUltimate(m, BOSS);
 		}
 		if (b.past(length)) {
+			MatriarchSky.end(m.getUUID());
 			f.closeUltimate(m);
 		}
 	}
@@ -617,12 +633,13 @@ public final class MatriarchService {
 		double dx = m.getX() - p.getX(), dz = m.getZ() - p.getZ();
 		double d = Math.max(0.1, Math.sqrt(dx * dx + dz * dz)), h = Math.min(1.5, d * 0.06);
 		p.setDeltaMovement(dx / d * h, -1.2, dz / d * h);
-		p.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(p);
 		WorldFx.effect(p, MobEffects.SLOWNESS, 2, 1);
 	}
 
 	public static void onDefeat(Matriarch m, Entity killer) {
 		Fight f = FIGHTS.remove(m.getUUID());
+		MatriarchSky.end(m.getUUID());
 		ElderArena.release(m);
 		ElderStrikes.forget(m);
 		ElderFx.silence(m, ElderFx.MUSIC_MATRIARCH);
@@ -640,7 +657,7 @@ public final class MatriarchService {
 			ElderFx.loot(m, f.target, s);
 		}
 		for (int i = 0; i < Math.max(0, Config.MATRIARCH_RELICS); i++) {
-			ElderFx.loot(m, f.target, RelicService.random());
+			ElderFx.loot(m, f.target, RelicService.random(true));
 		}
 		// She has fallen to the one she came for, wherever they stood (she does not come for them again), and to all near
 		DataStore.get(f.target).matriarchSlain = true;
@@ -663,6 +680,7 @@ public final class MatriarchService {
 	/** Gone: she sinks back into the ground, whole. */
 	public static void fade(Matriarch m) {
 		Fight f = FIGHTS.remove(m.getUUID());
+		MatriarchSky.end(m.getUUID());
 		ElderArena.release(m);
 		if (f != null) {
 			f.abandonUltimate(BOSS);

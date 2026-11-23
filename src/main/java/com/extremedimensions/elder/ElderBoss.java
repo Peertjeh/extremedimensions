@@ -51,6 +51,18 @@ public abstract class ElderBoss extends Monster {
 		this.noPhysics = true;
 		this.setNoGravity(true);
 		this.xpReward = 250;
+		// Its own health from its setting (3.32), as it is made; one loaded from the world keeps what it was saved with
+		var max = this.getAttribute(Attributes.MAX_HEALTH);
+		double hp = baseHealth();
+		if (!level.isClientSide() && max != null && hp > 0) {
+			max.setBaseValue(Math.min(1024, hp));
+			this.setHealth(this.getMaxHealth());
+		}
+	}
+
+	/** Its own health from its setting, before elder_health_scale and the players fighting it (none: as registered). */
+	protected double baseHealth() {
+		return -1;
 	}
 
 	public static AttributeSupplier.Builder elderAttributes(double health, double armor) {
@@ -108,6 +120,8 @@ public abstract class ElderBoss extends Monster {
 					getBbWidth() * 0.5, 0.2, 6);
 			return false;
 		}
+		// A mace's blow (a smash from a height above all) glances off: only boss_mace_damage of it lands (3.37)
+		amount = ElderPower.maceGuard(this, level, source, amount);
 		if (getAction() == ULTIMATE) {
 			// Its ultimate builds behind a ward: most of a blow is shrugged off
 			amount *= (float) Math.max(0, 1 - Math.min(1, Config.ELDER_ULTIMATE_GUARD));
@@ -221,6 +235,15 @@ public abstract class ElderBoss extends Monster {
 	/** How far the model reaches past the hitbox, so it is drawn whenever any of it is in view. */
 	public abstract double modelReach();
 
+	/**
+	 * How far a hull of its own reaches out ahead of it and behind it along the way it faces, where that is further than
+	 * its body is wide (the Ferryman's boat): it stands on the ground under all of it (see {@link ElderMotion}). 0 for
+	 * none.
+	 */
+	public double hullReach() {
+		return 0;
+	}
+
 	@Override
 	public boolean removeWhenFarAway(double distance) {
 		return false;
@@ -243,17 +266,17 @@ public abstract class ElderBoss extends Monster {
 
 	@Override
 	protected SoundEvent getAmbientSound() {
-		return ModSounds.ELDER_AMBIENT[ElderFx.index(this)];
+		return ModSounds.ELDER_AMBIENT[ElderFx.voice(this)];
 	}
 
 	@Override
 	protected SoundEvent getHurtSound(DamageSource source) {
-		return ModSounds.ELDER_HURT[ElderFx.index(this)];
+		return ModSounds.ELDER_HURT[ElderFx.voice(this)];
 	}
 
 	@Override
 	protected SoundEvent getDeathSound() {
-		return ModSounds.ELDER_DEATH[ElderFx.index(this)];
+		return ModSounds.ELDER_DEATH[ElderFx.voice(this)];
 	}
 
 	@Override

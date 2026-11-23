@@ -1,0 +1,71 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:homing_pearl",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": 2
+          }
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:ender_pearl",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": 12
+          }
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:tether_fragment",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": 4
+          }
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:ender_eye",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": 4
+          }
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "minecraft:shulker_shell",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": 1
+          }
+        }
+      ]
+    }
+  ],
+  "random_sequence": "extremedimensions:gameplay/pale_thanks"
+}

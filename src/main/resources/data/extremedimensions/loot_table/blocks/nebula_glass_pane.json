@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "extremedimensions:nebula_glass_pane"
+        }
+      ],
+      "condition": {
+        "type": "minecraft:table_bonus",
+        "enchantment": "minecraft:silk_touch",
+        "chances": [
+          0.0,
+          1.0
+        ]
+      }
+    }
+  ],
+  "random_sequence": "extremedimensions:blocks/nebula_glass_pane"
+}

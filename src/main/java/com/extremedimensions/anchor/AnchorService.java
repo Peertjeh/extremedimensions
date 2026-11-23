@@ -110,6 +110,20 @@ public final class AnchorService {
 
 	// ------------------------------------------------------------------ interaction
 
+	/**
+	 * The status screen, with fresh numbers for it; a curse still owed is offered first instead. From an anchor (a sneak
+	 * and an empty hand) and, since 3.55.0, from its key anywhere.
+	 */
+	public static void status(ServerPlayer p) {
+		PlayerData d = DataStore.get(p.getUUID());
+		Sync.state(p, d);
+		if (!d.pendingOffer.isEmpty()) {
+			Sync.offer(p, d);
+		} else {
+			ServerPlayNetworking.send(p, new ModPackets.OpenStatusPayload(d.shareAnchors));
+		}
+	}
+
 	/** Right click on a lodestone or anchor with the main hand. */
 	public static InteractionResult use(ServerPlayer p, BlockPos pos) {
 		PlayerData d = DataStore.get(p.getUUID());
@@ -118,12 +132,7 @@ public final class AnchorService {
 		if (stack.isEmpty()) {
 			if (p.isShiftKeyDown()) {
 				// Sneak + empty hand: status screen (or the owed penalty first)
-				Sync.state(p, d);
-				if (!d.pendingOffer.isEmpty()) {
-					Sync.offer(p, d);
-				} else {
-					ServerPlayNetworking.send(p, new ModPackets.OpenStatusPayload(d.shareAnchors));
-				}
+				status(p);
 				return InteractionResult.SUCCESS;
 			}
 			if (Anchor.key(pos.getX(), pos.getY(), pos.getZ()).equals(d.tetherAnchor) && !d.inRun) {
@@ -173,6 +182,11 @@ public final class AnchorService {
 		return cap;
 	}
 
+	/** What fuel is worth to this player, as a multiple: less for every stack of Debt, more with the Anchor Rivet bound. */
+	public static double worth(PlayerData d) {
+		return d.debtFactor() * RelicService.fuel(d);
+	}
+
 	private static InteractionResult deposit(ServerPlayer p, PlayerData d, BlockPos pos, ItemStack stack, String type) {
 		if (!Dims.OVERWORLD.equals(Dims.of(p))) {
 			refuse(p, "overworld_only");
@@ -202,12 +216,15 @@ public final class AnchorService {
 
 		Item item = stack.getItem();
 		boolean instant = item == ModItems.EMBER_TETHER || item == ModItems.VOID_TETHER;
+		if (instant && !spendsAnyway(p, key, stack, Math.min(space, Config.TETHER_ITEM_CHARGE * worth(d)), Config.TETHER_ITEM_CHARGE * worth(d))) {
+			return InteractionResult.SUCCESS;
+		}
 		double added;
 		if (instant) {
-			added = Math.min(space, Config.TETHER_ITEM_CHARGE * d.debtFactor());
+			added = Math.min(space, Config.TETHER_ITEM_CHARGE * worth(d));
 			stack.shrink(1);
 		} else {
-			double per = FuelValues.of(type, item) * d.debtFactor();
+			double per = FuelValues.of(type, item) * worth(d);
 			int n = (int) Math.min(stack.getCount(), Math.ceil(space / per));
 			added = Math.min(space, n * per);
 			stack.shrink(n);
@@ -240,12 +257,59 @@ public final class AnchorService {
 		WorldFx.particleAt("minecraft:enchant", ax, ay + 0.5, az, 0.6, 0.6, 0.6, 0.4, instant ? 50 : 25);
 		WorldFx.sound(p, nether ? "minecraft:block.respawn_anchor.charge" : "minecraft:block.end_portal_frame.fill", 0.8f, instant ? 1.0f : 1.2f);
 		Sync.state(p, d);
+		// (a new anchor of theirs, or an old one of someone else's they now keep charge in, goes on their map)
+		AnchorSync.send(p);
 		return InteractionResult.SUCCESS;
 	}
 
-	/** Why an anchor turned the player away, on their action bar, with the low note it always gave. */
+	/** Ticks a warning that an Ember or Void Tether would be wasted holds: a second use on the same anchor within them spends it. */
+	private static final int WASTE_WARN_TICKS = 100;
+	/** Ticks after the warning before a second use counts (a use button held down repeats every few ticks). */
+	private static final int WASTE_CONFIRM_TICKS = 10;
+
+	/** The anchor a player was last warned about, and when (game time). */
+	private record WasteWarning(String anchor, long at) {}
+
+	/** Each player's last warning (in memory only: a warning is for the moment, not for the save). */
+	private static final java.util.Map<java.util.UUID, WasteWarning> WASTE = new java.util.HashMap<>();
+
+	/** Forgets a player's warning (on leaving). */
+	public static void forget(java.util.UUID id) {
+		WASTE.remove(id);
+	}
+
+	/**
+	 * An Ember or Void Tether used on an anchor with too little room for more than half of it (3.55.0): the first use
+	 * only says how much would fit, and a second use on the same anchor, from half a second to five seconds later,
+	 * spends it anyway (as binding a relic over another asks). A Tether that mostly fits is spent at once, as ever.
+	 */
+	private static boolean spendsAnyway(ServerPlayer p, String key, ItemStack stack, double fits, double full) {
+		if (full - fits <= full / 2) {
+			return true;
+		}
+		long now = p.level().getGameTime();
+		WasteWarning w = WASTE.get(p.getUUID());
+		if (w == null || !w.anchor().equals(key) || now < w.at() || now - w.at() > WASTE_WARN_TICKS) {
+			WASTE.put(p.getUUID(), new WasteWarning(key, now));
+			WorldFx.soundSelf(p, "minecraft:block.chain.hit", 1.0f, 0.6f);
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor.waste", com.extremedimensions.compat.TabPlaceholders.clock(fits),
+					com.extremedimensions.compat.TabPlaceholders.clock(full), stack.getHoverName()).withStyle(net.minecraft.ChatFormatting.GOLD), true);
+			return false;
+		}
+		if (now - w.at() < WASTE_CONFIRM_TICKS) {
+			// (the same press, still held: the warning stands)
+			return false;
+		}
+		WASTE.remove(p.getUUID());
+		return true;
+	}
+
+	/**
+	 * Why an anchor turned the player away, on their action bar, with the low note it always gave (since 3.55.0 the mod's
+	 * own sound for it, so its subtitle says the anchor refused).
+	 */
 	public static void refuse(ServerPlayer p, String why, Object... args) {
-		WorldFx.soundSelf(p, "minecraft:block.note_block.bass", 0.8f, 0.5f);
+		WorldFx.soundSelf(p, "extremedimensions:anchor.refuse", 0.8f, 0.5f);
 		p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor." + why, args), true);
 	}
 
@@ -271,8 +335,8 @@ public final class AnchorService {
 	}
 
 	public static void onBroken(String dim, BlockPos pos) {
-		if (Dims.OVERWORLD.equals(dim)) {
-			DataStore.anchors().remove(Anchor.key(pos.getX(), pos.getY(), pos.getZ()));
+		if (Dims.OVERWORLD.equals(dim) && DataStore.anchors().remove(Anchor.key(pos.getX(), pos.getY(), pos.getZ())) != null) {
+			AnchorSync.changed(WorldFx.server());
 		}
 	}
 
@@ -303,6 +367,7 @@ public final class AnchorService {
 			return;
 		}
 		double r2 = Config.PARTICLE_RANGE * Config.PARTICLE_RANGE;
+		boolean gone = false;
 		Iterator<Anchor> it = DataStore.anchors().values().iterator();
 		while (it.hasNext()) {
 			Anchor a = it.next();
@@ -323,6 +388,7 @@ public final class AnchorService {
 			BlockState state = ow.getBlockState(pos);
 			if (!isAnchorBlock(state)) {
 				it.remove(); // blown up or otherwise gone
+				gone = true;
 				continue;
 			}
 			if (a.charge <= 0) {
@@ -334,6 +400,7 @@ public final class AnchorService {
 				WorldFx.particleAt("minecraft:ash", a.x + 0.5, a.y + 1.0, a.z + 0.5, 0.4, 0.4, 0.4, 0.0, 20);
 				WorldFx.soundAt("minecraft:block.respawn_anchor.deplete", a.x, a.y, a.z, 1.0f, 0.8f);
 				it.remove();
+				gone = true;
 				continue;
 			}
 			if (!a.checked && a.portalCheck == 0) {
@@ -350,9 +417,17 @@ public final class AnchorService {
 				a.blocked = nowBlocked;
 				a.checked = true;
 				a.warded = SoulWards.warded(ow, a.x, a.y, a.z);
+				// Blocked at two looks running (not a mob walking through): its owners are told, wherever they are (3.55.0)
+				a.blockedLooks = nowBlocked ? a.blockedLooks + 1 : 0;
+				if (a.blockedLooks == 2 && a.charge > 0) {
+					tellBlocked(s, a);
+				}
 			}
 			particles(a);
 			hum(a, watchers);
+		}
+		if (gone) {
+			AnchorSync.changed(s);
 		}
 	}
 
@@ -360,9 +435,46 @@ public final class AnchorService {
 		double r2 = (Config.HUD_RANGE * 2) * (Config.HUD_RANGE * 2);
 		for (ServerPlayer p : players) {
 			if (a.distSq(p.getX(), p.getY(), p.getZ()) <= r2) {
-				WorldFx.soundSelf(p, "minecraft:block.respawn_anchor.deplete", 0.8f, 0.6f);
+				// (the anchor guttering, as the mod's own sound since 3.55.0: its subtitle says the anchor is blocked)
+				WorldFx.soundSelf(p, "extremedimensions:anchor.blocked", 0.8f, 0.6f);
 			}
 		}
+	}
+
+	/** How long (ticks) an anchor waits after telling its owners it is blocked before it tells them again. */
+	private static final int BLOCKED_TOLD_EVERY = 5 * 60 * 20;
+
+	/**
+	 * An anchor's way to its portal stays blocked: everyone who keeps charge in it hears so, wherever they are (most of
+	 * them are out beyond the wound, its leak running their charge down), as a cracked anchor tells them (3.55.0: before,
+	 * it leaked without a word to anyone out of earshot).
+	 */
+	private static void tellBlocked(MinecraftServer s, Anchor a) {
+		long now = s.getTickCount();
+		if (a.blockedToldAt != 0 && now - a.blockedToldAt < BLOCKED_TOLD_EVERY) {
+			return;
+		}
+		a.blockedToldAt = now;
+		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
+			if (a.own(p.getStringUUID()) >= 1) {
+				p.sendSystemMessage(Component.translatable("gui.extremedimensions.anchor.blocked_told", a.x, a.y, a.z).withStyle(net.minecraft.ChatFormatting.RED));
+			}
+		}
+	}
+
+	/**
+	 * What is wrong with the anchors of a world around a player (3.55.0, for the HUD's meters): 1 one is blocked, 2 one
+	 * is cracked.
+	 */
+	public static int nearTrouble(ServerPlayer p, String type) {
+		double r2 = Config.HUD_RANGE * Config.HUD_RANGE;
+		int out = 0;
+		for (Anchor a : DataStore.anchors().values()) {
+			if (type.equals(a.type) && a.distSq(p.getX(), p.getY(), p.getZ()) <= r2) {
+				out |= (a.blocked ? 1 : 0) | (a.unstable > 0 ? 2 : 0);
+			}
+		}
+		return out;
 	}
 
 	/** A charged anchor hums now and then, low and quiet, louder the fuller it is. */

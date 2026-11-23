@@ -26,7 +26,12 @@ public class Matriarch extends ElderBoss {
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
-		return elderAttributes(640.0, 8.0);
+		return elderAttributes(com.extremedimensions.config.Config.MATRIARCH_HEALTH, 8.0);
+	}
+
+	@Override
+	protected double baseHealth() {
+		return com.extremedimensions.config.Config.MATRIARCH_HEALTH;
 	}
 
 	@Override

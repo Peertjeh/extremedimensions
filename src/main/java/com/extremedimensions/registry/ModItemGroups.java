@@ -36,6 +36,9 @@ public final class ModItemGroups {
 					out.accept(ModItems.VEIL_LANTERN);
 					out.accept(ModItems.SEAM_SILK);
 					out.accept(ModItems.VEIL_WING);
+					out.accept(ModItems.HOMING_PEARL);
+					out.accept(ModItems.HOMEWARD_KEYSTONE);
+					out.accept(ModItems.PALE_LOCK);
 					out.accept(ModItems.MENDING_CLOTH);
 					out.accept(ModItems.BLOOD_CORD);
 					out.accept(ModItems.MENDING_THREAD);
@@ -54,6 +57,7 @@ public final class ModItemGroups {
 					out.accept(ModItems.DISC_FRAGMENT_ABYSS);
 					out.accept(ModItems.WEAVERS_LOOM);
 					out.accept(ModItems.SPINDLE);
+					out.accept(ModItems.KINDLED_SEAM_LANTERN);
 					out.accept(ModItems.TETHERITE_ORE);
 					out.accept(ModItems.TETHERITE_SCRAP);
 					out.accept(ModItems.TETHER_CORD);
@@ -70,6 +74,11 @@ public final class ModItemGroups {
 					out.accept(ModItems.THREAD_OF_THE_HEART);
 					ModItems.RELICS.values().forEach(out::accept);
 					ModItems.HUSH.forEach(out::accept);
+					out.accept(ModItems.SEAM_SILK_BLOCK);
+					out.accept(ModItems.SEAM_SILK_CARPET);
+					out.accept(ModItems.NEBULA_GLASS);
+					out.accept(ModItems.NEBULA_GLASS_PANE);
+					out.accept(ModItems.VEIL_LAMP);
 					out.accept(Items.LODESTONE);
 				})
 				.build());

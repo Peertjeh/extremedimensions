@@ -76,9 +76,15 @@ public final class ServerEvents {
 	public static void register() {
 		// A reset of the Seam that an operator asked for is carried out before the worlds load
 		ServerLifecycleEvents.SERVER_STARTING.register(com.extremedimensions.seam.SeamReset::starting);
+		// The relics a loot table gives are new ones, once the relics were reset (see RelicReset; after the Wanderer's
+		// leavings are added to a chest, so they are stamped too)
+		net.fabricmc.fabric.api.loot.v3.LootTableEvents.MODIFY_DROPS.register((table, context, drops) ->
+				com.extremedimensions.relic.RelicReset.found(drops));
 		ServerLifecycleEvents.SERVER_STARTED.register(s -> {
 			WorldFx.bind(s);
 			DataStore.load(s);
+			// What a boss fight cut short by a crash left in the world goes back as its ground loads
+			FightBlocks.load(s);
 			com.extremedimensions.coop.Allies.init(s);
 		});
 		// The mod's data is written with the world's own saves (autosave, /save-all, stop), never ahead of them
@@ -86,9 +92,12 @@ public final class ServerEvents {
 			// Everything, every time: small changes (charge drained, atonement gathered) mark nothing dirty on their own
 			DataStore.markDirty();
 			DataStore.flush();
+			FightBlocks.saved();
 		});
 		ServerLifecycleEvents.SERVER_STOPPING.register(s -> {
-			// Thorns and chains an Elder raised sink back, and its arena comes down, before the world is saved
+			// Thorns and chains an Elder raised sink back, and its arena comes down, before the world is saved (the ground
+			// an ultimate broke first, the arena's own floor in it among the rest)
+			com.extremedimensions.elder.ElderUpheaval.clear();
 			com.extremedimensions.elder.ElderTerrain.clear();
 			com.extremedimensions.elder.ElderArena.clear();
 			com.extremedimensions.elder.ElderGaol.clear();
@@ -96,10 +105,17 @@ public final class ServerEvents {
 			com.extremedimensions.events.WorldEvents.clear();
 			// Blocks of the Seam in the air land, and islands not yet finished are built again on the next visit
 			SeamService.stopping();
+			// An anchor finishing or breaking apart (3.44) is whole or broken at once, before the world is saved
+			com.extremedimensions.reach.AnchorRites.clear();
+			// Whatever any boss fight still holds goes back now, before the world is saved (its anchors, its nodes, what
+			// its systems above left); what lies in ground not loaded now goes back once it is, after the next start
+			FightBlocks.stopping();
 			DataStore.markDirty();
 			DataStore.flush();
 			// The stats export, once more, as a web page should show the world while the server is down
 			com.extremedimensions.compat.StatsExport.stopping(s);
+			// The playtest log's last lines are on the disk before the server is gone (a few seconds at most)
+			com.extremedimensions.compat.PlaytestLog.flush();
 		});
 		ServerLifecycleEvents.SERVER_STOPPED.register(s -> {
 			STRAYS.clear();
@@ -107,9 +123,20 @@ public final class ServerEvents {
 			com.extremedimensions.lore.FirstWeaver.clear();
 			com.extremedimensions.tapestry.Tapestry.clear();
 			com.extremedimensions.seam.FirstKnot.clear();
+			com.extremedimensions.reach.PaleReach.clear();
+			com.extremedimensions.reach.AnchorRites.clear();
 			LurkerService.clear();
 			com.extremedimensions.lurker.CaveLurkerService.clear();
 			com.extremedimensions.lurker.SculkLurkerService.clear();
+			com.extremedimensions.lurker.MagpieService.clear();
+			com.extremedimensions.lurker.WickService.clear();
+			com.extremedimensions.lurker.TidewalkerService.clear();
+			com.extremedimensions.lurker.GatebreakerService.clear();
+			com.extremedimensions.lurker.LockwardenService.clear();
+			com.extremedimensions.lurker.ThreadbiterService.clear();
+			com.extremedimensions.lurker.PaleHaulerService.clear();
+			com.extremedimensions.lurker.EdgecrawlerService.clear();
+			com.extremedimensions.lurker.CragbackService.clear();
 			com.extremedimensions.world.AmbientService.clear();
 			com.extremedimensions.coop.ClanService.clear();
 			com.extremedimensions.penalty.FleeService.clear();
@@ -121,7 +148,9 @@ public final class ServerEvents {
 			com.extremedimensions.expedition.ExpeditionBar.clear();
 			WorldService.clear();
 			MendingService.clear();
+			com.extremedimensions.elder.ElderStir.clear();
 			com.extremedimensions.elder.FerrymanService.clear();
+			com.extremedimensions.elder.PaleMasonService.clear();
 			com.extremedimensions.elder.MatriarchService.clear();
 			com.extremedimensions.elder.ElderStrikes.clear();
 			com.extremedimensions.elder.ElderSpells.clear();
@@ -135,6 +164,7 @@ public final class ServerEvents {
 			com.extremedimensions.coop.Allies.clear();
 			Requests.clear();
 			DataStore.unload();
+			FightBlocks.unload();
 			WorldFx.bind(null);
 		});
 		ServerTickEvents.END_SERVER_TICK.register(ServerEvents::tick);
@@ -143,18 +173,21 @@ public final class ServerEvents {
 		net.fabricmc.fabric.api.event.lifecycle.v1.ServerEntityEvents.ENTITY_LOAD.register((entity, level) -> {
 			// ... and so are a gaol's posts, echo chains and builders left behind by a stop, or by an echo or a build
 			// that is over
+			// (and rubble of an arena that was still falling when its chunk was saved)
 			if (BlockFlight.stray(entity) | com.extremedimensions.elder.ElderGaol.stray(entity)
-					| com.extremedimensions.events.Echoes.stray(entity) | com.extremedimensions.events.Unanchored.stray(entity)) {
+					| com.extremedimensions.events.Echoes.stray(entity) | com.extremedimensions.events.Unanchored.stray(entity)
+					| com.extremedimensions.elder.ArenaRuin.stray(entity)) {
 				STRAYS.add(entity);
 			}
 		});
 		// A block of an Elder's arena broken by a player drops nothing
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
 				com.extremedimensions.elder.ElderArena.broken(level, pos));
-		// A core of an Elder's arena takes hits rather than being mined
+		// A core of an Elder's arena (and an anchor of the Knot Mother's) takes hits rather than being mined
 		AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) ->
 				level instanceof net.minecraft.server.level.ServerLevel sl && !player.isSpectator()
-						&& (com.extremedimensions.elder.ElderDomain.hit(player, sl, pos) || com.extremedimensions.tapestry.Unweaving.hit(player, sl, pos))
+						&& (com.extremedimensions.elder.ElderDomain.hit(player, sl, pos) || com.extremedimensions.tapestry.Unweaving.hit(player, sl, pos)
+								|| com.extremedimensions.elder.WeaverService.anchorHit(player, sl, pos))
 						? InteractionResult.FAIL : InteractionResult.PASS);
 		PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
 				!(player instanceof ServerPlayer fallen && com.extremedimensions.coop.FallenService.fallen(fallen)));
@@ -176,8 +209,13 @@ public final class ServerEvents {
 			Requests.forget(handler.getPlayer());
 			com.extremedimensions.elder.ElderSpells.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.expedition.ExpeditionBar.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.world.WorldService.forgetBar(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.WoundLens.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.anchor.AnchorSync.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.binding.Charms.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.relic.RelicService.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.anchor.AnchorService.forget(handler.getPlayer().getUUID());
+			com.extremedimensions.tetherite.TetheriteBinding.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.world.AmbientService.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.lurker.CaveLurkerService.forget(handler.getPlayer().getUUID());
 			com.extremedimensions.coop.ClanService.forget(handler.getPlayer().getUUID());
@@ -194,6 +232,8 @@ public final class ServerEvents {
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.config.SettingsService.send(handler.getPlayer()));
 		// ... and who is fallen, to draw them crawling
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.coop.FallenService.sync(s, handler.getPlayer()));
+		// ... and where their anchors stand, for a map mod's waypoints
+		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> com.extremedimensions.anchor.AnchorSync.joined(handler.getPlayer()));
 		// What an echo gave back while they were away, and gear that came home and still waits
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, s) -> {
 			ServerPlayer p = handler.getPlayer();
@@ -206,6 +246,8 @@ public final class ServerEvents {
 			com.extremedimensions.coop.FallenService.forget(newPlayer);
 			PlayerData d = DataStore.get(newPlayer.getUUID());
 			if (!alive) {
+				// What the Ferryman's Obol kept from a death beyond the wound comes back first, each thing to its own slot
+				com.extremedimensions.relic.RelicService.restore(oldPlayer, newPlayer);
 				ExpeditionService.onRespawn(newPlayer, d);
 				com.extremedimensions.binding.Homebound.restore(newPlayer);
 				com.extremedimensions.penalty.AbyssalCurses.onRespawn(newPlayer);
@@ -217,9 +259,16 @@ public final class ServerEvents {
 		// Tethershot: an arrow hauls what it hits toward the archer
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.binding.Charms::afterDamage);
 		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.penalty.AbyssalCurses::afterDamage);
+		// The Thornward Bark hurts back whoever strikes its bearer up close; Hunger's Fang heals its bearer's blows (the
+		// killing one too)
+		ServerLivingEntityEvents.AFTER_DAMAGE.register(com.extremedimensions.relic.RelicService::afterDamage);
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register(com.extremedimensions.relic.RelicService::striking);
+		ServerLivingEntityEvents.AFTER_DEATH.register(com.extremedimensions.relic.RelicService::slain);
 		// Bitter Cure: a zombie villager cured breaks it for those close by
 		ServerLivingEntityEvents.MOB_CONVERSION.register((previous, converted, context) -> com.extremedimensions.penalty.AbyssalTolls.converted(previous, converted));
 		ServerLivingEntityEvents.ALLOW_DEATH.register(ExtremeCurses::oath);
+		// The Last Stitch holds a killing blow once an expedition (before an ally's help is needed)
+		ServerLivingEntityEvents.ALLOW_DEATH.register(com.extremedimensions.relic.RelicService::stitch);
 		// Co-op: struck down with an ally near, a player falls instead of dying, and cannot be hurt while fallen
 		ServerLivingEntityEvents.ALLOW_DEATH.register(com.extremedimensions.coop.FallenService::allowDeath);
 		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> com.extremedimensions.coop.FallenService.mayHurt(entity, source));
@@ -286,6 +335,8 @@ public final class ServerEvents {
 				com.extremedimensions.elder.MatriarchService.onDefeat(m, source.getEntity());
 			} else if (entity instanceof com.extremedimensions.elder.Ferryman f) {
 				com.extremedimensions.elder.FerrymanService.onDefeat(f, source.getEntity());
+			} else if (entity instanceof com.extremedimensions.elder.PaleMason pm) {
+				com.extremedimensions.elder.PaleMasonService.onDefeat(pm, source.getEntity());
 			} else if (entity instanceof com.extremedimensions.elder.Weaver w) {
 				com.extremedimensions.elder.WeaverService.onDefeat(w, source.getEntity());
 			} else if (entity instanceof Keeper k) {
@@ -296,6 +347,24 @@ public final class ServerEvents {
 				com.extremedimensions.lurker.CaveLurkerService.onDeath(cl);
 			} else if (entity instanceof com.extremedimensions.lurker.SculkLurker sl) {
 				com.extremedimensions.lurker.SculkLurkerService.onDeath(sl);
+			} else if (entity instanceof com.extremedimensions.lurker.Magpie mp) {
+				com.extremedimensions.lurker.MagpieService.onDeath(mp, HollowService.culprit(mp, source.getEntity()));
+			} else if (entity instanceof com.extremedimensions.lurker.Wick wk) {
+				com.extremedimensions.lurker.WickService.onDeath(wk, source.getEntity());
+			} else if (entity instanceof com.extremedimensions.lurker.Tidewalker tw) {
+				com.extremedimensions.lurker.TidewalkerService.onDeath(tw, HollowService.culprit(tw, source.getEntity()));
+			} else if (entity instanceof com.extremedimensions.lurker.Gatebreaker gb) {
+				com.extremedimensions.lurker.GatebreakerService.onDeath(gb, HollowService.culprit(gb, source.getEntity()));
+			} else if (entity instanceof com.extremedimensions.lurker.Lockwarden lw) {
+				com.extremedimensions.lurker.LockwardenService.onDeath(lw, HollowService.culprit(lw, source.getEntity()));
+			} else if (entity instanceof com.extremedimensions.lurker.PaleHauler ph) {
+				com.extremedimensions.lurker.PaleHaulerService.onDeath(ph, source.getEntity());
+			} else if (entity instanceof com.extremedimensions.lurker.Threadbiter tb) {
+				com.extremedimensions.lurker.ThreadbiterService.onDeath(tb, source.getEntity());
+			} else if (entity instanceof com.extremedimensions.lurker.Edgecrawler ec) {
+				com.extremedimensions.lurker.EdgecrawlerService.onDeath(ec, HollowService.culprit(ec, source.getEntity()));
+			} else if (entity instanceof com.extremedimensions.lurker.Cragback cb) {
+				com.extremedimensions.lurker.CragbackService.onDeath(cb, HollowService.culprit(cb, source.getEntity()));
 			} else if (entity instanceof Lurker l) {
 				LurkerService.onDeath(l, HollowService.culprit(l, source.getEntity()));
 			} else if (entity instanceof com.extremedimensions.seam.VeilRay || entity instanceof com.extremedimensions.seam.Thinned) {
@@ -314,6 +383,38 @@ public final class ServerEvents {
 
 		// Cold Forge and Barren Hand: the furnaces a cursed player works and the crops they plant are marked
 		UseBlockCallback.EVENT.register(com.extremedimensions.penalty.AbyssalWorld::onUse);
+		// A block laid out in the Pale Reach is remembered, for the Pale Haulers (3.39): looked at once it stands
+		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (level instanceof ServerLevel sl && player instanceof ServerPlayer && Dims.END.equals(Dims.of(sl))
+					&& player.getItemInHand(hand).getItem() instanceof net.minecraft.world.item.BlockItem
+					&& com.extremedimensions.reach.PaleReach.far(hit.getBlockPos().getX(), hit.getBlockPos().getZ())) {
+				net.minecraft.core.BlockPos on = hit.getBlockPos(), beside = on.relative(hit.getDirection());
+				boolean onOpen = sl.getBlockState(on).canBeReplaced(), besideOpen = sl.getBlockState(beside).canBeReplaced();
+				sl.getServer().execute(() -> {
+					if (onOpen) {
+						com.extremedimensions.lurker.PaleHaulerService.laid(sl, on);
+					}
+					if (besideOpen && !onOpen) {
+						com.extremedimensions.lurker.PaleHaulerService.laid(sl, beside);
+					}
+				});
+			}
+			return InteractionResult.PASS;
+		});
+		// The fitting of an Unfinished Anchor in the Pale Reach, attuned with an Eye of Ender (3.39)
+		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+			if (hand != InteractionHand.MAIN_HAND || !(player instanceof ServerPlayer sp) || !(level instanceof ServerLevel sl)) {
+				return InteractionResult.PASS;
+			}
+			// The Homeward Keystone or the Pale Lock: set in an attuned fitting, it decides the End (3.44)
+			if (com.extremedimensions.reach.HomeOrLock.holds(player.getItemInHand(hand))) {
+				return com.extremedimensions.reach.HomeOrLock.onUse(sp, sl, hit.getBlockPos(), player.getItemInHand(hand));
+			}
+			if (!level.getBlockState(hit.getBlockPos()).is(net.minecraft.world.level.block.Blocks.LODESTONE)) {
+				return InteractionResult.PASS;
+			}
+			return com.extremedimensions.reach.PaleReach.onUse(sp, sl, hit.getBlockPos(), player.getItemInHand(hand));
+		});
 		// Crouching with fragments or silk loads a Spindle with all that fits (the game skips the block for a crouching hand)
 		UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
 			net.minecraft.world.level.block.state.BlockState at = level.getBlockState(hit.getBlockPos());
@@ -341,9 +442,9 @@ public final class ServerEvents {
 			if (!Dims.ours(level)) {
 				return InteractionResult.PASS;
 			}
-			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && MendingService.isPedestal(hit.getBlockPos())
-					&& SeamService.inSeam(sp)) {
-				InteractionResult r = MendingService.onPedestal(sp, hit.getBlockPos(), player.getItemInHand(hand));
+			if (player instanceof ServerPlayer sp && hand == InteractionHand.MAIN_HAND && SeamService.inSeam(sp)
+					&& level instanceof net.minecraft.server.level.ServerLevel sl && MendingService.isSocket(sl, hit.getBlockPos())) {
+				InteractionResult r = MendingService.onSocket(sp, hit.getBlockPos(), player.getItemInHand(hand));
 				if (r != InteractionResult.PASS) {
 					return r;
 				}
@@ -423,6 +524,9 @@ public final class ServerEvents {
 			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.MENDING_CLOTH)) {
 				return PenaltyService.cloth(sp, player.getItemInHand(hand));
 			}
+			if (player instanceof ServerPlayer sp && player.getItemInHand(hand).is(ModItems.HOMING_PEARL)) {
+				return com.extremedimensions.reach.HomingPearl.use(sp, player.getItemInHand(hand));
+			}
 			if (player instanceof ServerPlayer sp && com.extremedimensions.relic.RelicService.of(player.getItemInHand(hand)) != null) {
 				return com.extremedimensions.relic.RelicService.bind(sp, player.getItemInHand(hand));
 			}
@@ -453,6 +557,8 @@ public final class ServerEvents {
 				CurseEffects.wear(sp);
 				// a Cave Lurker listening hears the stone give way
 				com.extremedimensions.lurker.CaveLurkerService.noise(sp, 10);
+				// a Cragback asleep near by wakes
+				com.extremedimensions.lurker.CragbackService.noise(sp, pos, state);
 				// Veinseeker: the ore and veins near broken stone ring out
 				com.extremedimensions.binding.Charms.seek(sp, pos, state);
 			}
@@ -535,6 +641,8 @@ public final class ServerEvents {
 			}
 			d.offerDelay = 40;
 		}
+		// Held in danger when last seen, and their leaving never seen to (a single-player world closed first): a flight
+		com.extremedimensions.penalty.FleeService.joined(d, p.level().getServer().isDedicatedServer());
 		d.joinDone = false;
 		d.ticksOnline = 0;
 		d.hasRopeEnd = false;
@@ -542,6 +650,8 @@ public final class ServerEvents {
 		com.extremedimensions.guide.Hints.known(p, d);
 		// The Elders they helped defeat, from their advancements, for the stats export (also while they are offline)
 		com.extremedimensions.compat.StatsExport.elders(p);
+		// Relics they carry from before the relics were reset crumble now
+		com.extremedimensions.relic.RelicReset.scan(p);
 		Sync.state(p, d);
 	}
 
@@ -558,7 +668,8 @@ public final class ServerEvents {
 
 	/** The mod's things that act (cloth, relics, endings) and so wait in another mod's world; the journal and pages are only read. */
 	private static boolean foreignRefuses(ItemStack held) {
-		return held.is(ModItems.MENDING_CLOTH) || held.is(ModItems.MENDING_THREAD) || held.is(ModItems.SEVERING_SHEARS)
+		return held.is(ModItems.MENDING_CLOTH) || held.is(ModItems.MENDING_THREAD) || held.is(ModItems.SEVERING_SHEARS) || held.is(ModItems.HOMING_PEARL)
+				|| held.is(ModItems.HOMEWARD_KEYSTONE) || held.is(ModItems.PALE_LOCK)
 				|| com.extremedimensions.relic.RelicService.of(held) != null;
 	}
 
@@ -603,6 +714,7 @@ public final class ServerEvents {
 
 	private static void work(MinecraftServer s) {
 		com.extremedimensions.compat.TabPlaceholders.tick(s);
+		com.extremedimensions.penalty.FleeService.tick(s);
 		com.extremedimensions.compat.StatsExport.tick(s);
 		// (each part timed while the performance tests listen; see TickProfile)
 		long lap = TickProfile.start();
@@ -634,6 +746,10 @@ public final class ServerEvents {
 				// A Plumb Line in hand: which way it pulls
 				com.extremedimensions.seam.FirstKnot.point(p);
 			}
+			if (beat % 20 == 13) {
+				// Relics from before the relics were reset crumble once a player comes across them (in any world)
+				com.extremedimensions.relic.RelicReset.scan(p);
+			}
 			if (!d.joinDone && ++d.ticksOnline >= Config.JOIN_DELAY_TICKS) {
 				d.joinDone = true;
 				afterJoin(p, d);
@@ -651,7 +767,15 @@ public final class ServerEvents {
 				d.offerAge = 0;
 				String pick = d.pendingOffer.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(d.pendingOffer.size()));
 				p.sendSystemMessage(net.minecraft.network.chat.Component.translatable("gui.extremedimensions.choice.timeout"));
-				PenaltyService.choose(p, pick);
+				PenaltyService.choose(p, pick, true);
+			}
+
+			// A curse laid without a choice since the last tick: a toast naming it and where it came from
+			com.extremedimensions.penalty.CurseLog.flush(p, d);
+
+			// A Tetherite binding waiting at the smithing table the player has open: its chance, sent when it changes
+			if (beat % 10 == 3) {
+				com.extremedimensions.tetherite.TetheriteBinding.tick(p);
 			}
 
 			// Another mod's world lies outside the wound's reach: the curses sleep, an expedition waits for the
@@ -680,13 +804,19 @@ public final class ServerEvents {
 			sync |= TetherService.tick(p, d, dim);
 			boolean onExpedition = Dims.isBeyond(dim) && d.inRun && !d.collapsing;
 			sync |= PenaltyService.tick(p, d, onExpedition, Dims.OVERWORLD.equals(dim) && !d.collapsing);
+			// The relic bound: the Pilgrim's Sandal's speed, the Unbound Pinion's wear
+			com.extremedimensions.relic.RelicService.tick(p, d);
 
 			if (beat % 100 == 0) {
 				CurseEffects.refreshEffects(p, d);
 				discover(p, d, dim);
 			}
 			if (beat % 20 == 0) {
+				// An ended expedition whose cost is settled by now is told (its record, see ExpeditionRecord)
+				com.extremedimensions.expedition.ExpeditionRecord.second(p, d);
 				com.extremedimensions.tribe.Standing.second(p, d);
+				TetherService.settle(p, d);
+				com.extremedimensions.tetherite.Tetherite.weigh(p, d);
 			}
 			if (beat % 40 == 7) {
 				com.extremedimensions.journal.Bestiary.scan(p);
@@ -706,13 +836,26 @@ public final class ServerEvents {
 		com.extremedimensions.binding.Charms.tick(s);
 		com.extremedimensions.binding.WoundLens.tick(s);
 		com.extremedimensions.events.WorldEvents.tick(s);
+		com.extremedimensions.reach.PaleReach.tick(s);
+		com.extremedimensions.reach.AnchorRites.tick(s);
+		com.extremedimensions.reach.HomeOrLock.tick(s);
 		if (s.getTickCount() % 1200 == 0) {
 			AtonementGuard.sweep(s);
 		}
 		AnchorService.tick(s);
+		com.extremedimensions.anchor.AnchorSync.tick(s);
 		LurkerService.tick(s);
 		com.extremedimensions.lurker.CaveLurkerService.tick(s);
 		com.extremedimensions.lurker.SculkLurkerService.tick(s);
+		com.extremedimensions.lurker.MagpieService.tick(s);
+		com.extremedimensions.lurker.WickService.tick(s);
+		com.extremedimensions.lurker.TidewalkerService.tick(s);
+		com.extremedimensions.lurker.GatebreakerService.tick(s);
+		com.extremedimensions.lurker.LockwardenService.tick(s);
+		com.extremedimensions.lurker.ThreadbiterService.tick(s);
+		com.extremedimensions.lurker.PaleHaulerService.tick(s);
+		com.extremedimensions.lurker.EdgecrawlerService.tick(s);
+		com.extremedimensions.lurker.CragbackService.tick(s);
 		com.extremedimensions.world.AmbientService.tick(s);
 		com.extremedimensions.penalty.AbyssalTolls.serverTick(s);
 		com.extremedimensions.penalty.AbyssalWorld.serverTick(s);
@@ -724,8 +867,11 @@ public final class ServerEvents {
 		WorldService.tick(s);
 		MendingService.tick(s);
 		lap = TickProfile.lap("seam", lap);
+		com.extremedimensions.elder.ElderStir.tick(s);
 		com.extremedimensions.elder.FerrymanService.tick(s);
 		lap = TickProfile.lap("ferryman", lap);
+		com.extremedimensions.elder.PaleMasonService.tick(s);
+		lap = TickProfile.lap("pale mason", lap);
 		com.extremedimensions.elder.MatriarchService.tick(s);
 		lap = TickProfile.lap("matriarch", lap);
 		com.extremedimensions.elder.ElderStrikes.tick(s);
@@ -735,10 +881,15 @@ public final class ServerEvents {
 		lap = TickProfile.lap("spells and gaol", lap);
 		com.extremedimensions.elder.ElderTerrain.tick(s);
 		lap = TickProfile.lap("terrain", lap);
+		com.extremedimensions.elder.ElderUpheaval.tick(s);
+		lap = TickProfile.lap("upheaval", lap);
 		com.extremedimensions.elder.WeaverService.tick(s);
 		lap = TickProfile.lap("weaver", lap);
 		com.extremedimensions.elder.ElderArena.tick(s);
 		lap = TickProfile.lap("arena", lap);
+		// (last of the fights: what they let go of this tick, and their journal)
+		FightBlocks.tick(s);
+		lap = TickProfile.lap("fight blocks", lap);
 		com.extremedimensions.coop.FallenService.tick(s);
 		com.extremedimensions.tribe.RaidService.tick(s);
 		com.extremedimensions.elder.AttackFx.flush(s);
@@ -747,6 +898,10 @@ public final class ServerEvents {
 
 	/** Journal pages found by exploring. */
 	private static void discover(ServerPlayer p, PlayerData d, String dim) {
+		// (never the biome of a chunk not loaded yet: a player just moved may stand in one still on its way in)
+		if (!(p.level() instanceof ServerLevel here) || !Loaded.ready(here, p.blockPosition())) {
+			return;
+		}
 		if (p.level().getBiome(p.blockPosition()).is(Biomes.DEEP_DARK)) {
 			Journal.unlock(p, d, JournalEntry.WEAVERS);
 		}

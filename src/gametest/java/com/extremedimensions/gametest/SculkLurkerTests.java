@@ -20,7 +20,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.SculkSensorBlock;
 import net.minecraft.world.level.block.SculkShriekerBlock;
+import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -106,6 +108,49 @@ public class SculkLurkerTests {
 		});
 	}
 
+	/** Between the shriekers it scurries to a sculk sensor near the player and sets it off in their name. It never strikes them. */
+	@GameTest(environment = Alone.SCULK_SENSOR, maxTicks = 320)
+	public void aSculkLurkerSetsOffASensorInThePlayersName(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer p = TestPlayers.survivor(helper, "sculk-sensor");
+		place(helper, p, 3.5, 0, 6.5);
+		BlockPos sensor = helper.absolutePos(new BlockPos(6, 0, 6));
+		SculkLurker[] in = {null};
+		helper.runAfterDelay(60, () -> {
+			level.setBlockAndUpdate(sensor, Blocks.SCULK_SENSOR.defaultBlockState());
+			in[0] = ModEntities.SCULK_LURKER.spawn(level, helper.absolutePos(new BlockPos(1, 0, 1)), EntitySpawnReason.COMMAND);
+			check(helper, in[0] != null, "no Sculk Lurker came");
+			p.setHealth(20f);
+			SculkLurkerService.adopt(level, in[0], p, "beckon");
+		});
+		boolean[] set = {false};
+		int[] count = {0};
+		float[] lowest = {20f};
+		for (int t = 61; t <= 290; t++) {
+			helper.runAfterDelay(t, () -> {
+				var s = level.getBlockState(sensor);
+				set[0] |= s.hasProperty(SculkSensorBlock.PHASE) && s.getValue(SculkSensorBlock.PHASE) != SculkSensorPhase.INACTIVE;
+				if (in[0] != null) {
+					count[0] = Math.max(count[0], SculkLurkerService.sensorsSetOff(in[0]));
+				}
+				lowest[0] = Math.min(lowest[0], p.getHealth());
+			});
+		}
+		helper.runAfterDelay(291, () -> {
+			try {
+				check(helper, count[0] > 0 && set[0], "the Sculk Lurker never set the sensor off (it set off %s, the sensor went %s; it is at %s)", count[0],
+						set[0] ? "off" : "never off", in[0] == null ? "-" : in[0].blockPosition());
+				check(helper, lowest[0] >= 20f, "the Sculk Lurker hurt the player (%s)", lowest[0]);
+			} finally {
+				if (in[0] != null && in[0].isAlive()) {
+					in[0].discard();
+				}
+				level.setBlockAndUpdate(sensor, Blocks.AIR.defaultBlockState());
+			}
+			helper.succeed();
+		});
+	}
+
 	/**
 	 * With a Warden up, it goes to it and leads it towards the player, the Warden's ear set on where it goes; near the
 	 * player, it sets the Warden on them.
@@ -128,6 +173,7 @@ public class SculkLurkerTests {
 		boolean[] heard = {false};
 		boolean[] angry = {false};
 		boolean[] delivered = {false};
+		int[] laughs = {0};
 		for (int t = 72; t <= 270; t++) {
 			helper.runAfterDelay(t, () -> {
 				if (w[0] == null || in[0] == null) {
@@ -138,6 +184,7 @@ public class SculkLurkerTests {
 						.filter(pos -> pos.distSqr(in[0].blockPosition()) <= 9).isPresent();
 				angry[0] |= w[0].getEntityAngryAt().filter(e -> e == p).isPresent();
 				delivered[0] |= SculkLurkerService.delivered(in[0]);
+				laughs[0] = Math.max(laughs[0], SculkLurkerService.laughs(in[0]));
 			});
 		}
 		helper.runAfterDelay(271, () -> {
@@ -146,6 +193,7 @@ public class SculkLurkerTests {
 				check(helper, delivered[0], "the Sculk Lurker never set the Warden on its prey (it is %s at %s)",
 						in[0] == null ? "gone" : SculkLurkerService.mode(in[0]), in[0] == null ? "-" : in[0].blockPosition());
 				check(helper, angry[0], "the Warden never grew angry at the player");
+				check(helper, laughs[0] > 0, "the Sculk Lurker never laughed as it brought the Warden on its prey");
 			} finally {
 				if (w[0] != null) {
 					w[0].discard();
@@ -177,6 +225,32 @@ public class SculkLurkerTests {
 			if (sl != null) {
 				sl.discard();
 			}
+		}
+		helper.succeed();
+	}
+
+	/** A city's pack: two or three for one player, one more for every further player, never past the cap. */
+	@GameTest
+	public void aCitysPackGrowsWithItsPlayers(GameTestHelper helper) {
+		int min = com.extremedimensions.config.Config.SCULK_LURKER_PACK_MIN, max = com.extremedimensions.config.Config.SCULK_LURKER_PACK_MAX;
+		int per = com.extremedimensions.config.Config.SCULK_LURKER_PACK_PER_PLAYER, cap = com.extremedimensions.config.Config.SCULK_LURKER_PACK_CAP;
+		try {
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_MIN = 2;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_MAX = 3;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_PER_PLAYER = 1;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_CAP = 6;
+			java.util.Random rnd = new java.util.Random(3);
+			for (int i = 0; i < 100; i++) {
+				int one = SculkLurkerService.packSize(1, rnd), three = SculkLurkerService.packSize(3, rnd);
+				check(helper, one >= 2 && one <= 3, "one player drew a pack of %s", one);
+				check(helper, three >= 4 && three <= 5, "three players drew a pack of %s", three);
+				check(helper, SculkLurkerService.packSize(10, rnd) == 6, "ten players drew past the cap");
+			}
+		} finally {
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_MIN = min;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_MAX = max;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_PER_PLAYER = per;
+			com.extremedimensions.config.Config.SCULK_LURKER_PACK_CAP = cap;
 		}
 		helper.succeed();
 	}

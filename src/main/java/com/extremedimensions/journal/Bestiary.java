@@ -25,9 +25,9 @@ public final class Bestiary {
 	private Bestiary() {}
 
 	public enum Beast {
-		LURKER("lurker", 3), CAVE_LURKER("cave_lurker", 3), SCULK_LURKER("sculk_lurker", 3), HOLLOWLING("hollowling", 3), KEEPER("keeper", 1), STARVED_ONE("starved_one", 1),
+		LURKER("lurker", 3), CAVE_LURKER("cave_lurker", 3), SCULK_LURKER("sculk_lurker", 3), MAGPIE("magpie", 3), WICK("wick", 3), TIDEWALKER("tidewalker", 3), GATEBREAKER("gatebreaker", 1), LOCKWARDEN("lockwarden", 2), THREADBITER("threadbiter", 3), EDGECRAWLER("edgecrawler", 2), CRAGBACK("cragback", 1), HOLLOWLING("hollowling", 3), KEEPER("keeper", 1), STARVED_ONE("starved_one", 1),
 		THINNED("thinned", 3), VEIL_RAY("veil_ray", 3), FRAYED_RAY("frayed_ray", 3), MATRIARCH("matriarch", 1), FERRYMAN("ferryman", 1), LAST_WEAVER("weaver", 1),
-		KNOT_MOTHER("knot_mother", 1);
+		KNOT_MOTHER("knot_mother", 1), PALE_HAULER("pale_hauler", 3), PALE_MASON("pale_mason", 1);
 
 		public final String id;
 		/** Slain this many times, the journal notes how to face it. */
@@ -39,7 +39,7 @@ public final class Bestiary {
 		}
 
 		public boolean great() {
-			return this == STARVED_ONE || this == MATRIARCH || this == FERRYMAN || this == LAST_WEAVER || this == KNOT_MOTHER;
+			return this == STARVED_ONE || this == MATRIARCH || this == FERRYMAN || this == LAST_WEAVER || this == KNOT_MOTHER || this == PALE_MASON;
 		}
 
 		public String nameKey() {
@@ -78,6 +78,33 @@ public final class Bestiary {
 		if (e instanceof com.extremedimensions.lurker.SculkLurker) {
 			return Beast.SCULK_LURKER;
 		}
+		if (e instanceof com.extremedimensions.lurker.Magpie) {
+			return Beast.MAGPIE;
+		}
+		if (e instanceof com.extremedimensions.lurker.Wick) {
+			return Beast.WICK;
+		}
+		if (e instanceof com.extremedimensions.lurker.Tidewalker) {
+			return Beast.TIDEWALKER;
+		}
+		if (e instanceof com.extremedimensions.lurker.Gatebreaker) {
+			return Beast.GATEBREAKER;
+		}
+		if (e instanceof com.extremedimensions.lurker.Lockwarden) {
+			return Beast.LOCKWARDEN;
+		}
+		if (e instanceof com.extremedimensions.lurker.Threadbiter) {
+			return Beast.THREADBITER;
+		}
+		if (e instanceof com.extremedimensions.lurker.PaleHauler) {
+			return Beast.PALE_HAULER;
+		}
+		if (e instanceof com.extremedimensions.lurker.Edgecrawler) {
+			return Beast.EDGECRAWLER;
+		}
+		if (e instanceof com.extremedimensions.lurker.Cragback) {
+			return Beast.CRAGBACK;
+		}
 		if (e instanceof Lurker) {
 			return Beast.LURKER;
 		}
@@ -95,6 +122,9 @@ public final class Bestiary {
 		}
 		if (e instanceof com.extremedimensions.elder.Ferryman) {
 			return Beast.FERRYMAN;
+		}
+		if (e instanceof com.extremedimensions.elder.PaleMason) {
+			return Beast.PALE_MASON;
 		}
 		if (e instanceof com.extremedimensions.elder.KnotMother) {
 			return Beast.KNOT_MOTHER;

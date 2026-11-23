@@ -55,13 +55,47 @@ public class SettingsTests {
 		helper.succeed();
 	}
 
+	/** A world from before 3.16 on a difficulty takes that difficulty's barter costs; one of its own rules the new defaults. */
+	@GameTest
+	public void barterGrowsDearThroughTheUpgrade(GameTestHelper helper) {
+		java.util.Set<String> added = java.util.Set.of("tribe_barter_price", "tribe_barter_standing_cost", "tribe_barter_curse_chance", "tribe_rep_barter");
+		JsonObject easy = new JsonObject();
+		easy.addProperty("config_version", 5);
+		JsonObject custom = new JsonObject();
+		custom.addProperty("config_version", 5);
+		for (var e : Preset.EASY.values.entrySet()) {
+			if (!added.contains(e.getKey())) {
+				easy.addProperty(e.getKey(), Double.parseDouble(e.getValue()));
+				custom.addProperty(e.getKey(), Double.parseDouble(e.getValue()));
+			}
+		}
+		// as a 3.15 file holds them: the old defaults
+		for (JsonObject j : new JsonObject[] {easy, custom}) {
+			j.addProperty("tribe_rep_barter", 1);
+			j.addProperty("tribe_barter_price", 1.0);
+			j.addProperty("tribe_barter_trusted_discount", 0.25);
+			j.addProperty("tribe_barter_kin_discount", 0.4);
+		}
+		custom.addProperty("atone_base", 999);
+		Config.migrate(easy);
+		Config.migrate(custom);
+		check(helper, easy.get("tribe_barter_price").getAsDouble() == 2 && easy.get("tribe_barter_standing_cost").getAsInt() == 3
+				&& easy.get("tribe_barter_curse_chance").getAsDouble() == 0.1 && easy.get("tribe_rep_barter").getAsInt() == 0
+				&& easy.get("tribe_barter_trusted_discount").getAsDouble() == 0.1, "an Easy world did not take Easy's barter costs: %s", easy);
+		check(helper, custom.get("tribe_barter_price").getAsDouble() == 3 && custom.get("tribe_rep_barter").getAsInt() == 0
+				&& custom.get("tribe_barter_kin_discount").getAsDouble() == 0.2 && !custom.has("tribe_barter_standing_cost"),
+				"a world of its own rules did not follow the new barter defaults: %s", custom);
+		helper.succeed();
+	}
+
 	@GameTest
 	public void olderConfigsFollowNewDefaultsButKeepChoices(GameTestHelper helper) {
 		JsonObject old = new JsonObject();
 		old.addProperty("atone_base", 100);
 		old.addProperty("atone_per_stack", 75);
 		Config.migrate(old);
-		check(helper, old.get("atone_base").getAsInt() == 120, "an old default was not brought up to the new one (%s)", old.get("atone_base"));
+		// (100 was the default before 2.7.0, 120 before 3.49.0: it follows each new default in turn)
+		check(helper, old.get("atone_base").getAsInt() == 160, "an old default was not brought up to the new one (%s)", old.get("atone_base"));
 		check(helper, old.get("atone_per_stack").getAsInt() == 75, "a chosen value was overwritten (%s)", old.get("atone_per_stack"));
 		JsonObject current = new JsonObject();
 		current.addProperty("config_version", 3);
@@ -102,6 +136,25 @@ public class SettingsTests {
 		chosen.addProperty("elder_arena_size", 2.5);
 		Config.migrate(chosen);
 		check(helper, chosen.get("elder_arena_size").getAsDouble() == 2.5, "a chosen arena size was overwritten (%s)", chosen.get("elder_arena_size"));
+		helper.succeed();
+	}
+
+	/** 3.34: every setting the settings screen shows as an On/Off button is a whole number that defaults to 0 or 1. */
+	@GameTest
+	public void everySwitchIsAWholeNumberThatDefaultsToOffOrOn(GameTestHelper helper) {
+		java.util.Map<String, Config.Setting> byKey = new java.util.HashMap<>();
+		for (Config.Setting st : Config.settings()) {
+			byKey.put(st.key(), st);
+		}
+		for (String key : Config.switches()) {
+			Config.Setting st = byKey.get(key);
+			check(helper, st != null, "the switch %s is no setting", key);
+			check(helper, st.whole(), "the switch %s is not a whole number", key);
+			check(helper, "0".equals(st.fallback()) || "1".equals(st.fallback()), "the switch %s defaults to %s", key, st.fallback());
+		}
+		check(helper, Config.isSwitch("lurker_enabled") && Config.isSwitch("elder_griefing"), "the Lurker's and the Elders' switches are no switches");
+		check(helper, !Config.isSwitch("lurker_health") && !Config.isSwitch("trial_unlock") && !Config.isSwitch("coop_allies"),
+				"a number (or a choice of more than on and off) is shown as a switch");
 		helper.succeed();
 	}
 

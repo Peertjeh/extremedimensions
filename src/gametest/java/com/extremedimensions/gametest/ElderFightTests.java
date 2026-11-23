@@ -145,13 +145,83 @@ public class ElderFightTests {
 		}
 		helper.runAfterDelay(35, () -> {
 			int now = near(f);
-			boolean grew = now > counted[0] && Math.abs(f.toughness() - ElderPower.health(now)) < 0.001;
+			// It counts once a second, and a player of another test may wander near in between (or already stood near
+			// at the first count, and has gone since): with its own two near, it must have grown past one fighter to a
+			// count it could have seen (two, or more with a stranger near)
+			int most = Math.max(2, Math.max(now, counted[0] + 1));
+			boolean seen = false;
+			for (int k = 2; k <= most; k++) {
+				seen |= Math.abs(f.toughness() - ElderPower.health(k)) < 0.001;
+			}
+			boolean grew = now >= 2 && f.toughness() > ElderPower.health(1) + 0.001 && seen;
 			boolean share = Math.abs(f.getHealth() / f.getMaxHealth() - 1.0) < 0.01;
 			done.run();
 			check(helper, grew, "against %s (from %s) it has x%s health, not x%s", now, counted[0], f.toughness(), ElderPower.health(now));
 			check(helper, share, "its health bar did not keep its share (%s of %s)", f.getHealth(), f.getMaxHealth());
 			helper.succeed();
 		});
+	}
+
+	/**
+	 * An Elder's fight holds everyone in it, not only the one it came for: leaving is a flight for both (3.49.2). One it
+	 * let go of in the moment before their leaving was seen to (he sails off as his passenger vanishes) is held all the
+	 * same; and one whose leaving was never seen to (a single-player world closed first) pays on joining.
+	 */
+	@GameTest(environment = Alone.FLEE_ELDER, maxTicks = 40)
+	public void anEldersFightHoldsEveryoneInIt(GameTestHelper helper) {
+		ServerPlayer p = com.extremedimensions.gametest.TestPlayers.survivor(helper, "flee-passenger");
+		ServerPlayer near = com.extremedimensions.gametest.TestPlayers.survivor(helper, "flee-beside");
+		stand(helper, p, 2, 2);
+		stand(helper, near, 9, 9);
+		int curses = Config.FLEE_CURSES, range = Config.FLEE_ELDER_RANGE;
+		Config.FLEE_CURSES = 1;
+		Config.FLEE_ELDER_RANGE = 64;
+		Ferryman f = ferryman(helper, p);
+		com.extremedimensions.data.PlayerData d = com.extremedimensions.data.DataStore.get(near.getUUID());
+		try {
+			check(helper, f != null, "the Ferryman could not come");
+			String passenger = com.extremedimensions.penalty.FleeService.danger(p);
+			String beside = com.extremedimensions.penalty.FleeService.danger(near);
+			check(helper, "elder".equals(passenger), "the one he came for is in danger %s", passenger);
+			check(helper, "elder".equals(beside), "one fighting beside them is in danger %s", beside);
+			// Noted with their data, as it is every half second while they play
+			com.extremedimensions.penalty.FleeService.note(near, beside);
+			check(helper, "elder".equals(d.held), "what holds them was noted as %s", d.held);
+			// He sails off before their leaving is seen to: it is a flight all the same
+			FerrymanService.fade(f);
+			String after = com.extremedimensions.penalty.FleeService.danger(near);
+			check(helper, after == null, "with him gone the player is still in danger %s", after);
+			com.extremedimensions.penalty.FleeService.leaving(near, helper.getLevel().getServer());
+			check(helper, "elder".equals(d.fled), "leaving as he went was noted as %s", d.fled);
+			check(helper, d.held == null, "what held them was kept after they left (%s)", d.held);
+			// Held when last seen, their leaving never seen to: a flight on joining a single-player world, none after a
+			// dedicated server's crash
+			com.extremedimensions.data.PlayerData closed = new com.extremedimensions.data.PlayerData();
+			closed.held = "elder";
+			com.extremedimensions.penalty.FleeService.joined(closed, false);
+			check(helper, "elder".equals(closed.fled) && closed.held == null, "a world closed in a fight was no flight (%s, %s)", closed.fled, closed.held);
+			com.extremedimensions.data.PlayerData crashed = new com.extremedimensions.data.PlayerData();
+			crashed.held = "elder";
+			com.extremedimensions.penalty.FleeService.joined(crashed, true);
+			check(helper, crashed.fled == null && crashed.held == null, "a server's crash was a flight (%s, %s)", crashed.fled, crashed.held);
+			// With no reach, only the one it came for is held
+			Ferryman again = ferryman(helper, p);
+			check(helper, again != null, "the Ferryman could not come again");
+			Config.FLEE_ELDER_RANGE = 0;
+			String none = com.extremedimensions.penalty.FleeService.danger(near);
+			check(helper, none == null && "elder".equals(com.extremedimensions.penalty.FleeService.danger(p)),
+					"with no reach the one beside is in danger %s", none);
+			FerrymanService.fade(again);
+		} finally {
+			Config.FLEE_CURSES = curses;
+			Config.FLEE_ELDER_RANGE = range;
+			if (f != null && f.isAlive()) {
+				FerrymanService.fade(f);
+			}
+			d.fled = null;
+			d.held = null;
+		}
+		helper.succeed();
 	}
 
 	@GameTest

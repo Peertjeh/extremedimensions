@@ -7,25 +7,24 @@
         {
           "type": "minecraft:item",
           "name": "extremedimensions:mossy_hush_brick_slab",
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 2,
-            "add": false,
-            "conditions": [
-              {
-                "condition": "minecraft:block_state_property",
-                "block": "extremedimensions:mossy_hush_brick_slab",
-                "properties": {
+          "modifier": [
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:mossy_hush_brick_slab",
+                "state": {
                   "type": "double"
                 }
-              }
-            ]
-          }
+              },
+              "count": 2
+            },
+            {
+              "type": "minecraft:explosion_decay"
+            }
+          ]
         }
-      ],
-      "condition": {
-        "type": "minecraft:survives_explosion"
-      }
+      ]
     }
   ],
   "random_sequence": "extremedimensions:blocks/mossy_hush_brick_slab"

@@ -106,7 +106,7 @@ public final class AbyssalTolls {
 			room.remove(lifted);
 			if (!room.isEmpty()) {
 				Penalty to = room.get(ThreadLocalRandom.current().nextInt(room.size()));
-				d.addStacks(to, 1);
+				CurseLog.add(d, to, 1, CurseLog.Source.BLOOD);
 				CurseEffects.applyEffects(p, d);
 				p.sendSystemMessage(Component.translatable("gui.extremedimensions.abyssal.blood_jump", Component.translatable(to.nameKey())));
 			}

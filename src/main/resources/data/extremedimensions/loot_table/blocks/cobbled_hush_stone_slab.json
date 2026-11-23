@@ -7,25 +7,24 @@
         {
           "type": "minecraft:item",
           "name": "extremedimensions:cobbled_hush_stone_slab",
-          "modifier": {
-            "type": "minecraft:set_count",
-            "count": 2,
-            "add": false,
-            "conditions": [
-              {
-                "condition": "minecraft:block_state_property",
-                "block": "extremedimensions:cobbled_hush_stone_slab",
-                "properties": {
+          "modifier": [
+            {
+              "type": "minecraft:set_count",
+              "condition": {
+                "type": "minecraft:match_block",
+                "blocks": "extremedimensions:cobbled_hush_stone_slab",
+                "state": {
                   "type": "double"
                 }
-              }
-            ]
-          }
+              },
+              "count": 2
+            },
+            {
+              "type": "minecraft:explosion_decay"
+            }
+          ]
         }
-      ],
-      "condition": {
-        "type": "minecraft:survives_explosion"
-      }
+      ]
     }
   ],
   "random_sequence": "extremedimensions:blocks/cobbled_hush_stone_slab"

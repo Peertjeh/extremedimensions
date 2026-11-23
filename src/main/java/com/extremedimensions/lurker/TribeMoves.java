@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import com.extremedimensions.server.Dims;
+import com.extremedimensions.server.Loaded;
 import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
@@ -82,9 +83,73 @@ public final class TribeMoves {
 		}
 		nav.moveTo(x, y, z, speed);
 		Path path = nav.getPath();
-		// No way round to a spot above it (a cliff, a ledge): it leaps up
-		if ((path == null || !path.canReach()) && leap(m, x, y, z)) {
+		// No way round to a spot above it (a cliff, a ledge), or only a long way round: it leaps up
+		double dx = x - m.getX(), dz = z - m.getZ();
+		boolean detour = path != null && path.canReach() && path.getNodeCount() > 2 * Math.sqrt(dx * dx + dz * dz) + 8;
+		if ((path == null || !path.canReach() || detour) && leap(m, x, y, z)) {
 			nav.stop();
+		}
+	}
+
+	/** Ticks without headway before a creature on a route counts as stuck. */
+	private static final int STUCK_TICKS = 30;
+	/** Where each creature last made headway on its route: x, z, and its age then. */
+	private static final Map<Mob, double[]> HEADWAY = new WeakHashMap<>();
+
+	/**
+	 * A big body's walk (the Lurker's), every tick after its route moved it on. A wide body cannot always stand on the
+	 * middle of the next point of its route (by a wall, round a corner), and walking at it from a little off it would
+	 * circle it: so the points it has passed or nearly stands on are skipped. And when it makes no headway for a while,
+	 * it leaps the ledge before it, or works its route out afresh, rather than turning where it stands.
+	 */
+	public static void stride(Mob m) {
+		PathNavigation nav = m.getNavigation();
+		Path path = nav.getPath();
+		if (path == null || path.isDone() || !m.onGround()) {
+			HEADWAY.remove(m);
+			return;
+		}
+		trimBehind(m);
+		double reach = Math.max(0.75, m.getBbWidth() * 0.5 + 0.25);
+		boolean skipped = false;
+		for (int guard = 0; guard < 2 && path.getNextNodeIndex() + 1 < path.getNodeCount(); guard++) {
+			Vec3 a = path.getEntityPosAtNode(m, path.getNextNodeIndex());
+			Vec3 b = path.getEntityPosAtNode(m, path.getNextNodeIndex() + 1);
+			double ax = a.x - m.getX(), az = a.z - m.getZ();
+			// (only when its body passes straight on to the point after: a corner is never cut into the wall)
+			if (ax * ax + az * az < reach * reach && Math.abs(a.y - m.getY()) < 0.6 && Math.abs(b.y - m.getY()) < 0.6
+					&& m.level() instanceof ServerLevel sl && sweeps(sl, m, b)) {
+				path.advance();
+				skipped = true;
+			} else {
+				break;
+			}
+		}
+		if (skipped && !path.isDone()) {
+			Vec3 next = path.getNextEntityPos(m);
+			m.getMoveControl().setWantedPosition(next.x, next.y, next.z, m.getMoveControl().getSpeedModifier());
+		}
+		double[] h = HEADWAY.get(m);
+		if (h == null) {
+			HEADWAY.put(m, new double[] {m.getX(), m.getZ(), m.tickCount});
+			return;
+		}
+		double hx = m.getX() - h[0], hz = m.getZ() - h[1];
+		if (hx * hx + hz * hz > 1.0) {
+			h[0] = m.getX();
+			h[1] = m.getZ();
+			h[2] = m.tickCount;
+			return;
+		}
+		if (m.tickCount - h[2] < STUCK_TICKS) {
+			return;
+		}
+		// Stuck: up onto the ledge before it (the next point of its route, or the spot it is going to), else a fresh route
+		h[2] = m.tickCount;
+		Vec3 next = path.getNextEntityPos(m);
+		BlockPos goal = nav.getTargetPos();
+		if (!leap(m, next.x, next.y, next.z) && (goal == null || !leap(m, goal.getX() + 0.5, goal.getY(), goal.getZ() + 0.5))) {
+			nav.recomputePath();
 		}
 	}
 
@@ -147,6 +212,19 @@ public final class TribeMoves {
 			return;
 		}
 		go(m, t.getX(), t.getY(), t.getZ(), speed);
+	}
+
+	/** Whether the creature's body passes on its level straight from where it stands to a spot (nothing in the way). */
+	static boolean sweeps(ServerLevel level, Mob m, Vec3 to) {
+		double dx = to.x - m.getX(), dz = to.z - m.getZ();
+		int steps = Math.max(1, (int) Math.ceil(Math.sqrt(dx * dx + dz * dz) * 2));
+		for (int i = 1; i <= steps; i++) {
+			double k = i / (double) steps;
+			if (!level.noCollision(m, m.getBoundingBox().move(dx * k, 0.05, dz * k))) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/** As {@link #clear(ServerLevel, Vec3, Vec3)}, and the creature's whole body passes all the way (no low lintel). */
@@ -267,7 +345,7 @@ public final class TribeMoves {
 		double rise = y - m.getY();
 		double dx = x - m.getX(), dz = z - m.getZ();
 		double flat = Math.sqrt(dx * dx + dz * dz);
-		if (rise < 1.6 || rise > leapHeight(m) || flat > 7 || flat < 0.5) {
+		if (rise < 1.2 || rise > leapHeight(m) || flat > 7 || flat < 0.5) {
 			return false;
 		}
 		Integer last = LEAPT.get(m);
@@ -304,14 +382,63 @@ public final class TribeMoves {
 		double lx = land.getX() + 0.5 - m.getX(), lz = land.getZ() + 0.5 - m.getZ();
 		double across = Math.sqrt(lx * lx + lz * lz);
 		double v = across * 0.09 / (1 - Math.pow(0.91, ticks));
+		boolean carried = m.getType() == com.extremedimensions.registry.ModEntities.LURKER;
+		if (carried) {
+			// The big one climbs: straight up past the ledge's top, then over it (see carry). Nothing may stand in its
+			// body's way across the top of the ledge, a wall between it and the ledge included: it goes round instead
+			double dy = land.getY() - m.getY() + 0.05;
+			int steps = Math.max(1, (int) Math.ceil(across * 2));
+			for (int i = 1; i <= steps; i++) {
+				double k = i / (double) steps;
+				if (!level.noCollision(m, m.getBoundingBox().move(lx * k, dy, lz * k))) {
+					return false;
+				}
+			}
+		}
 		m.getNavigation().stop();
 		m.getMoveControl().setWait();
-		m.setDeltaMovement(across < 1e-3 ? 0 : lx / across * v, vy, across < 1e-3 ? 0 : lz / across * v);
+		if (carried) {
+			m.setDeltaMovement(0, vy, 0);
+			LEAPS.put(m, new double[] {land.getX() + 0.5, land.getY(), land.getZ() + 0.5, m.tickCount});
+		} else {
+			m.setDeltaMovement(across < 1e-3 ? 0 : lx / across * v, vy, across < 1e-3 ? 0 : lz / across * v);
+		}
 		m.needsSync = true;
 		LEAPT.put(m, m.tickCount);
 		WorldFx.particleIn(level, "minecraft:poof", m.getX(), m.getY() + 0.2, m.getZ(), 0.4, 0.1, 0.4, 0.02, 8);
 		WorldFx.soundIn(level.dimension().identifier().toString(), "extremedimensions:lurker_step", "hostile", m.getX(), m.getY(), m.getZ(), 1.0f, 0.7f);
 		return true;
+	}
+
+	/** Leaps the big Lurker is in the middle of: where it lands (x, the ledge's top, z) and when it leapt. */
+	private static final Map<Mob, double[]> LEAPS = new WeakHashMap<>();
+
+	/**
+	 * Every tick of the big Lurker's climb: once its feet are over the ledge's top it is drawn across onto it; below
+	 * that it only rises, so its body never strikes the ledge's side on the way up. Over once it stands again.
+	 */
+	public static void carry(Mob m) {
+		double[] l = LEAPS.get(m);
+		if (l == null) {
+			return;
+		}
+		if (m.tickCount - l[3] > 40 || (m.onGround() && m.tickCount - l[3] > 3)) {
+			LEAPS.remove(m);
+			return;
+		}
+		if (m.getY() < l[1] + 0.05) {
+			return;
+		}
+		double dx = l[0] - m.getX(), dz = l[2] - m.getZ(), d = Math.sqrt(dx * dx + dz * dz);
+		double speed = Math.min(0.35, d * 0.6);
+		Vec3 v = m.getDeltaMovement();
+		m.setDeltaMovement(d < 1e-3 ? 0 : dx / d * speed, v.y, d < 1e-3 ? 0 : dz / d * speed);
+		m.needsSync = true;
+	}
+
+	/** Whether the big Lurker is in the middle of a leap. */
+	public static boolean leaping(Mob m) {
+		return LEAPS.containsKey(m);
 	}
 
 	/** What burns or drowns: never walked into. */
@@ -345,16 +472,23 @@ public final class TribeMoves {
 	 * in the way of any part of it, and no water or fire where it would stand.
 	 */
 	public static boolean roomFor(ServerLevel level, BlockPos feet, double width, double height) {
-		if (!ground(level.getBlockState(feet.below()))) {
-			return false;
-		}
 		double h = width / 2.0;
 		AABB box = new AABB(feet.getX() + 0.5 - h, feet.getY(), feet.getZ() + 0.5 - h, feet.getX() + 0.5 + h, feet.getY() + height,
 				feet.getZ() + 0.5 + h);
+		BlockPos lo = BlockPos.containing(box.minX, box.minY, box.minZ), hi = BlockPos.containing(box.maxX, box.minY + 1, box.maxZ);
+		// Only in chunks loaded now: a body at a chunk's edge reaches into the next one, and reading a block of a chunk
+		// still on its way in makes the server stand and wait for it
+		if (!Loaded.chunk(level, lo.getX() >> 4, lo.getZ() >> 4) || !Loaded.chunk(level, hi.getX() >> 4, hi.getZ() >> 4)
+				|| !Loaded.chunk(level, lo.getX() >> 4, hi.getZ() >> 4) || !Loaded.chunk(level, hi.getX() >> 4, lo.getZ() >> 4)) {
+			return false;
+		}
+		if (!ground(level.getBlockState(feet.below()))) {
+			return false;
+		}
 		if (!level.noCollision(box)) {
 			return false;
 		}
-		for (BlockPos q : BlockPos.betweenClosed(BlockPos.containing(box.minX, box.minY, box.minZ), BlockPos.containing(box.maxX, box.minY + 1, box.maxZ))) {
+		for (BlockPos q : BlockPos.betweenClosed(lo, hi)) {
 			if (hazard(level.getBlockState(q))) {
 				return false;
 			}
@@ -372,6 +506,10 @@ public final class TribeMoves {
 	 * when it is water, a tree or no room. In the Nether, looked for downwards from {@code top}.
 	 */
 	public static BlockPos surface(ServerLevel level, int x, int z, int top, double width, double height) {
+		// (the height of a column not loaded now would load its chunk to read it)
+		if (!Loaded.chunk(level, x >> 4, z >> 4)) {
+			return null;
+		}
 		if (Dims.NETHER.equals(Dims.of(level))) {
 			for (int y = top; y > top - 40; y--) {
 				BlockPos feet = new BlockPos(x, y, z);
@@ -485,7 +623,7 @@ public final class TribeMoves {
 		double pull = Math.min(1.6, 0.3 + d * 0.12);
 		double up = p.getY() - from.getY() > 2 ? -0.8 : 0.35;
 		p.setDeltaMovement(dx / d * pull, up, dz / d * pull);
-		p.needsSync = true;
+		com.extremedimensions.server.WorldFx.moved(p);
 	}
 
 	/** Whether the world lets creatures break blocks (the mobGriefing game rule). */
@@ -515,5 +653,13 @@ public final class TribeMoves {
 				level.destroyBlock(q, true, m);
 			}
 		}
+	}
+
+	/**
+	 * How deep the tribe swims: they float with only the head out of the water (vanilla's 0.4 blocks of water at the
+	 * feet left a tall Lurker standing three-quarters out of it). The water reaches to a little under the eyes.
+	 */
+	public static double swimDepth(net.minecraft.world.entity.Entity e) {
+		return Math.max(0.4, e.getEyeHeight() - 0.3);
 	}
 }

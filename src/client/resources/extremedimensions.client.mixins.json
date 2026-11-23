@@ -11,7 +11,9 @@
 		"LoadingArtMixin",
 		"TitleLogoMixin",
 		"MusicManagerMixin",
-		"UnmappedCompassMixin"
+		"UnmappedCompassMixin",
+		"EndFlashStateMixin",
+		"IrisBlockIdsMixin"
 	],
 	"injectors": {
 		"defaultRequire": 0

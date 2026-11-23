@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "hanging=false": {
+      "model": "extremedimensions:block/kindled_seam_lantern"
+    },
+    "hanging=true": {
+      "model": "extremedimensions:block/kindled_seam_lantern_hanging"
+    }
+  }
+}

@@ -34,14 +34,23 @@ public class Lurker extends Monster implements LurkerBody {
 	private static final EntityDataAccessor<Integer> POSE = SynchedEntityData.defineId(Lurker.class, EntityDataSerializers.INT);
 	private static final EntityDataAccessor<Integer> MOOD = SynchedEntityData.defineId(Lurker.class, EntityDataSerializers.INT);
 
+	/** The most the big Lurker turns in a tick while it walks (its kin set their own). */
+	private static final float TURN = 35.0F;
+
 	public Lurker(EntityType<? extends Monster> type, Level level) {
 		super(type, level);
 		TribeMoves.wary(this);
+		// A steady walk: round a corner in a few strides, never a jerk to the other side and back, never a spin
+		if (type == com.extremedimensions.registry.ModEntities.LURKER) {
+			this.moveControl = new SteadyMoveControl(this, TURN);
+		}
+		// Each kind's health from its setting (3.31), for this Lurker and every kind made from it, the Keeper among them
+		TribeHealth.apply(this);
 	}
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, 60.0)
+				.add(Attributes.MAX_HEALTH, com.extremedimensions.config.Config.LURKER_HEALTH)
 				.add(Attributes.MOVEMENT_SPEED, 0.3)
 				.add(Attributes.FOLLOW_RANGE, 64.0)
 				.add(Attributes.KNOCKBACK_RESISTANCE, 0.8)
@@ -96,6 +105,11 @@ public class Lurker extends Monster implements LurkerBody {
 			TribeMoves.unstick(this);
 		}
 		TribeMoves.brush(this);
+		// The big one's body is too wide to stand on its route's every point: it strides past them, and leaps when stuck
+		if (this.getType() == com.extremedimensions.registry.ModEntities.LURKER) {
+			TribeMoves.carry(this);
+			TribeMoves.stride(this);
+		}
 	}
 
 	@Override
@@ -162,5 +176,11 @@ public class Lurker extends Monster implements LurkerBody {
 	@Override
 	public int getAmbientSoundInterval() {
 		return 320;
+	}
+
+	/** It swims with only its head out of the water (see {@link com.extremedimensions.lurker.TribeMoves#swimDepth}). */
+	@Override
+	public double getFluidJumpThreshold() {
+		return com.extremedimensions.lurker.TribeMoves.swimDepth(this);
 	}
 }

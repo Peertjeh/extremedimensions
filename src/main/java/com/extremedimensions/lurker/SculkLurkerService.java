@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import it.unimi.dsi.fastutil.longs.LongSet;
+
 import com.extremedimensions.config.Config;
 import com.extremedimensions.registry.ModEntities;
 import com.extremedimensions.server.Dims;
@@ -19,6 +21,8 @@ import com.extremedimensions.server.WorldFx;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -27,11 +31,18 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.monster.warden.WardenAi;
 import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.block.SculkSensorBlock;
 import net.minecraft.world.level.block.SculkShriekerBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SculkSensorBlockEntity;
 import net.minecraft.world.level.block.entity.SculkShriekerBlockEntity;
+import net.minecraft.world.level.block.state.properties.SculkSensorPhase;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.structure.BoundingBox;
+import net.minecraft.world.level.levelgen.structure.BuiltinStructures;
+import net.minecraft.world.level.levelgen.structure.Structure;
+import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -86,12 +97,28 @@ public final class SculkLurkerService {
 		boolean leading;
 		boolean delivered;
 		int goneIn = -1;
+		/** The sculk sensor it is going to set off (in its player's name), and since when; when it may go for the next. */
+		BlockPos sensor;
+		int sensorSince;
+		int sensorIn = 60;
+		/** When it may laugh at its player again; whether it laughed as the Warden closed in. */
+		int laughIn = 40;
+		boolean laughedLead;
+		int laughs;
+		int sensorsSetOff;
+		/** Ticks left of skipping back out of reach after it was caught looking. */
+		int skip;
 	}
+
+	/** How long it lingers to watch, laughing, once it has set the Warden on its player (ticks). */
+	private static final int MOCK = 100;
 
 	private static final Map<UUID, State> STATES = new HashMap<>();
 	private static final Map<UUID, ServerLevel> LEVELS = new HashMap<>();
 	/** Server tick each player last had a Sculk Lurker come (cooldown). */
 	private static final Map<UUID, Long> LAST = new HashMap<>();
+	/** Server tick each Ancient City (by its box's lowest corner) last sent a pack of them out (cooldown). */
+	private static final Map<String, Long> CITY_LAST = new HashMap<>();
 
 	public static boolean isDriven(Entity e) {
 		return STATES.containsKey(e.getUUID());
@@ -101,17 +128,97 @@ public final class SculkLurkerService {
 		STATES.clear();
 		LEVELS.clear();
 		LAST.clear();
+		CITY_LAST.clear();
 	}
 
 	// ------------------------------------------------------------------ coming
 
 	/** Whether one may come to this player: in the Deep Dark of the Overworld, shriekers that can call the Warden near. */
 	public static boolean fits(ServerPlayer p) {
+		return inDeepDark(p) && !shriekers((ServerLevel) p.level(), p.blockPosition(), COME_RANGE).isEmpty();
+	}
+
+	/** Whether this player is one they may come to at all: in the Deep Dark of the Overworld, playing, in a world of the mod. */
+	static boolean inDeepDark(ServerPlayer p) {
 		if (Config.SCULK_LURKER_ENABLED <= 0 || !Dims.OVERWORLD.equals(Dims.of(p)) || !Dims.ours(p) || p.isSpectator() || p.isCreative()
 				|| !p.isAlive() || Rules.peaceful(p.level()) || !(p.level() instanceof ServerLevel level)) {
 			return false;
 		}
-		return level.getBiome(p.blockPosition()).is(Biomes.DEEP_DARK) && !shriekers(level, p.blockPosition(), COME_RANGE).isEmpty();
+		return level.getBiome(p.blockPosition()).is(Biomes.DEEP_DARK);
+	}
+
+	/** The Ancient City this position stands in (its bounding box), or null (only in chunks already loaded). */
+	public static BoundingBox city(ServerLevel level, BlockPos at) {
+		if (!Loaded.ready(level, at)) {
+			return null;
+		}
+		Registry<Structure> structures = level.registryAccess().lookupOrThrow(Registries.STRUCTURE);
+		for (Map.Entry<Structure, LongSet> e : level.structureManager().getAllStructuresAt(at).entrySet()) {
+			if (!structures.wrapAsHolder(e.getKey()).is(BuiltinStructures.ANCIENT_CITY)) {
+				continue;
+			}
+			List<StructureStart> starts = new ArrayList<>();
+			level.structureManager().fillStartsForStructure(e.getKey(), e.getValue(), starts::add);
+			for (StructureStart start : starts) {
+				BoundingBox box = start.getBoundingBox();
+				if (box.isInside(at)) {
+					return box;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * How many come at once to this many players in a city: sculk_lurker_pack_min to sculk_lurker_pack_max, and
+	 * sculk_lurker_pack_per_player more for every player after the first, never more than sculk_lurker_pack_cap.
+	 */
+	public static int packSize(int players, java.util.Random rnd) {
+		int min = Math.max(1, Config.SCULK_LURKER_PACK_MIN), max = Math.max(min, Config.SCULK_LURKER_PACK_MAX);
+		int n = min + rnd.nextInt(max - min + 1) + Math.max(0, players - 1) * Math.max(0, Config.SCULK_LURKER_PACK_PER_PLAYER);
+		return Math.max(1, Math.min(n, Math.max(1, Config.SCULK_LURKER_PACK_CAP)));
+	}
+
+	/**
+	 * Players walk into an Ancient City: it sends a pack of its servants out to them, spread over everyone inside, and
+	 * then not again for a while (sculk_lurker_city_cooldown_seconds, for the city whoever comes).
+	 */
+	private static void cities(MinecraftServer s) {
+		ThreadLocalRandom rnd = ThreadLocalRandom.current();
+		long now = s.getTickCount();
+		for (ServerPlayer p : s.getPlayerList().getPlayers()) {
+			if (!inDeepDark(p)) {
+				continue;
+			}
+			ServerLevel level = (ServerLevel) p.level();
+			BoundingBox box = city(level, p.blockPosition());
+			if (box == null) {
+				continue;
+			}
+			String key = level.dimension().identifier() + "|" + box.minX() + "," + box.minY() + "," + box.minZ();
+			Long last = CITY_LAST.get(key);
+			if (last != null && now - last < Math.max(0, Config.SCULK_LURKER_CITY_COOLDOWN_SECONDS) * 20L) {
+				continue;
+			}
+			CITY_LAST.put(key, now);
+			if (rnd.nextDouble() >= Config.SCULK_LURKER_CITY_CHANCE) {
+				continue;
+			}
+			List<ServerPlayer> inside = new ArrayList<>();
+			for (ServerPlayer q : level.players()) {
+				if (inDeepDark(q) && box.isInside(q.blockPosition())) {
+					inside.add(q);
+				}
+			}
+			int n = packSize(inside.size(), new java.util.Random(rnd.nextLong()));
+			for (int i = 0; i < n; i++) {
+				come(inside.get(i % inside.size()));
+			}
+			// (and the one-at-a-time roll leaves them be for its own while)
+			for (ServerPlayer q : inside) {
+				LAST.put(q.getUUID(), now);
+			}
+		}
 	}
 
 	/** The shriekers that can call up the Warden within this range, nearest first (only in chunks already loaded). */
@@ -138,8 +245,58 @@ public final class SculkLurkerService {
 		return out;
 	}
 
+	/** The sculk sensors within this range not already set off, nearest first (only in chunks already loaded). */
+	public static List<BlockPos> sensors(ServerLevel level, BlockPos around, int range) {
+		List<BlockPos> out = new ArrayList<>();
+		int reach = (range >> 4) + 1;
+		int cx = around.getX() >> 4, cz = around.getZ() >> 4;
+		for (int dx = -reach; dx <= reach; dx++) {
+			for (int dz = -reach; dz <= reach; dz++) {
+				LevelChunk chunk = level.getChunkSource().getChunkNow(cx + dx, cz + dz);
+				if (chunk == null) {
+					continue;
+				}
+				for (BlockEntity be : chunk.getBlockEntities().values()) {
+					BlockState s = be.getBlockState();
+					if (be instanceof SculkSensorBlockEntity && be.getBlockPos().distSqr(around) <= (double) range * range
+							&& s.hasProperty(SculkSensorBlock.PHASE) && s.getValue(SculkSensorBlock.PHASE) == SculkSensorPhase.INACTIVE) {
+						out.add(be.getBlockPos());
+					}
+				}
+			}
+		}
+		out.sort(Comparator.comparingDouble(q -> q.distSqr(around)));
+		return out;
+	}
+
+	/**
+	 * It laughs at its player: a low wet chuckle, a little hop of glee, the sculk's charge popping about it, and it
+	 * looks them in the eye.
+	 */
+	static void laugh(ServerLevel level, SculkLurker sl, State st, ServerPlayer p) {
+		WorldFx.soundIn(level.dimension().identifier().toString(), "extremedimensions:sculk_lurker.laugh", "hostile", sl.getX(), sl.getY() + 0.7, sl.getZ(),
+				1.3f, 0.92f + ThreadLocalRandom.current().nextFloat() * 0.12f);
+		WorldFx.particleIn(level, "minecraft:sculk_charge_pop", sl.getX(), sl.getY() + 0.8, sl.getZ(), 0.25, 0.2, 0.25, 0.01, 6);
+		if (sl.onGround()) {
+			sl.setDeltaMovement(sl.getDeltaMovement().add(0, 0.3, 0));
+		}
+		sl.getLookControl().setLookAt(p, 30, 30);
+		st.laughIn = 120;
+		st.laughs++;
+	}
+
+	/** Whether the player is looking straight at it, close enough and with nothing between. */
+	private static boolean watched(SculkLurker sl, ServerPlayer p) {
+		Vec3 to = sl.getEyePosition().subtract(p.getEyePosition());
+		double dist = to.length();
+		return dist > 0.5 && dist < 18 && p.getViewVector(1f).dot(to.scale(1 / dist)) > 0.97 && p.hasLineOfSight(sl);
+	}
+
 	public static void tick(MinecraftServer s) {
 		drive();
+		if (Config.SCULK_LURKER_ENABLED > 0 && (s.getTickCount() + 20) % 40 == 0) {
+			cities(s);
+		}
 		// (a quarter of a cycle off the Lurker's look, and the Cave Lurker's)
 		if (Config.SCULK_LURKER_ENABLED <= 0 || (s.getTickCount() + 100) % 400 != 0) {
 			return;
@@ -153,13 +310,18 @@ public final class SculkLurkerService {
 			if (last != null && s.getTickCount() - last < Config.SCULK_LURKER_COOLDOWN_SECONDS * 20L) {
 				continue;
 			}
-			if (rnd.nextDouble() >= Config.SCULK_LURKER_SPAWN_CHANCE) {
+			if (rnd.nextDouble() >= chance(p)) {
 				continue;
 			}
 			if (come(p) != null) {
 				LAST.put(p.getUUID(), (long) s.getTickCount());
 			}
 		}
+	}
+
+	/** The chance a Sculk Lurker comes to this player at each look: more often for the Muffled Bell's bearer. */
+	public static double chance(ServerPlayer p) {
+		return Math.min(1, Config.SCULK_LURKER_SPAWN_CHANCE * com.extremedimensions.relic.RelicService.sculkLurkers(p));
 	}
 
 	private static boolean after(ServerPlayer p) {
@@ -260,8 +422,22 @@ public final class SculkLurkerService {
 				continue;
 			}
 			if (st.goneIn >= 0) {
-				// its work done, it lingers a moment and sinks into the sculk
-				TribeMoves.stand(sl);
+				// Its work done, it backs off to watch what it has brought on them, laughing, and sinks into the sculk
+				if (sl.distanceTo(p) < 10) {
+					Vec3 away = sl.position().subtract(p.position());
+					double len = Math.max(0.1, Math.sqrt(away.x * away.x + away.z * away.z));
+					sl.setLurkerPose(Lurker.POSE_RUN);
+					if (st.goneIn % 5 == 0) {
+						TribeMoves.go(sl, sl.getX() + away.x / len * 5, sl.getY(), sl.getZ() + away.z / len * 5, 1.2);
+					}
+				} else {
+					sl.setLurkerPose(Lurker.POSE_WATCH);
+					TribeMoves.stand(sl);
+					sl.getLookControl().setLookAt(p, 20, 20);
+				}
+				if (st.goneIn == MOCK - 15 || st.goneIn == MOCK - 65) {
+					laugh(level, sl, st, p);
+				}
 				if (st.goneIn-- == 0) {
 					later.add(() -> vanish(sl));
 				}
@@ -273,7 +449,7 @@ public final class SculkLurkerService {
 				st.warden = w.getUUID();
 				st.leading = false;
 				st.shrieker = null;
-				WorldFx.soundIn(Dims.fullId(p), "minecraft:block.sculk_sensor.clicking", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 1.2f, 0.7f);
+				WorldFx.soundIn(Dims.fullId(p), "extremedimensions:sculk_lurker.call", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 1.6f, 1.0f);
 			} else if (w == null && st.mode == Mode.LURE) {
 				// the Warden went back down: it calls it up again
 				st.mode = Mode.BECKON;
@@ -314,7 +490,7 @@ public final class SculkLurkerService {
 		sl.setLurkerMood(LurkerBody.MOOD_CALM);
 		if (st.ticks % 70 == 0) {
 			// a tell: the dry clicks of something small on the sculk
-			WorldFx.soundIn(Dims.fullId(p), "minecraft:block.sculk_sensor.clicking", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 0.5f, 1.9f);
+			WorldFx.soundIn(Dims.fullId(p), "extremedimensions:sculk_lurker.chirp", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 0.8f, 1.0f);
 		}
 		if (st.shrieker != null) {
 			BlockState s = level.getBlockState(st.shrieker);
@@ -336,10 +512,17 @@ public final class SculkLurkerService {
 					WorldFx.particleIn(level, "minecraft:sculk_soul", st.shrieker.getX() + 0.5, st.shrieker.getY() + 0.7, st.shrieker.getZ() + 0.5,
 							0.2, 0.1, 0.2, 0.01, 2);
 				}
+				if (st.scratch == 0) {
+					// claws on the shrieker's bone, a dry rattle
+					WorldFx.soundIn(Dims.fullId(p), "extremedimensions:sculk_lurker.rattle", "hostile", st.shrieker.getX() + 0.5, st.shrieker.getY() + 0.6,
+							st.shrieker.getZ() + 0.5, 1.2f, 1.0f);
+				}
 				if (++st.scratch >= SCRATCH) {
 					if (level.getBlockEntity(st.shrieker) instanceof SculkShriekerBlockEntity shrieker && s.getValue(SculkShriekerBlock.CAN_SUMMON)) {
 						shrieker.tryShriek(level, p);
 						st.rattles++;
+						// and it laughs, for the shriek was put down to them
+						laugh(level, sl, st, p);
 						// the page on the Warden's herald
 						com.extremedimensions.journal.Journal.unlock(p, com.extremedimensions.data.DataStore.get(p.getUUID()),
 								com.extremedimensions.journal.JournalEntry.HERALD);
@@ -363,10 +546,38 @@ public final class SculkLurkerService {
 			}
 			return;
 		}
+		if (st.sensor != null) {
+			setOff(level, sl, st, p);
+			return;
+		}
 		if (--st.rattleIn <= 0) {
 			if (!pickShrieker(level, sl, st, p)) {
 				st.rattleIn = 100;
 			}
+			return;
+		}
+		if (--st.sensorIn <= 0) {
+			// Between the shriekers it plays with the sensors, setting them off in its player's name
+			List<BlockPos> near = sensors(level, p.blockPosition(), Math.max(4, Config.SCULK_LURKER_SENSOR_RANGE));
+			st.sensorIn = Math.max(2, Config.SCULK_LURKER_SENSOR_SECONDS) * 20;
+			if (!near.isEmpty()) {
+				st.sensor = near.get(ThreadLocalRandom.current().nextInt(Math.min(3, near.size())));
+				st.sensorSince = sl.tickCount;
+				return;
+			}
+		}
+		if (--st.laughIn <= 0 && watched(sl, p)) {
+			// Caught looking at it: it laughs at them and skips back out of reach
+			laugh(level, sl, st, p);
+			Vec3 away = sl.position().subtract(p.position());
+			double len = Math.max(0.1, Math.sqrt(away.x * away.x + away.z * away.z));
+			TribeMoves.go(sl, sl.getX() + away.x / len * 4, sl.getY(), sl.getZ() + away.z / len * 4, 1.3);
+			sl.setLurkerPose(Lurker.POSE_RUN);
+			st.skip = 30;
+			return;
+		}
+		if (st.skip > 0) {
+			st.skip--;
 			return;
 		}
 		// Company: it closes in when the player is far, to the middle of its distance, and otherwise stands and watches
@@ -386,6 +597,42 @@ public final class SculkLurkerService {
 			sl.setLurkerPose(Lurker.POSE_WATCH);
 			TribeMoves.stand(sl);
 			sl.getLookControl().setLookAt(p, 10, 10);
+		}
+	}
+
+	/**
+	 * It scurries to a sculk sensor and sets it off as if the player had made the sound: the sensor clicks and glows, and
+	 * a shrieker that hears it shrieks at them (so the Warden draws nearer to waking, in their name). Now and then it
+	 * laughs at what it has done.
+	 */
+	private static void setOff(ServerLevel level, SculkLurker sl, State st, ServerPlayer p) {
+		BlockState s = level.getBlockState(st.sensor);
+		if (!s.hasProperty(SculkSensorBlock.PHASE) || s.getValue(SculkSensorBlock.PHASE) != SculkSensorPhase.INACTIVE
+				|| sl.tickCount - st.sensorSince > 160) {
+			st.sensor = null;
+			return;
+		}
+		double dx = st.sensor.getX() + 0.5 - sl.getX(), dz = st.sensor.getZ() + 0.5 - sl.getZ();
+		if (dx * dx + dz * dz <= 1.8 * 1.8 && Math.abs(st.sensor.getY() - sl.getY()) < 2.0) {
+			TribeMoves.stand(sl);
+			sl.setLurkerPose(Lurker.POSE_TAKE);
+			sl.getLookControl().setLookAt(st.sensor.getX() + 0.5, st.sensor.getY() + 0.5, st.sensor.getZ() + 0.5, 30, 30);
+			if (s.getBlock() instanceof SculkSensorBlock sensor) {
+				// in its player's name: a shrieker hears it, though the sculk hears nothing the Muffled Bell's bearer does themselves
+				BlockPos at = st.sensor;
+				com.extremedimensions.relic.RelicService.inTheirName(() -> sensor.activate(p, level, at, s, 15, 1));
+				st.sensorsSetOff++;
+			}
+			st.sensor = null;
+			if (ThreadLocalRandom.current().nextDouble() < 0.4 && sl.distanceTo(p) < 24) {
+				laugh(level, sl, st, p);
+			}
+			return;
+		}
+		sl.setLurkerPose(Lurker.POSE_RUN);
+		if (st.ticks % 5 == 0) {
+			TribeMoves.go(sl, st.sensor.getX() + 0.5, st.sensor.getY(), st.sensor.getZ() + 0.5, 1.2);
+			TribeMoves.trimBehind(sl);
 		}
 	}
 
@@ -451,10 +698,14 @@ public final class SculkLurkerService {
 				return;
 			}
 		}
-		// Leading: the Warden follows where it hears it
+		// Leading: the Warden follows where it hears it; it laughs once as the Warden closes in on its player
+		if (!st.laughedLead && wardenToPlayer < 14) {
+			st.laughedLead = true;
+			laugh((ServerLevel) sl.level(), sl, st, p);
+		}
 		if (st.ticks % 10 == 0) {
 			WardenAi.setDisturbanceLocation(w, sl.blockPosition());
-			WorldFx.soundIn(Dims.fullId(p), "minecraft:block.sculk_sensor.clicking", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 1.0f, 1.4f);
+			WorldFx.soundIn(Dims.fullId(p), "extremedimensions:sculk_lurker.pulse", "hostile", sl.getX(), sl.getY() + 0.6, sl.getZ(), 1.0f, 1.0f);
 		}
 		if (toWarden > BEHIND) {
 			// too far ahead: it waits, looking back
@@ -471,7 +722,7 @@ public final class SculkLurkerService {
 	}
 
 	private static void done(SculkLurker sl, State st, ServerPlayer p) {
-		st.goneIn = 30;
+		st.goneIn = MOCK;
 		sl.setLurkerPose(Lurker.POSE_WATCH);
 		TribeMoves.stand(sl);
 		WorldFx.soundIn(Dims.fullId(p), "minecraft:block.sculk_catalyst.bloom", "hostile", sl.getX(), sl.getY() + 0.4, sl.getZ(), 1.0f, 1.2f);
@@ -509,6 +760,18 @@ public final class SculkLurkerService {
 	public static int rattles(SculkLurker sl) {
 		State st = STATES.get(sl.getUUID());
 		return st == null ? 0 : st.rattles;
+	}
+
+	/** How many times it laughed at its player. */
+	public static int laughs(SculkLurker sl) {
+		State st = STATES.get(sl.getUUID());
+		return st == null ? 0 : st.laughs;
+	}
+
+	/** How many sculk sensors it set off in its player's name. */
+	public static int sensorsSetOff(SculkLurker sl) {
+		State st = STATES.get(sl.getUUID());
+		return st == null ? 0 : st.sensorsSetOff;
 	}
 
 	public static boolean delivered(SculkLurker sl) {

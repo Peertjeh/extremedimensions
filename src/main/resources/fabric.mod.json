@@ -23,6 +23,15 @@
 		],
 		"modmenu": [
 			"com.extremedimensions.client.compat.ModMenuEntry"
+		],
+		"jei_mod_plugin": [
+			"com.extremedimensions.client.compat.jei.ExtremeJeiPlugin"
+		],
+		"jade": [
+			"com.extremedimensions.client.compat.jade.ExtremeJadePlugin"
+		],
+		"journeymap": [
+			"com.extremedimensions.client.compat.journeymap.ExtremeJourneyMapPlugin"
 		]
 	},
 	"mixins": [
@@ -39,6 +48,10 @@
 		"fabric-api": ">=0.162.0"
 	},
 	"suggests": {
-		"placeholder-api": "*"
+		"placeholder-api": "*",
+		"jei": "*",
+		"jade": "*",
+		"wthit": "*",
+		"journeymap": "*"
 	}
 }

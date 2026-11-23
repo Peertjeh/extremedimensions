@@ -7,7 +7,7 @@ import com.extremedimensions.tribe.Standing;
 /**
  * The ledger at the back of the journal: what the player has been through, counted. Three pages: the road (where they
  * went and how often it went wrong), the burden (the curses, what was lifted, what was found) and the others (the
- * tribe, the great ones, allies).
+ * tribe, the great ones, allies); and since 3.55.0 the last falls, the cards of the last Collapses kept.
  */
 public final class Ledger {
 	private Ledger() {}
@@ -43,6 +43,18 @@ public final class Ledger {
 		add(out, "others", "lifts_given", d.liftsGiven);
 		add(out, "others", "lifts_taken", d.liftsTaken);
 		add(out, "others", "burdens", d.burdensCarried);
+		// The last falls (3.55.0), newest first: how long ago (seconds) in place of when, then the card as it was kept
+		if (d.falls != null) {
+			long now = System.currentTimeMillis();
+			int n = 0;
+			for (String fall : d.falls) {
+				long when = com.extremedimensions.expedition.RecapText.head(fall);
+				if (when < 0) {
+					continue;
+				}
+				add(out, "falls", String.valueOf(++n), Math.max(0, (now - when) / 1000) + fall.substring(fall.indexOf('|')));
+			}
+		}
 		return out.toString();
 	}
 

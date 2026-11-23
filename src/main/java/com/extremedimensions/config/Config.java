@@ -62,8 +62,18 @@ public final class Config {
 	public static int BOUNCE_GRACE_TICKS = 40;
 	/** 1 = a big title ("The Tether Tightens", "Expedition Ended") on respawn after a death that costs a curse; 0 = none. */
 	public static int RESPAWN_TITLE = 0;
+	/**
+	 * 1 = after a Collapse (or a throw out of the Seam), once the player is home and has chosen what it cost, a short card
+	 * says how long they were away, how far out they went, why the charge ran out faster and what it cost; 0 = none.
+	 */
+	public static int COLLAPSE_RECAP = 1;
 	/** 1 = the expedition timer is a boss bar at the top of the screen, as Minecraft shows such things; 0 = the mod's own panel. */
 	public static int HUD_BOSS_BAR = 1;
+	/**
+	 * Whether the timer points the way back to the arrival portal beside its distance on an expedition, and a map mod
+	 * marks the portal (3.55.0; 1 = on, 0 = off). Unmapped hides both, as it spins a compass.
+	 */
+	public static int ARRIVAL_COMPASS = 1;
 	/**
 	 * 1 = the mod acts only in its own worlds: the Overworld, the Nether, the End and the Seam. In another mod's world its
 	 * curses sleep, an expedition waits, and nothing of it spawns or strikes. 0 = it acts in every world.
@@ -93,6 +103,11 @@ public final class Config {
 	 */
 	public static int CURSE_OVERFLOW = 1;
 	/**
+	 * A curse laid without a choice (a Lurker's touch, a Collapse in the Seam) is this many times likelier to be one the
+	 * player does not carry yet than one they do, and is never the same as the last one so laid. 1: all alike.
+	 */
+	public static double CURSE_FRESH_WEIGHT = 3.0;
+	/**
 	 * 1: when no curse a death draws from has room left, its cards come from the Extreme curses with room, and once those
 	 * are full too, from the Abyssal curses the player does not carry (where those are on and after enough Collapses,
 	 * whatever their card chance and the most carried); 0: such a death costs no curse.
@@ -121,7 +136,7 @@ public final class Config {
 	/** Seconds an offer of curse cards may stand unanswered before the Tether chooses one itself (0 = never). */
 	public static int OFFER_TIMEOUT_SECONDS = 120;
 	/** Chance that an offer is multiplied: then every card carries its own multiplier between the two values below. */
-	public static double MULTIPLIER_CHANCE = 0.15;
+	public static double MULTIPLIER_CHANCE = 0.25;
 	public static int MULTIPLIER_MIN = 2;
 	public static int MULTIPLIER_MAX = 4;
 	/** Ticks without looking around or without moving before a player counts as idle (no atonement) (15 s). */
@@ -141,11 +156,32 @@ public final class Config {
 	public static int ATONE_PER_NIGHT_KILL = 1;
 	/** Active seconds in a night a player needs for its dawn to earn atonement (idling or sleeping it away earns none). */
 	public static int ATONE_NIGHT_ACTIVE_SECONDS = 120;
-	/** Share of every curse's atonement a death takes away (0.5 = half, 0 = none, 1 = all). */
-	public static double ATONE_DEATH_LOSS = 0.5;
+	/** Share of every curse's atonement a death takes away (0.75 = three quarters, 0 = none, 1 = all). */
+	public static double ATONE_DEATH_LOSS = 0.75;
 	/** Points needed for a curse's last stack, and how many more for every stack above it. */
-	public static int ATONE_BASE = 120;
-	public static int ATONE_PER_STACK = 60;
+	public static int ATONE_BASE = 160;
+	public static int ATONE_PER_STACK = 80;
+	/**
+	 * A Mending Cloth pays this share of the whole atonement the next stack of the curse atoned for asks (0.4: it lifts
+	 * nothing by itself, only a stack it completes comes off), and a player may use one every this many minutes of play.
+	 * It works on the Extreme set only with {@code cloth_extreme} 1 (an Abyssal curse follows abyssal_mending_cloth), and
+	 * a stack it helped to lift leaves a scar only with {@code cloth_scars} 1. With 1, 0, 1 and 1 a cloth lifts a stack
+	 * at once, as it did before 3.49.
+	 */
+	public static double CLOTH_SHARE = 0.4;
+	public static int CLOTH_COOLDOWN_MINUTES = 60;
+	public static int CLOTH_EXTREME = 0;
+	public static int CLOTH_SCARS = 0;
+	/**
+	 * A Fresh Wound: every death in the mod's worlds leaves the player wounded for this many minutes of play (0 = never),
+	 * their maximum health this much lower (4 = two hearts), the Tether draining this many times as fast beyond the
+	 * wound, and for the first {@code death_wound_bind_minutes} of it no Tether binds to an anchor. A death while wounded
+	 * starts it over.
+	 */
+	public static int DEATH_WOUND_MINUTES = 10;
+	public static double DEATH_WOUND_HEALTH = 4;
+	public static double DEATH_WOUND_DRAIN = 1.25;
+	public static int DEATH_WOUND_BIND_MINUTES = 3;
 	/** Chance that one card of an offer is an Extreme curse (never multiplied). */
 	public static double EXTREME_CARD_CHANCE = 0.025;
 	/** How likely a spilled stack lands on an Extreme curse compared to any other curse (1 = as likely, 0 = never). */
@@ -167,11 +203,10 @@ public final class Config {
 	public static int ABYSSAL_AFTER_COLLAPSES = 5;
 	public static int ABYSSAL_MAX_CARRIED = 1;
 	/**
-	 * Lifting an Abyssal curse without its deed: times the atonement, Tether Fragments per stack, the share of its
-	 * atonement a death takes (1 = all), and whether a Mending Cloth works on it (1) or not (0).
+	 * Lifting an Abyssal curse without its deed: times the atonement, the share of its atonement a death takes (1 = all),
+	 * and whether a Mending Cloth works on it (1) or not (0).
 	 */
 	public static double ABYSSAL_ATONE_FACTOR = 4.0;
-	public static int ABYSSAL_FRAGMENTS = 4;
 	public static double ABYSSAL_DEATH_LOSS = 1.0;
 	public static int ABYSSAL_MENDING_CLOTH = 0;
 	/** The deed that breaks each Abyssal curse at once: how many (undead slain in daylight, days without dying, ...). */
@@ -228,8 +263,12 @@ public final class Config {
 	 * monster that spawned there in the dark by itself (0 = off).
 	 */
 	public static double ATONE_SPAWNER_RADIUS = 16.0;
-	/** Tether Fragments a mending at an anchor costs per stack the curse has (3 stacks = 3 fragments). */
-	public static int FRAGMENT_COST_PER_STACK = 1;
+	/**
+	 * A Tether Fragment offered at an anchor atones for this share of what the curse's next stack still asks (0.1 = a
+	 * tenth: much at first, little later), and an anchor takes at most this many for one stack of a curse.
+	 */
+	public static double FRAGMENT_ATONE_SHARE = 0.10;
+	public static int FRAGMENT_MAX_PER_STACK = 5;
 	/** Chance that a Veil Ray drops a second Veil Wing. */
 	public static double VEIL_WING_EXTRA_CHANCE = 0.35;
 
@@ -252,6 +291,8 @@ public final class Config {
 
 	/** 1 = Lurkers appear, 0 = never. */
 	public static int LURKER_ENABLED = 1;
+	/** The Lurker's health (3.31: half again its old 60). Holds for every Lurker that comes from now on. */
+	public static double LURKER_HEALTH = 90.0;
 	/** Chance per player every 20 seconds that a Lurker appears (Overworld and Nether), outside the cooldown. */
 	public static double LURKER_SPAWN_CHANCE = 0.012;
 	/** Minimum seconds between two encounters for the same player. */
@@ -307,6 +348,11 @@ public final class Config {
 	public static int LURKER_CURSES_MAX = 1;
 	/** Chance that a Lurker coming closer comes to hurt (glowing red) rather than to steal (pulsing blue). */
 	public static double LURKER_HUNT_CHANCE = 0.25;
+	/**
+	 * Chance that a Lurker watching in the Seam, where it never steals, comes to hurt instead of leaving once the
+	 * player's thread runs thin (under a third of their time, the Fray, or the Seam pulling them out).
+	 */
+	public static double LURKER_SEAM_HUNT_CHANCE = 0.5;
 	/** Chance that a Lurker struck while it watches, stalks or reaches turns on you instead of running. */
 	public static double LURKER_RETALIATE_CHANCE = 0.35;
 	/** A Lurker come to hurt: the damage of each blow, how many blows before it runs, its speed and how long it keeps at it. */
@@ -325,6 +371,9 @@ public final class Config {
 	public static int LURKER_SWARM_SECONDS = 45;
 	/** Damage of each bite of a swarm's young (half-hearts). */
 	public static double LURKER_SWARM_BITE = 3.0;
+	/** Chance that a bite of a swarm's young that lands also leaves a curse, and how many curses one swarm's young may leave. */
+	public static double HOLLOWLING_SWARM_CURSE_CHANCE = 0.02;
+	public static int HOLLOWLING_SWARM_CURSES_MAX = 1;
 	/**
 	 * A prey hiding where a Lurker cannot follow (a house too low for it): seconds before it stops trying, then the ink
 	 * bolt it throws when it sees them (damage in half-hearts, seconds between bolts) and the young it sends in when it
@@ -340,6 +389,8 @@ public final class Config {
 
 	/** 1 = Cave Lurkers come to players deep under the Overworld, 0 = never. */
 	public static int CAVE_LURKER_ENABLED = 1;
+	/** The Cave Lurker's health (was 30). */
+	public static double CAVE_LURKER_HEALTH = 45.0;
 	/** Chance per player every 20 seconds, while they are underground, that a Cave Lurker comes (outside the cooldown). */
 	public static double CAVE_LURKER_SPAWN_CHANCE = 0.008;
 	/** Minimum seconds between two Cave Lurkers for the same player. */
@@ -374,6 +425,8 @@ public final class Config {
 
 	/** 1 = Sculk Lurkers come to players in the Deep Dark, near the shriekers that call the Warden; 0 = never. */
 	public static int SCULK_LURKER_ENABLED = 1;
+	/** The Sculk Lurker's health (was 14). */
+	public static double SCULK_LURKER_HEALTH = 21.0;
 	/** Chance per player every 20 seconds, there, that one comes (outside the cooldown). */
 	public static double SCULK_LURKER_SPAWN_CHANCE = 0.12;
 	/** Minimum seconds between two for the same player. */
@@ -382,10 +435,208 @@ public final class Config {
 	public static int SCULK_LURKER_RATTLE_SECONDS = 12;
 	/** How far from the player a shrieker it rattles may be (blocks). */
 	public static int SCULK_LURKER_SHRIEKER_RANGE = 16;
+	/** Seconds between two sculk sensors it sets off in its player's name (between the shriekers). */
+	public static int SCULK_LURKER_SENSOR_SECONDS = 6;
+	/** How far from the player a sculk sensor it sets off may be. */
+	public static int SCULK_LURKER_SENSOR_RANGE = 12;
 	/** How far from the player a Warden it fetches may be (blocks). */
 	public static int SCULK_LURKER_LURE_RANGE = 48;
 	/** Seconds it stays before it sinks into the sculk, its work done or not. */
 	public static int SCULK_LURKER_SECONDS = 180;
+	/** Chance an Ancient City sends a pack of Sculk Lurkers out when players walk into it. 0: never. */
+	public static double SCULK_LURKER_CITY_CHANCE = 1.0;
+	/** Seconds before the same Ancient City sends another pack out, whoever comes. */
+	public static int SCULK_LURKER_CITY_COOLDOWN_SECONDS = 1200;
+	/** Fewest and most Sculk Lurkers in a pack for one player. */
+	public static int SCULK_LURKER_PACK_MIN = 2;
+	public static int SCULK_LURKER_PACK_MAX = 3;
+	/** More in the pack for every further player in the city. */
+	public static int SCULK_LURKER_PACK_PER_PLAYER = 1;
+	/** Most in a pack, however many players there are. */
+	public static int SCULK_LURKER_PACK_CAP = 6;
+
+	// --- The Magpie ----------------------------------------------------------------------------
+
+	/** 1 = Magpies come for what players keep in chests and barrels (in the Overworld and the Nether), 0 = never. */
+	public static int MAGPIE_ENABLED = 1;
+	/** The Magpie's health (was 24). */
+	public static double MAGPIE_HEALTH = 36.0;
+	/** Chance per player every 20 seconds, with a chest or barrel of theirs near, that a Magpie comes (outside the cooldown). */
+	public static double MAGPIE_SPAWN_CHANCE = 0.02;
+	/** Minimum seconds between two Magpies for the same player. */
+	public static int MAGPIE_COOLDOWN_SECONDS = 1800;
+	/** How far from the player a chest or barrel it robs may be (blocks). */
+	public static int MAGPIE_RANGE = 24;
+	/** The most things (stacks) it takes from one chest. */
+	public static int MAGPIE_TAKES = 3;
+	/** Its speed (a multiplier): it creeps at seven tenths of this and runs home at a little over it. */
+	public static double MAGPIE_SPEED = 1.2;
+	/** Seconds it creeps towards a chest before it gives up, and that it runs before it is gone (its loot to the hoard). */
+	public static int MAGPIE_SNEAK_SECONDS = 60;
+	public static int MAGPIE_FLEE_SECONDS = 25;
+
+	// --- The Wick ------------------------------------------------------------------------------
+
+	/** 1 = Wicks come out on dark nights to eat the light round players in the Overworld, 0 = never. */
+	public static int WICK_ENABLED = 1;
+	/** The Wick's health (was 4). */
+	public static double WICK_HEALTH = 6.0;
+	/** Chance per player every 20 seconds, on a dark dry night with enough light about them, that Wicks come. */
+	public static double WICK_SPAWN_CHANCE = 0.03;
+	/** Minimum seconds between two visits of Wicks for the same player. */
+	public static int WICK_COOLDOWN_SECONDS = 1200;
+	/** Lights (torches, lanterns, lit candles) within 12 blocks of the player before Wicks come for them. */
+	public static int WICK_LIGHTS = 6;
+	/** Most Wicks that come at once (one to this many). */
+	public static int WICK_PACK = 3;
+	/** Lights one puts out before it is full and goes. */
+	public static int WICK_MEALS = 6;
+	/** 1 = it eats torches and lanterns whole (where the mobGriefing rule allows), 0 = it only snuffs out candles. */
+	public static int WICK_EATS = 1;
+	/** How near soul fire (soul torches, soul lanterns, soul campfires) frightens it off a light (blocks). 0: it fears nothing. */
+	public static int WICK_FEAR_RANGE = 4;
+	/** Its speed (a multiplier). */
+	public static double WICK_SPEED = 1.0;
+	/** Seconds it stays at most. */
+	public static int WICK_SECONDS = 180;
+	/** Seconds a full Wick's burst sets whoever stands beside it alight when it is slain. 0: no burst. */
+	public static int WICK_BURST_SECONDS = 2;
+
+	// --- The Tidewalker ------------------------------------------------------------------------
+
+	/** 1 = Tidewalkers rise under players who row or swim over deep water in the Overworld, 0 = never. */
+	public static int TIDEWALKER_ENABLED = 1;
+	/** The Tidewalker's health (was 40). */
+	public static double TIDEWALKER_HEALTH = 60.0;
+	/** Chance per player every 20 seconds, out on deep water, that a Tidewalker comes (twice that at night; outside the cooldown). */
+	public static double TIDEWALKER_SPAWN_CHANCE = 0.04;
+	/** Minimum seconds between two Tidewalkers for the same player. */
+	public static int TIDEWALKER_COOLDOWN_SECONDS = 900;
+	/** Seconds it circles under the water before each strike (a little more, by chance). */
+	public static int TIDEWALKER_STALK_SECONDS = 6;
+	/** Strikes it makes (a boat capsized, a swimmer dragged down) before it sinks away. */
+	public static int TIDEWALKER_STRIKES = 3;
+	/** Damage when it seizes a swimmer (half-hearts), and the chance that it leaves a curse then (once at most). */
+	public static double TIDEWALKER_DAMAGE = 3.0;
+	public static double TIDEWALKER_CURSE_CHANCE = 0.1;
+	/** Seconds it holds a swimmer under, and the breath it tears out of them each tick (a full breath is 300). */
+	public static int TIDEWALKER_DRAG_SECONDS = 2;
+	public static int TIDEWALKER_AIR_DRAIN = 6;
+	/** Its speed in the water (a multiplier). */
+	public static double TIDEWALKER_SPEED = 1.0;
+
+	// --- The Gatebreaker -----------------------------------------------------------------------
+
+	/** 1 = Gatebreakers come out of the Wound Storms, 0 = never. */
+	public static int GATEBREAKER_ENABLED = 1;
+	/** The Gatebreaker's health with one player near (was 180); more near add gatebreaker_health_per_player each. */
+	public static double GATEBREAKER_HEALTH = 270.0;
+	/** Chance every 20 seconds, while a Wound Storm rages round a player, that a Gatebreaker comes for them (outside the cooldown). */
+	public static double GATEBREAKER_CHANCE = 0.35;
+	/** Minimum seconds between two Gatebreakers for the same player. */
+	public static int GATEBREAKER_COOLDOWN_SECONDS = 1800;
+	/** 1 = it breaks through walls (where the mobGriefing rule allows), 0 = it never breaks a block. */
+	public static int GATEBREAKER_BREAKS = 1;
+	/** It breaks only blocks softer than this (stone 1.5, iron block 5; obsidian is 50 and holds). */
+	public static double GATEBREAKER_HARDNESS = 10.0;
+	/** The most blocks one blow of its fists breaks. */
+	public static int GATEBREAKER_SMASH_BLOCKS = 12;
+	/** Damage of its slam to everyone near it (half-hearts). */
+	public static double GATEBREAKER_DAMAGE = 10.0;
+	/** Its speed (a multiplier; it is slow). */
+	public static double GATEBREAKER_SPEED = 0.9;
+	/** Seconds it stays at most, storm or not. */
+	public static int GATEBREAKER_SECONDS = 240;
+	/** Health added for every further player near it, as a share of its own (0.5 = half again for each). */
+	public static double GATEBREAKER_HEALTH_PER_PLAYER = 0.5;
+
+	// --- The Lockwarden ------------------------------------------------------------------------
+
+	/** 1 = Lockwardens roam the End once the Dragon has fallen, after players who carry ender pearls; 0 = never. */
+	public static int LOCKWARDEN_ENABLED = 1;
+	/** The Lockwarden's health (was 80). */
+	public static double LOCKWARDEN_HEALTH = 120.0;
+	/** Chance per player every 20 seconds, in the End with ender pearls on them, that a Lockwarden comes (outside the cooldown). */
+	public static double LOCKWARDEN_SPAWN_CHANCE = 0.06;
+	/** Minimum seconds between two Lockwardens for the same player. */
+	public static int LOCKWARDEN_COOLDOWN_SECONDS = 1200;
+	/** The most ender pearls it snatches at once. */
+	public static int LOCKWARDEN_TAKES = 16;
+	/** Damage of its snatch (half-hearts). */
+	public static double LOCKWARDEN_DAMAGE = 4.0;
+	/** Chance that, its snatch landed, it leaves its prey on a lost islet (one pearl at their feet to get back with). */
+	public static double LOCKWARDEN_MAROON_CHANCE = 0.35;
+	/** How far off (blocks) the lost islet lies. */
+	public static int LOCKWARDEN_MAROON_DISTANCE = 48;
+	/** Seconds it stays at most. */
+	public static int LOCKWARDEN_SECONDS = 90;
+
+	// --- The Seam's own: the Threadbiter, the Edgecrawler and the Cragback -------------------------
+
+	/** 1 = packs of Threadbiters scurry over the Seam's islands and gnaw at a visitor's thread; 0 = never. */
+	public static int THREADBITER_ENABLED = 1;
+	/** Each Threadbiter's health (was 6). */
+	public static double THREADBITER_HEALTH = 9.0;
+	/** Chance per visitor every 20 seconds in the Seam that a pack of Threadbiters comes (twice that once the thread runs thin). */
+	public static double THREADBITER_SPAWN_CHANCE = 0.05;
+	/** Minimum seconds between two packs for the same visitor. */
+	public static int THREADBITER_COOLDOWN_SECONDS = 600;
+	/** The most Threadbiters in a pack (at least two come). */
+	public static int THREADBITER_PACK = 4;
+	/** Seconds of the thread one bite takes. */
+	public static double THREADBITER_BITE = 4.0;
+	/** Bites a Threadbiter takes before it runs off with what it ate. */
+	public static int THREADBITER_BITES = 5;
+	/** Seconds of the thread they always leave: they never bite it shorter than this. */
+	public static int THREADBITER_FLOOR = 20;
+	/** Their speed (a multiplier). */
+	public static double THREADBITER_SPEED = 1.3;
+	/** Seconds a Threadbiter runs with what it ate before it is gone (and the time with it). */
+	public static int THREADBITER_FLEE_SECONDS = 20;
+
+	/** 1 = Edgecrawlers climb up over the Seam's island rims after visitors near an edge; 0 = never. */
+	public static int EDGECRAWLER_ENABLED = 1;
+	/** The Edgecrawler's health (was 30). */
+	public static double EDGECRAWLER_HEALTH = 45.0;
+	/** Chance per visitor every 20 seconds, near an island's edge in the Seam, that an Edgecrawler climbs up (outside the cooldown). */
+	public static double EDGECRAWLER_SPAWN_CHANCE = 0.06;
+	/** Minimum seconds between two Edgecrawlers for the same visitor. */
+	public static int EDGECRAWLER_COOLDOWN_SECONDS = 900;
+	/** How near (blocks) an edge a visitor must stand for an Edgecrawler to come. */
+	public static int EDGECRAWLER_EDGE_RANGE = 6;
+	/** How deep a drop (blocks of open air under the rim) counts as an edge. */
+	public static int EDGECRAWLER_DROP = 12;
+	/** Damage of its throw, or of its claws where there is no edge to throw you over (half-hearts). */
+	public static double EDGECRAWLER_DAMAGE = 4.0;
+	/** How hard it throws its prey over the edge. */
+	public static double EDGECRAWLER_THROW = 1.0;
+	/** 1 = it drags its prey to the edge and throws them over; 0 = it only claws. */
+	public static int EDGECRAWLER_HURLS = 1;
+	/** Its speed (a multiplier). */
+	public static double EDGECRAWLER_SPEED = 1.1;
+	/** Seconds it stays at most. */
+	public static int EDGECRAWLER_SECONDS = 60;
+
+	/** 1 = Cragbacks sleep on the Seam's islands, looking like rock, and wake when someone digs near; 0 = never. */
+	public static int CRAGBACK_ENABLED = 1;
+	/** The Cragback's health with one player near (was 140); more near add cragback_health_per_player each. */
+	public static double CRAGBACK_HEALTH = 210.0;
+	/** Chance per visitor every 20 seconds in the Seam that a sleeping Cragback lies somewhere near (outside the cooldown). */
+	public static double CRAGBACK_SPAWN_CHANCE = 0.03;
+	/** Minimum seconds between two Cragbacks for the same visitor. */
+	public static int CRAGBACK_COOLDOWN_SECONDS = 1500;
+	/** How near (blocks) a block must be broken to wake it (Tetherite ore wakes it from twice as far). */
+	public static int CRAGBACK_WAKE_RANGE = 8;
+	/** Damage of its slam (half-hearts). */
+	public static double CRAGBACK_DAMAGE = 9.0;
+	/** Damage of each rock it brings down (half-hearts). */
+	public static double CRAGBACK_ROCK_DAMAGE = 6.0;
+	/** Its speed (a multiplier; it is slow). */
+	public static double CRAGBACK_SPEED = 0.9;
+	/** Seconds it stays awake at most before it settles and sinks away. */
+	public static int CRAGBACK_SECONDS = 180;
+	/** Health added for every further player near it, as a share of its own (0.5 = half again for each). */
+	public static double CRAGBACK_HEALTH_PER_PLAYER = 0.5;
 
 	// --- Leaving in danger ----------------------------------------------------------------------
 
@@ -396,6 +647,11 @@ public final class Config {
 	public static int FLEE_CURSES = 1;
 	/** Seconds after a blow from one of the wound's creatures that a player still counts as in danger. */
 	public static int FLEE_DANGER_SECONDS = 10;
+	/**
+	 * Blocks from a living Elder (or the Starved One) within which its fight holds a player, whoever it came for, so that
+	 * leaving is a flight. 0 = only the one an Elder is after.
+	 */
+	public static int FLEE_ELDER_RANGE = 64;
 	/** Whether what hunted a player who left (a swarm, a hunting Lurker) comes again when they are back (1 on, 0 off). */
 	public static int FLEE_RETURNS = 1;
 
@@ -415,8 +671,19 @@ public final class Config {
 	public static int COMPANION_GIFT_MINUTES = 20;
 	/** Chance that a companion Hollowling chases off a Lurker about to take something from you. */
 	public static double COMPANION_GUARD_CHANCE = 0.6;
+	/** How loud a companion Hollowling is (its chatter, its warnings, its gifts, its hurt), as a share of a wild one's. */
+	public static double COMPANION_SOUND_VOLUME = 0.3;
+	/** Seconds, about, between a companion Hollowling's idle chatter. */
+	public static int COMPANION_AMBIENT_SECONDS = 90;
+	/**
+	 * Seconds at least between a companion Hollowling's chittered warnings of danger you have not seen (0 = it warns only by
+	 * looking at the danger, a mote over it).
+	 */
+	public static int COMPANION_WARN_SECONDS = 30;
 	/** 1 = hoards are guarded by a Keeper, 0 = never. */
 	public static int KEEPER_ENABLED = 1;
+	/** The Keeper's health (was 140). */
+	public static double KEEPER_HEALTH = 210.0;
 	/** Damage when a Keeper reaches in after a prey it sees but cannot get at, and drags them out (half-hearts). */
 	public static double KEEPER_REACH_DAMAGE = 6.0;
 
@@ -506,6 +773,14 @@ public final class Config {
 	 * 2 a village's, 3 a colossus's reliquary, 4 a tangle in the Fray): 0.02 is 2% to 8%. 0: never.
 	 */
 	public static double SEAM_MUSIC_DISC_CHANCE = 0.02;
+	/**
+	 * Whether the Seam's buildings are furnished inside (1): shelves, looms, lecterns, candles and rugs in the towers,
+	 * pews in the halls, a ladder and a room upstairs in every house, and storerooms in all of them. 0: bare walls, as
+	 * before 3.17. Only islands built from now on change.
+	 */
+	public static int SEAM_INTERIORS = 1;
+	/** Chance each storeroom barrel or chest in a furnished building holds anything (the rest stand empty). */
+	public static double SEAM_STOREROOM_CHANCE = 0.6;
 	/** Chance a tangle in the Fray, an old hoard or a raided one holds the music disc "What the Wound Remembers". 0: never. */
 	public static double MUSIC_DISC_WOUND_CHANCE = 0.05;
 	/** Chance a Cave Lurker or a Sculk Lurker slain by a player leaves the music disc "What Listens". 0: never. */
@@ -592,37 +867,108 @@ public final class Config {
 
 	/** Ember Heart: drain multiplier in the Nether (the gift) and in the End (the price). */
 	public static double RELIC_EMBER_HEART_NETHER = 0.8;
-	public static double RELIC_EMBER_HEART_END = 1.2;
+	public static double RELIC_EMBER_HEART_END = 1.15;
 	/** Pale Shard: drain multiplier in the End (the gift) and in the Nether (the price). */
 	public static double RELIC_PALE_SHARD_END = 0.8;
-	public static double RELIC_PALE_SHARD_NETHER = 1.2;
+	public static double RELIC_PALE_SHARD_NETHER = 1.15;
 	/** Hungering Hand: extra reach for blocks and creatures (blocks); maximum health it takes (2 = one heart). */
 	public static double RELIC_HUNGERING_HAND_REACH = 2.0;
 	public static double RELIC_HUNGERING_HAND_HEALTH = 2.0;
 	/** Featherbone: extra fall before it hurts (blocks); armour it takes. */
-	public static double RELIC_FEATHERBONE_FALL = 8.0;
+	public static double RELIC_FEATHERBONE_FALL = 10.0;
 	public static double RELIC_FEATHERBONE_ARMOR = 2.0;
 	/** Keeper's Eye: fragment chance multiplier for wild kills; atonement multiplier for kills. */
-	public static double RELIC_KEEPERS_EYE_FRAGMENTS = 2.0;
+	public static double RELIC_KEEPERS_EYE_FRAGMENTS = 2.5;
 	public static double RELIC_KEEPERS_EYE_ATONEMENT = 0.5;
 	/** Tithe Bell: extra share of the experience you gain (0.5 = half again); levels it takes on every safe return. */
-	public static double RELIC_TITHE_BELL_XP = 0.75;
+	public static double RELIC_TITHE_BELL_XP = 0.5;
 	public static int RELIC_TITHE_BELL_LEVELS = 1;
 	/** Lurker's Tooth: Lurkers cannot take your items or armour; how many times as often they come for you. */
-	public static double RELIC_LURKERS_TOOTH_OFTEN = 2.0;
+	public static double RELIC_LURKERS_TOOTH_OFTEN = 1.5;
 	/** Seam Lantern: extra seconds in the Seam; how much farther monsters notice you at night in the Overworld (0.25 = a quarter). */
-	public static int RELIC_SEAM_LANTERN_SECONDS = 60;
+	public static int RELIC_SEAM_LANTERN_SECONDS = 90;
 	public static double RELIC_SEAM_LANTERN_NOTICE = 0.25;
+	/**
+	 * Blocks out from a Kindled Seam Lantern (the Seam Lantern lit from a lantern and a soul lantern) that its light is
+	 * carried, by unseen lights in the eight directions round it: 14 lights twice as far as a lantern. 0 = only its own.
+	 */
+	public static int KINDLED_LANTERN_SPREAD = 14;
+	/** The light level of the lights a Kindled Seam Lantern carries out (1 to 15). */
+	public static int KINDLED_LANTERN_LIGHT = 15;
 	/** Kindred Knot: the wait before you can fall again, as a multiple (0.5 = halved); how long you last fallen, as a multiple (0.67 = a third shorter). */
 	public static double RELIC_KINDRED_KNOT_COOLDOWN = 0.5;
 	public static double RELIC_KINDRED_KNOT_BLEED = 0.67;
 	/** Held's Chain: seconds the chain holds you once your charge runs out beyond the wound; most charge (seconds) an anchor holds for you. */
-	public static int RELIC_HELDS_CHAIN_GRACE = 15;
+	public static int RELIC_HELDS_CHAIN_GRACE = 20;
 	public static double RELIC_HELDS_CHAIN_CAP = 1200.0;
 	/** Chance a slain Keeper leaves a relic; relics the Starved One leaves every player who fought it; chance a Seam chest holds one. */
 	public static double RELIC_KEEPER_CHANCE = 0.35;
 	public static int RELIC_STARVED_ONE = 1;
 	public static double RELIC_SEAM_CHEST_CHANCE = 0.05;
+	/**
+	 * How often each tier of relic is found, as weights (a tier first, then a relic of it): from ordinary finds, and from
+	 * great foes (the Elders, the Starved One, a Rift Trial's gold medal). With every weight of a set 0, all are as likely.
+	 */
+	public static int RELIC_WEIGHT_COMMON = 50;
+	public static int RELIC_WEIGHT_UNCOMMON = 30;
+	public static int RELIC_WEIGHT_RARE = 15;
+	public static int RELIC_WEIGHT_EPIC = 5;
+	public static int RELIC_GREAT_WEIGHT_COMMON = 20;
+	public static int RELIC_GREAT_WEIGHT_UNCOMMON = 35;
+	public static int RELIC_GREAT_WEIGHT_RARE = 30;
+	public static int RELIC_GREAT_WEIGHT_EPIC = 15;
+	/** Pilgrim's Sandal: the level of Speed on an expedition and in the Seam (0 = none); how much faster hunger runs there. */
+	public static int RELIC_PILGRIMS_SANDAL_SPEED = 1;
+	public static double RELIC_PILGRIMS_SANDAL_HUNGER = 1.25;
+	/** Lodestone Chip: drain multiplier everywhere beyond the wound; curses a Collapse costs on top. */
+	public static double RELIC_LODESTONE_CHIP_DRAIN = 0.9;
+	public static int RELIC_LODESTONE_CHIP_COLLAPSE = 1;
+	/** Thornward Bark: damage whoever strikes you in melee takes back; what your own melee deals, as a multiple. */
+	public static double RELIC_THORNWARD_BARK_THORNS = 2.0;
+	public static double RELIC_THORNWARD_BARK_MELEE = 0.9;
+	/** Hollow Whistle: what the young's wares cost, as a multiple; the standing gained with the tribe, as a multiple. */
+	public static double RELIC_HOLLOW_WHISTLE_PRICE = 0.7;
+	public static double RELIC_HOLLOW_WHISTLE_STANDING = 0.5;
+	/** Last Stitch: health a killing blow leaves you at, once an expedition (0 = never); maximum health it takes. */
+	public static double RELIC_LAST_STITCH_HEALTH = 4.0;
+	public static double RELIC_LAST_STITCH_MAX_HEALTH = 2.0;
+	/** Hunger's Fang: share of your melee damage that heals you; how much faster you hunger. */
+	public static double RELIC_HUNGERS_FANG_LEECH = 0.15;
+	public static double RELIC_HUNGERS_FANG_HUNGER = 1.5;
+	/** Debtor's Seal: atonement earned, as a multiple; times each curse of a death or a Lurker comes, and an Elder's. */
+	public static double RELIC_DEBTORS_SEAL_ATONEMENT = 2.0;
+	public static int RELIC_DEBTORS_SEAL_CURSES = 2;
+	public static int RELIC_DEBTORS_SEAL_BOSS_CURSES = 3;
+	/** Unbound Pinion: damage taken, as a multiple; how many times as fast an elytra wears while you glide. */
+	public static double RELIC_UNBOUND_PINION_DAMAGE = 1.3;
+	public static int RELIC_UNBOUND_PINION_WEAR = 25;
+	/** Ashen Locket: damage from fire and lava, as a multiple; damage from freezing and drowning, as a multiple. */
+	public static double RELIC_ASHEN_LOCKET_FIRE = 0.75;
+	public static double RELIC_ASHEN_LOCKET_COLD = 1.25;
+	/** Miner's Candle: Night Vision under rock below this height in the Overworld; how many times as often Cave Lurkers come for you. */
+	public static int RELIC_MINERS_CANDLE_DEPTH = 40;
+	public static double RELIC_MINERS_CANDLE_CAVE_LURKER = 1.5;
+	/** Magpie's Glint: chance a wild creature you slay drops its loot twice; how many times as often Magpies come for your chests. */
+	public static double RELIC_MAGPIES_GLINT_CHANCE = 0.25;
+	public static double RELIC_MAGPIES_GLINT_MAGPIE = 2.0;
+	/** Anchor Rivet: the charge your fuel gives an anchor, as a multiple; how many times as fast a Lurker drinks your anchors. */
+	public static double RELIC_ANCHOR_RIVET_FUEL = 1.2;
+	public static double RELIC_ANCHOR_RIVET_DRINK = 2.0;
+	/** Muffled Bell: the sculk does not hear you; how many times as often Sculk Lurkers come for you. */
+	public static double RELIC_MUFFLED_BELL_SCULK_LURKER = 2.0;
+	/** Veil Scale: blocks of fall in the Seam before you drift down slowly; seconds less in the Seam. */
+	public static int RELIC_VEIL_SCALE_FALL = 4;
+	public static int RELIC_VEIL_SCALE_SECONDS = 30;
+	/** Ferryman's Obol: curses every death beyond the wound costs on top; drain multiplier beyond the wound. */
+	public static int RELIC_FERRYMANS_OBOL_CURSES = 1;
+	public static double RELIC_FERRYMANS_OBOL_DRAIN = 1.15;
+	/** Hollow Crown: how much of natural healing is left to you (0 = none, 1 = all of it). */
+	public static double RELIC_HOLLOW_CROWN_REGEN = 0.0;
+	/**
+	 * Relics serve once (1 on, 0 off): one bound over another, or taken off the Tether, breaks for good. Off, the relic
+	 * bound before comes back to the hand, and one taken off does too.
+	 */
+	public static int RELIC_SINGLE_USE = 1;
 
 	// --- Enchantments: the Art of Binding (Woundbane's numbers are in its data file) -----------
 
@@ -684,12 +1030,58 @@ public final class Config {
 	public static int SPINDLE_FRAGMENTS = 2;
 	public static int SPINDLE_SILK = 1;
 	public static int SPINDLE_TURNS = 8;
+	/** 1: a redstone pulse turns the Spindle once, as an empty hand does (3.55.0), so a machine can work it; 0: hands only. */
+	public static int SPINDLE_REDSTONE = 1;
 	/** 1: Tetherite that falls out of the bottom of a world comes back to its owner; 0: the void keeps it. */
 	public static int TETHERITE_TETHERED = 1;
 	/** How far below the bottom of a world a Tetherite item falls before it is drawn back. */
 	public static int TETHERITE_VOID_DEPTH = 16;
 	/** What the full Tetherite set takes off the drain (0.1 = 10%), held to the drain floor with the rest. */
 	public static double TETHERITE_SET_DRAIN = 0.10;
+	/** The binding at the smithing table (3.26): the chance netherite takes the Tetherite, before anything adds or takes. */
+	public static double TETHERITE_BIND_CHANCE = 0.40;
+	/** Where a binding can be done: 0 anywhere, 1 only in the Seam (the Fray included), 2 only down in the Fray. */
+	public static int TETHERITE_BIND_WHERE = 1;
+	/** The lowest and the highest a binding's chance can come to, whatever adds or takes. */
+	public static double TETHERITE_BIND_MIN = 0.05;
+	public static double TETHERITE_BIND_MAX = 0.95;
+	/** What each level of Unbreaking on the netherite piece adds to the chance. */
+	public static double TETHERITE_BIND_UNBREAKING = 0.05;
+	/** What Mending on the piece adds. */
+	public static double TETHERITE_BIND_MENDING = 0.10;
+	/** What Knitting on the piece adds. */
+	public static double TETHERITE_BIND_KNITTING = 0.10;
+	/** What the Curse of Binding on the piece adds: the metal takes to what is already bound. */
+	public static double TETHERITE_BIND_BINDING_CURSE = 0.10;
+	/** What each other curse on the piece takes off the chance. */
+	public static double TETHERITE_BIND_CURSE = 0.10;
+	/** What each level of Luck adds (and each level of Bad Luck takes). */
+	public static double TETHERITE_BIND_LUCK = 0.05;
+	/** What binding in the Seam adds, near the metal's source. */
+	public static double TETHERITE_BIND_SEAM = 0.10;
+	/** What binding down in the Fray adds on top of the Seam's share. */
+	public static double TETHERITE_BIND_FRAY = 0.10;
+	/** What a Tether Cord held in the other hand adds; the cord is spent whether the binding holds or not. */
+	public static double TETHERITE_BIND_CORD = 0.15;
+	/** What each scar of a failed binding adds to the next try on that piece. */
+	public static double TETHERITE_BIND_SCAR = 0.10;
+	/** The most scars a piece keeps (and counts). */
+	public static int TETHERITE_BIND_SCARS_MAX = 3;
+	/** Share of the piece's durability a failed binding wears away (it never breaks the piece). */
+	public static double TETHERITE_BIND_WEAR = 0.25;
+	/** 1: the upgrade template survives a failed binding; 0: it is lost with the ingot. */
+	public static int TETHERITE_BIND_KEEP_TEMPLATE = 1;
+	/**
+	 * Tetherite's drawbacks, all at once (3.27.4): 1 = its weight, hunger and call act (each at the value below), 0 =
+	 * none of them, whatever the values say.
+	 */
+	public static int TETHERITE_DRAWBACKS = 1;
+	/** Tetherite's weight: what each piece of its armor worn takes off its wearer's speed (0.03 = 3%). */
+	public static double TETHERITE_WEIGHT = 0.03;
+	/** Tetherite's hunger: extra hunger for each piece worn and each Tetherite tool or weapon in hand (0.1 = 10%). */
+	public static double TETHERITE_HUNGER = 0.10;
+	/** Tetherite's call: how much more often the Lurkers come for each piece worn or in hand (0.25 = 25%). */
+	public static double TETHERITE_LURE = 0.25;
 
 	// --- Pacts: curses taken on willingly for an expedition, for what a safe return brings -------
 
@@ -749,16 +1141,36 @@ public final class Config {
 
 	/** Keepers a player must have slain before the next hoard they wake is guarded by the Matriarch (0 = never). */
 	public static int MATRIARCH_AFTER_KEEPERS = 3;
+	/**
+	 * Seconds the Matriarch stirs beneath a nest before she rises (3.28): a bar counts down and everyone near is told;
+	 * going {@link #MATRIARCH_CALM_RANGE} away lets her sleep again. 0 = she rises at once.
+	 */
+	public static int MATRIARCH_WAKE_SECONDS = 15;
+	/** How far (blocks) from the nest everyone must go while she stirs for her to settle again. */
+	public static int MATRIARCH_CALM_RANGE = 32;
+	/** How near (blocks) to a nest she watches over a player is warned (about once a minute); 0 = no warning. */
+	public static int MATRIARCH_WARN_RANGE = 20;
+	/** The Matriarch's own health (3.32: half again its old 640); elder_health_scale and the players fighting multiply it. */
+	public static double MATRIARCH_HEALTH = 960.0;
 	/** Hollowlings the Matriarch calls when her health falls below 70% and again below 35%. */
 	public static int MATRIARCH_BROOD = 3;
 	/** Relics the Matriarch always leaves. */
 	public static int MATRIARCH_RELICS = 1;
+	/** Damage of a beam from a lantern of her Requiem's sky, onto the ground under someone (a sigil shows where) (3.42). */
+	public static double MATRIARCH_REQUIEM_BEAM_DAMAGE = 9.0;
 	/** When the Ferryman comes: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
 	public static int FERRYMAN_UNLOCK = 1;
+	/** The Ferryman's own health (3.32: half again his old 520). */
+	public static double FERRYMAN_HEALTH = 780.0;
 	/** Active seconds on a Nether expedition before the Ferryman may come (once per expedition). */
 	public static int FERRYMAN_AFTER_SECONDS = 300;
 	/** Chance he comes once that time has passed; each stack of Ferryman's Fee adds the same again. */
 	public static double FERRYMAN_CHANCE = 0.2;
+	/**
+	 * Seconds his bell tolls before the Ferryman comes (3.38): a bar counts down for the one he comes for, and leaving the
+	 * Nether in that time lets the crossing pass. 0 = he comes at once.
+	 */
+	public static int FERRYMAN_WAKE_SECONDS = 15;
 	/** While he lives, the Tether drains this many times faster (half again more once he is wounded below half). */
 	public static double FERRYMAN_DRAIN = 2.0;
 	/** Levels each of his blows takes. */
@@ -769,10 +1181,21 @@ public final class Config {
 	public static double FERRYMAN_RELIC_CHANCE = 0.5;
 	/** When the Last Weaver wakes: 0 = from the start, 1 = after the Ender Dragon falls, 2 = after the Starved One falls. */
 	public static int WEAVER_UNLOCK = 2;
+	/** The Last Weaver's own health (3.32: half again its old 480). */
+	public static double WEAVER_HEALTH = 720.0;
 	/** Chance the Last Weaver wakes at a village of the Thinned on its first visit (each village rolls once). */
 	public static double WEAVER_CHANCE = 0.4;
 	/** How much likelier the next village is for every village in a row that woke no Weaver: 0.2 is 40%, then 60%, 80%, 100%. */
 	public static double WEAVER_PITY = 0.2;
+	/**
+	 * Seconds the threads of a village tighten before its Last Weaver wakes (3.38): a bar counts down for everyone near,
+	 * and going {@link #WEAVER_CALM_RANGE} from the village lets it sink back into the weave. 0 = it wakes at once.
+	 */
+	public static int WEAVER_WAKE_SECONDS = 15;
+	/** How far (blocks) from the village everyone must go while its threads tighten for the Weaver to settle again. */
+	public static int WEAVER_CALM_RANGE = 48;
+	/** How near (blocks) to a village whose Weaver may still wake a player is warned of it; 0 = no warning. */
+	public static int WEAVER_WARN_RANGE = 40;
 	/** Seconds of Seam time each of the Weaver's blows unpicks. */
 	public static int WEAVER_TIME_THEFT = 10;
 	/** Seconds of Seam time given back to everyone near when it falls. */
@@ -782,6 +1205,45 @@ public final class Config {
 	/** Relics the Knot Mother always leaves, and minutes before she can be woken again once slain (0 = at once). */
 	public static int KNOT_MOTHER_RELICS = 1;
 	public static int KNOT_MOTHER_REST = 40;
+	/**
+	 * Seconds the First Knot loosens before the Knot Mother wakes (3.38): a bar counts down for everyone near, and going
+	 * {@link #KNOT_MOTHER_CALM_RANGE} from its heart lets the knot pull tight again. 0 = she wakes at once.
+	 */
+	public static int KNOT_MOTHER_WAKE_SECONDS = 15;
+	/** How far (blocks) from the knot's heart everyone must go while it loosens for her to sleep on. */
+	public static int KNOT_MOTHER_CALM_RANGE = 24;
+	/** The Knot Mother's own health (3.32: half again her old 560). */
+	public static double KNOT_MOTHER_HEALTH = 840.0;
+	/** How far (blocks) the Knot Mother can stray from where she woke: her cords hold her to it. */
+	public static double KNOT_MOTHER_LEASH = 14.0;
+	/** How readily she uses her Threadline (a thread swept low across the floor): its weight against her other blows (0 = never). */
+	public static int KNOT_MOTHER_THREADLINE_WEIGHT = 4;
+	/** Damage of her Threadline. */
+	public static double KNOT_MOTHER_THREADLINE_DAMAGE = 7.0;
+	/** How far either way (radians) her Threadline sweeps from its prey. */
+	public static double KNOT_MOTHER_THREADLINE_SWEEP = 0.7;
+	/** How readily she uses her Knot Snare (patterns on the floor that close and hold you fast): its weight (0 = never). */
+	public static int KNOT_MOTHER_SNARE_WEIGHT = 3;
+	/** Seconds at least a Snare's pattern shows on the floor, closing, before it holds anyone still in it. */
+	public static double KNOT_MOTHER_SNARE_WARNING = 1.5;
+	/** Seconds a Snare holds a player fast (no step, no jump). */
+	public static double KNOT_MOTHER_SNARE_SECONDS = 2.0;
+	/** Seconds of Seam time a Snare picks off whoever it catches. */
+	public static int KNOT_MOTHER_SNARE_TIME = 10;
+	/** Damage of a Snare as it closes. */
+	public static double KNOT_MOTHER_SNARE_DAMAGE = 2.0;
+	/** Anchors she ties round her chamber (and again at 70% and 35% of her health); 0 = none. */
+	public static int KNOT_MOTHER_ANCHORS = 3;
+	/** How far (blocks) from where she woke her anchors stand. */
+	public static double KNOT_MOTHER_ANCHOR_RADIUS = 9.0;
+	/** Hits an anchor takes before it breaks. */
+	public static int KNOT_MOTHER_ANCHOR_HITS = 3;
+	/** Share of every blow she shrugs off while all her anchors stand (less as they break). */
+	public static double KNOT_MOTHER_ANCHOR_WARD = 0.5;
+	/** Seconds she lies exposed when an anchor breaks (she hangs still, open). */
+	public static double KNOT_MOTHER_EXPOSED_SECONDS = 4.0;
+	/** How much more a blow does while she lies exposed. */
+	public static double KNOT_MOTHER_EXPOSED_DAMAGE = 1.5;
 	/** How readily the Weaver fires its Seraphic Lance: its weight against its other blows (which weigh 1 to 4 each). */
 	public static int WEAVER_LANCE_WEIGHT = 8;
 	/** Chance the Lance sweeps back once more after its first pass (always, once the Weaver is enraged). */
@@ -792,6 +1254,14 @@ public final class Config {
 	public static int WEAVER_ULTIMATE_RINGS = 2;
 	/** Damage of a ring beam in the Weaver's ultimate. */
 	public static double WEAVER_ULTIMATE_RING_DAMAGE = 10.0;
+	/** Damage of the Weaver's Warp and Weft (3.43) to whoever stands on one of the lines of its grid as it lands. */
+	public static double WEAVER_WARP_DAMAGE = 10.0;
+	/** Damage of a tornado of the Weaver's Spindle Storm (3.43) to whoever is caught in its core, at most once every half second. */
+	public static double WEAVER_SPINDLE_DAMAGE = 6.0;
+	/** How hard a tornado of the Spindle Storm (3.43) draws everyone near in towards its core, each tick (by the squall's rules). */
+	public static double WEAVER_SPINDLE_PULL = 0.05;
+	/** Damage of each great needle of the Weaver's Loom Comes Down (3.43). */
+	public static double WEAVER_NEEDLE_DAMAGE = 12.0;
 	/** How fast the Elders move, as a multiple of their own pace. */
 	public static double ELDER_SPEED = 1.5;
 	/** How often the Elders strike: the pause between their blows is divided by this. */
@@ -800,6 +1270,12 @@ public final class Config {
 	public static double ELDER_WINDUP_SPEED = 1.25;
 	/** Whether the Elders' blows tear up the world (craters, torn-up ground, scorched and changed blocks): 1 = on, 0 = off. The mobGriefing rule must allow it too. */
 	public static int ELDER_GRIEFING = 1;
+	/**
+	 * Seconds the ground an Elder strikes stays changed (the Matriarch's roots and moss, the Ferryman's soul soil and soul
+	 * fire, the Weaver's scorched ground and glass) before it goes back as it was; it goes back at the latest when the fight
+	 * is over.
+	 */
+	public static int ELDER_MARK_SECONDS = 45;
 	/** Share of its health at which an Elder unleashes its ultimate, once per fight (0 = never). */
 	public static double ELDER_ULTIMATE_AT = 0.5;
 	/** Seconds an Elder's ultimate lasts. */
@@ -812,6 +1288,26 @@ public final class Config {
 	public static int ELDER_ULTIMATE_SCATTER = 1;
 	/** Share of the damage an Elder shrugs off while its ultimate builds. */
 	public static double ELDER_ULTIMATE_GUARD = 0.6;
+	/**
+	 * Whether an Elder's ultimate breaks the ground of its whole arena (3.41): it cracks and shakes as the ultimate builds;
+	 * as it breaks, cliffs, spikes and roots burst up and chasms and craters open, all of it sinking back after the fight.
+	 * 1 = on, 0 = off. Blocks change only where the Elders may tear up the world (elder_griefing, mobGriefing).
+	 */
+	public static int ELDER_UPHEAVAL = 1;
+	/** How far the ground breaks in an ultimate, as a multiple of its arena's floor (without an arena, of 28 blocks round the Elder). */
+	public static double ELDER_UPHEAVAL_SCALE = 1.0;
+	/** Damage to whoever stands where the ground erupts in an ultimate (they are thrown upwards as well). */
+	public static double ELDER_UPHEAVAL_DAMAGE = 6.0;
+	/** How hard the erupting ground throws whoever stands on it upwards (blocks a tick). */
+	public static double ELDER_UPHEAVAL_THROW = 1.1;
+	/** Seconds after an Elder's fight by which everything its ultimate broke is back as it was, whatever (it sinks back at once; ground not loaded then waits at most this long). */
+	public static int ELDER_UPHEAVAL_LINGER_SECONDS = 60;
+	/** Most blocks the ultimates' broken ground changes (or puts back) in one tick, all of them together. */
+	public static int ELDER_UPHEAVAL_BUDGET = 400;
+	/** Most blocks one ultimate's upheaval changes. */
+	public static int ELDER_UPHEAVAL_BLOCKS = 30000;
+	/** Most blocks torn loose that hover round an Elder while its ultimate builds (each a block display). */
+	public static int ELDER_UPHEAVAL_DISPLAYS = 36;
 	/** Seconds an Elder takes to form out of matter and light before it fights (it cannot be hurt meanwhile). */
 	public static double ELDER_SPAWN_SECONDS = 7.0;
 	/** Whether the view of everyone near is held on an Elder while it forms: 1 = on, 0 = off. */
@@ -907,9 +1403,14 @@ public final class Config {
 	/** An Elder's health grows by this share for every player fighting it beyond the first. */
 	public static double ELDER_HEALTH_PER_PLAYER = 0.5;
 	/** The damage of the Elders' blows, as a multiple. */
-	public static double ELDER_DAMAGE_SCALE = 1.5;
+	public static double ELDER_DAMAGE_SCALE = 2.25;
 	/** The damage of an Elder's blows grows by this share for every player fighting it beyond the first. */
 	public static double ELDER_DAMAGE_PER_PLAYER = 0.1;
+	/**
+	 * The share of a mace's blow that lands on an Elder or the Starved One (3.37): a smash from a height did their whole
+	 * health in a few blows. 0 = immune, 1 = as on anything else.
+	 */
+	public static double BOSS_MACE_DAMAGE = 0.1;
 	/** The pause between an Elder's blows shrinks by this share for every player fighting it beyond the first. */
 	public static double ELDER_REST_PER_PLAYER = 0.1;
 	/** The pause between an Elder's blows never shrinks below this share of its own. */
@@ -944,16 +1445,189 @@ public final class Config {
 	public static double FERRYMAN_GAOL_SECONDS = 1.5;
 	/** Damage of the Ferryman's gaol closing on those still inside it. */
 	public static double FERRYMAN_GAOL_DAMAGE = 14.0;
+	/** How hard the Ferryman's Undertow draws everyone near round and in, each tick (by the squall's rules: walls, sneaking, Anchored) (3.43). */
+	public static double FERRYMAN_UNDERTOW_PULL = 0.07;
+	/** Damage of the geyser of soul fire at the end of his Undertow, to whoever is in its middle (half for its wave) (3.43). */
+	public static double FERRYMAN_GEYSER_DAMAGE = 14.0;
+	/** Damage of an oar of his Oars of the Drowned, to whoever it sweeps through (3.43). */
+	public static double FERRYMAN_OAR_DAMAGE = 12.0;
+	/** Damage of the shockwave of a toll of his Bells of the Drowned, to whoever it runs over on the ground (3.43). */
+	public static double FERRYMAN_BELL_DAMAGE = 8.0;
 	/** How much sooner the Weaver's blows land once it starts them, as a multiple (the rhythm between its blows stays). */
 	public static double WEAVER_WINDUP_SPEED = 1.6;
 	/** How long the Seraphic Lance's beam burns, as a multiple. */
 	public static double WEAVER_LANCE_LENGTH = 1.5;
 	/** The Starved One's health grows by this share for every player at the Heart beyond the first. */
+	/** The Starved One's own health against one player (3.32: half again its old 500); more at the Heart add starved_health_per_player each. */
+	public static double STARVED_HEALTH = 750.0;
 	public static double STARVED_HEALTH_PER_PLAYER = 0.5;
+	/**
+	 * Seconds the Heart groans before the Starved One rises (3.38): a bar counts down for everyone near, and going
+	 * {@link #STARVED_CALM_RANGE} from the altar lets it sink back into the hunger. 0 = it rises at once.
+	 */
+	public static int STARVED_WAKE_SECONDS = 15;
+	/** How far (blocks) from the altar everyone must go while the Heart groans for the Starved One to settle again. */
+	public static int STARVED_CALM_RANGE = 32;
+	/** How near (blocks) to the altar a player is warned that stepping onto it wakes the Starved One; 0 = no warning. */
+	public static int STARVED_WARN_RANGE = 24;
 	/** Below this share of its health the Starved One turns ravenous: faster, quicker tricks, and famine. */
 	public static double STARVED_ENRAGE_AT = 0.3;
 	/** Its speed once ravenous, as a multiple. */
 	public static double STARVED_ENRAGE_SPEED = 1.3;
+	/** The harm the Starved One's blows do, as a multiple (3.33). */
+	public static double STARVED_DAMAGE_SCALE = 1.5;
+	/** Its health back each second for every pillar still feeding it, as a share of its health (3.33). */
+	public static double STARVED_HEAL = 0.01;
+	/** Pillars quenched at once for it to heal no more (3.33). */
+	public static int STARVED_HEAL_QUENCH = 3;
+	/** Seam Silk a pillar's node drinks before it is quenched (an arrow does it at once). */
+	public static int STARVED_SOCKET_SILK = 1;
+	/** Seconds a quenched node stays dark before it feeds the Starved One again. */
+	public static double STARVED_SOCKET_SECONDS = 40.0;
+	/** Pillars quenched at once to stun it (3.33: all four, for any party). */
+	public static int STARVED_SOCKETS = 4;
+	/** Seconds it stays stunned. */
+	public static double STARVED_BIND_SECONDS = 8.0;
+	/** The harm it takes while stunned, as a multiple. */
+	public static double STARVED_BOUND_DAMAGE = 2.0;
+	/** The harm it takes while free, as a multiple (in full if no pillar stands to bind it). */
+	public static double STARVED_UNBOUND_DAMAGE = 0.5;
+	/** Seconds between the waves of young it calls. */
+	public static double STARVED_MINION_SECONDS = 25.0;
+	/** Young of the tribe in each wave it calls. */
+	public static int STARVED_MINIONS = 3;
+	/** Most of its young about it at once. */
+	public static int STARVED_MINIONS_MAX = 10;
+	/** Frayed Rays that rise to the Heart as it wakes (one more for every player beyond the first). */
+	public static int STARVED_RAYS = 3;
+	/**
+	 * Seconds the Starved One waits over the Heart with nobody at its fight before it sinks back into the hunger (3.48);
+	 * anyone coming back in that time keeps the fight. 0 = it sinks back at once.
+	 */
+	public static int STARVED_LEAVE_SECONDS = 30;
+	/** How far across (blocks) from the Heart its fight reaches: the Heart, its strands and the four pillars' islands (3.48). */
+	public static int STARVED_ARENA_REACH = 100;
+	/** How far under the Heart's floor (blocks) its fight reaches: the undersides of the islands (3.48). */
+	public static int STARVED_ARENA_BELOW = 48;
+	/** How far over the Heart's floor (blocks) its fight reaches: the pillars' nodes and the tops of their shafts (3.48). */
+	public static int STARVED_ARENA_ABOVE = 160;
+	/** Seconds the Starved One takes to rise out of the Heart once its wind-up is over; nothing hurts it meanwhile (3.48). */
+	public static double STARVED_RISE_SECONDS = 8.0;
+	/** Whether the Heart raises an arena of its own round the Starved One's fight, as the Elders do (1 on, 0 off; 3.48). */
+	public static int STARVED_ARENA = 1;
+	/** Below this share of its health the Heart's fight changes the first time: an upheaval, and islands falling (3.48). */
+	public static double STARVED_PHASE_ONE = 0.66;
+	/** Below this share of its health the Heart's fight changes the second time (3.48). */
+	public static double STARVED_PHASE_TWO = 0.33;
+	/** Damage of the spikes of an upheaval at the Heart to whoever stands where they burst up (times starved_damage_scale). */
+	public static double STARVED_UPHEAVAL_DAMAGE = 6.0;
+	/** Islands of the Heart's arena that come loose and fall at each change of its fight (3.48). */
+	public static int STARVED_PHASE_ISLES = 3;
+	/** Below this share of its health the Starved One drinks time, once a fight (3.48). 0 = never. */
+	public static double STARVED_DRINK_AT = 0.5;
+	/** Seconds its drinking of time draws in before the soul fire bursts out of it. */
+	public static double STARVED_DRINK_SECONDS = 8.0;
+	/** How hard its drinking of time draws everyone in its reach towards it, each tick (sneaking halves it, a wall stops it). */
+	public static double STARVED_DRINK_PULL = 0.05;
+	/** How slow its drinking of time makes everyone in its reach (the level of Slowness; 0 = none). */
+	public static int STARVED_DRINK_SLOW = 2;
+	/** How far (blocks) its drinking of time reaches. */
+	public static int STARVED_DRINK_RADIUS = 48;
+	/** How far (blocks) the soul fire it bursts with at the end reaches: whoever is that near is struck. */
+	public static int STARVED_DRINK_NOVA = 14;
+	/** Damage of that burst of soul fire (times starved_damage_scale). */
+	public static double STARVED_DRINK_DAMAGE = 18.0;
+
+	// --- The Pale Reach: the End's far islands (3.39) -----------------------------------------------
+
+	/** Whether the Pale Reach wakes once the Dragon has fallen: its Unfinished Anchors, Pale Haulers and Pale Squalls (1 on, 0 off). */
+	public static int PALE_REACH = 1;
+	/** How far (blocks) from the End's middle the Pale Reach begins. */
+	public static int PALE_REACH_FROM = 1000;
+	/** The Reach is laid out in squares this many blocks across; each may hold one Unfinished Anchor. */
+	public static int PALE_ANCHOR_SPACING = 512;
+	/** The chance a square of the Reach holds an Unfinished Anchor. */
+	public static double PALE_ANCHOR_CHANCE = 0.5;
+	/** Seconds an Unfinished Anchor takes to fly together once someone comes near. */
+	public static int PALE_ANCHOR_BUILD_SECONDS = 30;
+	/** Near an attuned fitting the Tether drains this many times as fast (0.5 = half). */
+	public static double PALE_FITTING_DRAIN = 0.5;
+	/** How near (blocks) to an attuned fitting its ease reaches. */
+	public static int PALE_FITTING_RANGE = 48;
+	/** Eyes of Ender a fitting takes to be attuned. */
+	public static int PALE_FITTING_COST = 1;
+	/** Whether Pale Haulers come for the bridges laid in the Reach (1 on, 0 off). */
+	public static int PALE_HAULER_ENABLED = 1;
+	/** A Pale Hauler's health. */
+	public static double PALE_HAULER_HEALTH = 24.0;
+	/** The chance, every twenty seconds a player has a bridge out over the void in the Reach, that a Pale Hauler comes for it. */
+	public static double PALE_HAULER_SPAWN_CHANCE = 0.2;
+	/** Most Pale Haulers after one player at once (they come in twos and threes). */
+	public static int PALE_HAULER_MAX = 3;
+	/** The harm a Pale Hauler's leap does. */
+	public static double PALE_HAULER_DAMAGE = 3.0;
+	/** Seconds a block shakes in a Pale Hauler's grip before it comes loose. */
+	public static double PALE_HAULER_PULL_SECONDS = 1.5;
+	/** Blocks a Pale Hauler takes before it goes with them. */
+	public static int PALE_HAULER_PULLS = 6;
+	/** Whether Pale Squalls sweep the Reach (1 on, 0 off). */
+	public static int PALE_SQUALL = 1;
+	/** The chance, every minute on an expedition in the Reach, that a Pale Squall comes. */
+	public static double PALE_SQUALL_CHANCE = 0.15;
+	/** Seconds the void draws breath (the warning) before the squall comes. */
+	public static int PALE_SQUALL_WARNING_SECONDS = 4;
+	/** Seconds a Pale Squall blows. */
+	public static int PALE_SQUALL_SECONDS = 8;
+	/** How hard a Pale Squall pushes, each tick (sneaking halves it; braced against a wall, nothing). */
+	public static double PALE_SQUALL_PUSH = 0.06;
+	/** How much less a Pale Squall pushes for each level of Anchored (0.25 = 25%). */
+	public static double PALE_SQUALL_ANCHORED = 0.25;
+	/** The Pale Mason's own health (before elder_health_scale and the players fighting him). */
+	public static double PALE_MASON_HEALTH = 900.0;
+	/** The chance, once each expedition that has gone on a while in the Reach, that the Pale Mason comes. */
+	public static double PALE_MASON_CHANCE = 0.35;
+	/** Seconds an expedition must have gone on (out in the Reach) before the Pale Mason may come. */
+	public static int PALE_MASON_AFTER_SECONDS = 150;
+	/** Seconds stone and chains are heard before he comes (0: he comes at once). */
+	public static int PALE_MASON_WAKE_SECONDS = 15;
+	/** Damage of his Teleport Strike, where its sigil lies. */
+	public static double PALE_MASON_STRIKE_DAMAGE = 14.0;
+	/** Seconds his Anchor Walls stand before they crumble. */
+	public static int PALE_MASON_WALL_SECONDS = 12;
+	/** Damage of a great block he hurls, where it lands. */
+	public static double PALE_MASON_BLOCK_DAMAGE = 12.0;
+	/** How large the great blocks he hurls are (blocks to a side). */
+	public static double PALE_MASON_BLOCK_SIZE = 2.5;
+	/** Damage of his Gaze on whoever looks him in the face. */
+	public static double PALE_MASON_GAZE_DAMAGE = 10.0;
+	/** How hard the Last Door draws everyone towards it, each tick (by the squall's rules: walls, sneaking, Anchored). */
+	public static double PALE_MASON_DOOR_PULL = 0.09;
+	/** Damage to whoever reaches the Last Door. */
+	public static double PALE_MASON_DOOR_DAMAGE = 16.0;
+	/** Damage of a chained stone of his Bound Stones, swung through someone or hurled at them (3.41). */
+	public static double PALE_MASON_CHAIN_DAMAGE = 12.0;
+	/** Damage of a pillar of light of his Pillars of the Anchor (3.41). */
+	public static double PALE_MASON_PILLAR_DAMAGE = 10.0;
+	/** Damage of a golden ring he casts across the floor, to whoever it runs over on the ground (3.41). */
+	public static double PALE_MASON_RING_DAMAGE = 8.0;
+	/** How hard his Unfinished Spiral draws everyone in towards him, each tick (by the squall's rules) (3.41). */
+	public static double PALE_MASON_SPIRAL_PULL = 0.06;
+	/** Damage of his spiral bursting, to whoever is close (less further out; a quarter while it grinds round him) (3.41). */
+	public static double PALE_MASON_BURST_DAMAGE = 14.0;
+	/** Seconds the door of a finished anchor stands open for the Endermen to go home through it (3.44). */
+	public static int PALE_DOOR_SECONDS = 40;
+	/** How far (blocks) the Endermen come from to go home through an open door (3.44). */
+	public static int PALE_DOOR_RANGE = 64;
+	/** Once they have gone home: whether the Endermen of the End let a gaze pass (1 on, 0 off) (3.44). */
+	public static int PALE_HOME_CALM = 1;
+	/** Once they have gone home: how often Pale Haulers and Pale Squalls still come, as a share of before (3.44). */
+	public static double PALE_HOME_QUIET = 0.5;
+	/** Once the lock is broken: the chance, each second, that an Enderman near a player in the End turns on them unprovoked (3.44). */
+	public static double PALE_LOCK_HOSTILE_CHANCE = 0.04;
+	/** Once the lock is broken: how near (blocks) an Enderman must be to turn on a player (3.44). */
+	public static int PALE_LOCK_HOSTILE_RANGE = 24;
+	/** Once the lock is broken: how often Pale Haulers and Pale Squalls come, as a share of before (3.44). */
+	public static double PALE_LOCK_WRATH = 1.5;
 
 	// --- Co-op -----------------------------------------------------------------------------------
 
@@ -1006,8 +1680,8 @@ public final class Config {
 	public static int TRIBE_GIFT_MINUTES = 10;
 	/** How many times the usual amount a gift must be (four gold nuggets at 1, twelve at 3). */
 	public static int TRIBE_GIFT_COST = 1;
-	/** Standing gained for each barter. */
-	public static int TRIBE_REP_BARTER = 1;
+	/** Standing gained for each barter, on top of what a barter costs (0 since 3.16: a bargain costs standing, see below). */
+	public static int TRIBE_REP_BARTER = 0;
 	/** Standing gained when a Hollowling bonds with the player. */
 	public static int TRIBE_REP_BOND = 6;
 	/** In-game days before bonding with one of the young again earns standing (a bond made again and again earns it once). */
@@ -1030,12 +1704,19 @@ public final class Config {
 	public static double TRIBE_KIN_THEFT_CHANCE = 0.5;
 	/** Wares a Hollowling offers in a day. */
 	public static int TRIBE_BARTER_OFFERS = 4;
-	/** Scales every price in barter. */
-	public static double TRIBE_BARTER_PRICE = 1.0;
+	/** Scales every price in barter (3 = three times the wares' own prices). */
+	public static double TRIBE_BARTER_PRICE = 3.0;
 	/** Share taken off prices for players the tribe trusts. */
-	public static double TRIBE_BARTER_TRUSTED_DISCOUNT = 0.25;
+	public static double TRIBE_BARTER_TRUSTED_DISCOUNT = 0.1;
 	/** Share taken off prices for kin of the tribe. */
-	public static double TRIBE_BARTER_KIN_DISCOUNT = 0.4;
+	public static double TRIBE_BARTER_KIN_DISCOUNT = 0.2;
+	/**
+	 * Standing every barter costs (the young do not give for nothing, and the tribe resents what it gives away); a kin's
+	 * ware (a relic, a Mending Cloth) and the Blood Cord cost three times as much.
+	 */
+	public static int TRIBE_BARTER_STANDING_COST = 5;
+	/** Chance a barter leaves a curse on the buyer (the wound's own bargain); twice as likely for a kin's ware or the cord. */
+	public static double TRIBE_BARTER_CURSE_CHANCE = 0.25;
 	/** Emeralds a Hollowling asks for a Tether Fragment (before discounts). */
 	public static int TRIBE_BARTER_FRAGMENT_PRICE = 5;
 	/** Emeralds a Hollowling asks kin for a relic (before discounts; 0 = never offered). */
@@ -1162,6 +1843,12 @@ public final class Config {
 	/** Minutes between writes of the stats export. */
 	public static int EXPORT_MINUTES = 5;
 	/**
+	 * 1 = the playtest log: a line in {@code extremedimensions/playtest.csv} in the server's folder for every expedition
+	 * that ends (and every visit to the Seam), every relic bound and every curse chosen, to judge the balance on real
+	 * numbers (see PlaytestLog); 0 = none.
+	 */
+	public static int PLAYTEST_LOG = 0;
+	/**
 	 * A Discord webhook's URL: the world's great moments (an Elder or the Starved One defeated, the ending, the tapestry,
 	 * a gold medal in the Rift Trial) are posted to its channel; "" = none. In the config file only, and never sent to
 	 * players: whoever has the URL can post to the channel.
@@ -1190,7 +1877,7 @@ public final class Config {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
 	/** Layout version of the config file; files from before a version are brought up to date on loading. */
-	private static final int VERSION = 5;
+	private static final int VERSION = 11;
 
 	/**
 	 * Defaults that changed, by the version that changed them: {key, old default, new default}. A file still holding
@@ -1211,6 +1898,26 @@ public final class Config {
 		{{"lurker_stalk_chance", "0.15", "0.3"}},
 		// 3.8.0: the tribe's standing is harder won
 		{{"tribe_rep_gift", "3", "2"}, {"tribe_rep_bond", "10", "6"}},
+		// 3.16.0: barter with the young costs dearly (dearer wares, smaller discounts, standing spent rather than won)
+		{{"tribe_barter_price", "1", "3"}, {"tribe_barter_trusted_discount", "0.25", "0.1"}, {"tribe_barter_kin_discount", "0.4", "0.2"},
+				{"tribe_rep_barter", "1", "0"}},
+		// 3.26.0: no default changed; a world on a difficulty takes that difficulty's chance for a Tetherite binding
+		{},
+		// 3.26.1: no default changed; a world on a difficulty takes where that difficulty lets a binding be done
+		{},
+		// 3.33.0: the Elders hit half again as hard; the Starved One's pillars heal it until quenched, all four stun it
+		// briefly, and one silk (or an arrow) quenches a node
+		{{"elder_damage_scale", "1.5", "2.25"}, {"starved_sockets", "2", "4"}, {"starved_bind_seconds", "12", "8"},
+				{"starved_socket_silk", "3", "1"}},
+		// 3.46.1: the older relics weighed to their tiers (the common ones' prices lighter, the Tithe Bell's gift smaller;
+		// the rarer ones' gifts greater, the Lurker's Tooth's price lighter)
+		{{"relic_ember_heart_end", "1.2", "1.15"}, {"relic_pale_shard_nether", "1.2", "1.15"}, {"relic_tithe_bell_xp", "0.75", "0.5"},
+				{"relic_featherbone_fall", "8", "10"}, {"relic_keepers_eye_fragments", "2", "2.5"}, {"relic_lurkers_tooth_often", "2", "1.5"},
+				{"relic_seam_lantern_seconds", "60", "90"}, {"relic_helds_chain_grace", "15", "20"}},
+		// 3.49.0: a death costs more (more of the penance undone, offers multiplied more often) and atonement takes
+		// longer; a world on a difficulty takes that difficulty's new values of these (see Preset.upgrade)
+		{{"atone_base", "120", "160"}, {"atone_per_stack", "60", "80"}, {"atone_death_loss", "0.5", "0.75"},
+				{"multiplier_chance", "0.15", "0.25"}},
 	};
 
 	/**
@@ -1222,9 +1929,10 @@ public final class Config {
 			Map.entry("offer_count", "curses"), Map.entry("fragment_chance", "lore"), Map.entry("lurker_enabled", "lurker"),
 			Map.entry("hoard_wild_chance", "hollow"), Map.entry("soul_woven_drain", "weaving"), Map.entry("seam_seconds", "seam"),
 			Map.entry("storm_chance", "dragon"), Map.entry("event_spacing", "events"), Map.entry("relic_ember_heart_nether", "relics"), Map.entry("ench_thrift_drain", "enchantments"),
-			Map.entry("tetherite_ore_island_chance", "tetherite"), Map.entry("pact_unlock", "pacts"),
+			Map.entry("tetherite_ore_island_chance", "tetherite"), Map.entry("tetherite_drawbacks", "tetherite_drawbacks"),
+			Map.entry("pact_unlock", "pacts"),
 			Map.entry("trial_unlock", "trials"), Map.entry("matriarch_after_keepers", "elders"),
-			Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("tapestry_respin_silk", "tapestry"),
+			Map.entry("pale_reach", "reach"), Map.entry("coop_revive", "coop"), Map.entry("tribe_enabled", "tribe"), Map.entry("tapestry_respin_silk", "tapestry"),
 			Map.entry("unweaving", "unweaving"), Map.entry("placeholders", "integration"),
 			Map.entry("seam_build_budget_ms", "technical"));
 
@@ -1274,6 +1982,36 @@ public final class Config {
 			settings = List.copyOf(out);
 		}
 		return settings;
+	}
+
+	/**
+	 * The settings that are switches (1 on, 0 off), which the settings screen shows as an On/Off button instead of a
+	 * number to type (3.34). Each is a whole number with a default of 0 or 1 (a gametest holds them to it).
+	 */
+	private static final java.util.Set<String> SWITCHES = java.util.Set.of("respawn_title", "collapse_recap", "hud_boss_bar", "arrival_compass", "own_worlds_only",
+			"curse_overflow", "curse_deeper", "overworld_curses", "curse_runes", "abyssal_curses", "abyssal_mending_cloth",
+			"cloth_extreme", "cloth_scars", "atone_kill_area_shared", "hints", "lurker_enabled", "cave_lurker_enabled", "sculk_lurker_enabled",
+			"magpie_enabled",
+			"wick_enabled", "wick_eats", "tidewalker_enabled", "gatebreaker_enabled", "gatebreaker_breaks", "lockwarden_enabled",
+			"threadbiter_enabled", "edgecrawler_enabled", "edgecrawler_hurls", "cragback_enabled", "flee_returns", "keeper_enabled",
+			"seam_fray", "seam_return_gate", "seam_rift_compass", "seam_rift_leash", "seam_portal", "seam_reset_backup",
+			"seam_interiors", "echoes", "unstable_anchors", "unanchored", "frayed_seam", "ambient_dread", "tetherite_tethered",
+			"tetherite_bind_keep_template", "tetherite_drawbacks", "elder_griefing", "elder_ultimate_scatter", "elder_spawn_camera",
+			"elder_upheaval", "elder_arena", "elder_arena_wall", "elder_arena_landmark", "elder_arena_breakable", "elder_arena_collapse",
+			"elder_arena_phases", "elder_cores", "elder_isle_fall", "elder_pierce", "matriarch_hex_milk", "starved_arena", "coop_revive",
+			"coop_fallen_locked", "coop_burden", "coop_shared_anchors", "tribe_enabled", "tribe_raid", "clan_enabled",
+			"tapestry_roots_peace", "tapestry_chain_steady", "unweaving", "placeholders", "playtest_log", "pale_reach",
+			"pale_hauler_enabled", "pale_squall", "pale_home_calm", "relic_single_use",
+			"spindle_redstone");
+
+	/** Whether this setting is a switch (1 on, 0 off) rather than a number. */
+	public static boolean isSwitch(String key) {
+		return SWITCHES.contains(key);
+	}
+
+	/** Every switch (for the gametest that holds each to a whole number with a default of 0 or 1). */
+	public static java.util.Set<String> switches() {
+		return SWITCHES;
 	}
 
 	private static List<Field> texts;
@@ -1359,9 +2097,10 @@ public final class Config {
 		if (json.size() == 0) {
 			return;
 		}
-		if (from < 5) {
+		if (from < VERSION) {
 			// A world set to one of the difficulties takes that difficulty's values of the settings it gained since (the
-			// Lurker's in 3.7.0, the tribe's standing and the swarm in 3.8.0), rather than turning into custom rules
+			// Lurker's in 3.7.0, the tribe's standing and the swarm in 3.8.0, the Fresh Wound in 3.49.0) and of those
+			// whose values it changed (3.49.0), rather than turning into custom rules
 			Preset.upgrade(json, from);
 		}
 		for (int v = from + 1; v <= VERSION && v < MIGRATIONS.length; v++) {
@@ -1399,9 +2138,18 @@ public final class Config {
 			{"collapse_pull_ticks", 1, 400}, {"leech_seconds", 1, 3600}, {"rope_segment", 0.25, 8},
 			{"lurker_ward_range", 0, 16}, {"scar_drain_reduction", 0, 0.2}, {"pact_full_seconds", 0, 86400},
 			{"elder_speed", 0.1, 10}, {"elder_attack_speed", 0.1, 10}, {"elder_windup_speed", 0.2, 10},
-			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400},
+			{"elder_ultimate_seconds", 2, 120}, {"elder_arena_linger_seconds", -1, 86400}, {"elder_mark_seconds", 1, 3600},
+			{"elder_upheaval", 0, 1}, {"elder_upheaval_scale", 0.1, 4}, {"elder_upheaval_damage", 0, 100}, {"elder_upheaval_throw", 0, 4},
+			{"elder_upheaval_linger_seconds", 5, 3600}, {"elder_upheaval_budget", 20, 5000}, {"elder_upheaval_blocks", 0, 200000},
+			{"elder_upheaval_displays", 0, 200},
 			{"seam_build_budget_ms", 1, 50}, {"elder_arena_design_budget_ms", 1, 50}, {"seam_fly_range", 0, 128}, {"seam_fly_max", 1, 5000}, {"seam_fly_ticks", 10, 200},
 			{"seam_fly_from", 2, 64}, {"seam_damage", 0, 100},
+			{"tetherite_bind_chance", 0, 1}, {"tetherite_bind_where", 0, 2}, {"tetherite_bind_min", 0, 1}, {"tetherite_bind_max", 0, 1},
+			{"tetherite_bind_unbreaking", 0, 0.5}, {"tetherite_bind_mending", 0, 1}, {"tetherite_bind_knitting", 0, 1},
+			{"tetherite_bind_binding_curse", -1, 1}, {"tetherite_bind_curse", -1, 1}, {"tetherite_bind_luck", 0, 0.5},
+			{"tetherite_bind_seam", 0, 1}, {"tetherite_bind_fray", 0, 1}, {"tetherite_bind_cord", 0, 1}, {"tetherite_bind_scar", 0, 1},
+			{"tetherite_bind_scars_max", 0, 10}, {"tetherite_bind_wear", 0, 0.9}, {"tetherite_bind_keep_template", 0, 1},
+			{"tetherite_drawbacks", 0, 1}, {"tetherite_weight", 0, 0.2}, {"tetherite_hunger", 0, 2}, {"tetherite_lure", 0, 4},
 			{"clan_max", 2, 16}, {"clan_cord_price", 1, 64}, {"clan_blood", 0, 19}, {"clan_share_loss", 0, 1}, {"clan_share_gain", 0, 1},
 			{"clan_range", 0, 256}, {"clan_lock_minutes", 0, 10080}, {"clan_leave_cost", 0, 200}, {"clan_leave_curses", 0, 10}, {"clan_left_cost", 0, 200},
 			{"ambient_chance", 0, 1}, {"ambient_min_seconds", 10, 3600}, {"ambient_volume", 0, 2}, {"ambient_dread", 0, 1},
@@ -1411,17 +2159,65 @@ public final class Config {
 			{"cave_lurker_give_up_seconds", 1, 120}, {"cave_lurker_flee_seconds", 1, 60},
 			{"sculk_lurker_spawn_chance", 0, 1}, {"sculk_lurker_rattle_seconds", 3, 600}, {"sculk_lurker_shrieker_range", 4, 48},
 			{"sculk_lurker_lure_range", 8, 96}, {"sculk_lurker_seconds", 20, 3600},
-			{"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
+			{"sculk_lurker_sensor_seconds", 2, 600}, {"sculk_lurker_sensor_range", 4, 32},
+			{"sculk_lurker_city_chance", 0, 1}, {"sculk_lurker_city_cooldown_seconds", 0, 86400}, {"sculk_lurker_pack_min", 1, 8},
+			{"sculk_lurker_pack_max", 1, 8}, {"sculk_lurker_pack_per_player", 0, 4}, {"sculk_lurker_pack_cap", 1, 12},
+			{"magpie_spawn_chance", 0, 1}, {"magpie_cooldown_seconds", 0, 86400}, {"magpie_range", 4, 64}, {"magpie_takes", 1, 27},
+			{"magpie_speed", 0.2, 4}, {"magpie_sneak_seconds", 10, 600}, {"magpie_flee_seconds", 3, 120},
+			{"wick_spawn_chance", 0, 1}, {"wick_cooldown_seconds", 0, 86400}, {"wick_lights", 1, 64}, {"wick_pack", 1, 8}, {"wick_meals", 1, 64},
+			{"wick_fear_range", 0, 12}, {"wick_speed", 0.2, 4}, {"wick_seconds", 20, 1200}, {"wick_burst_seconds", 0, 10},
+			{"tidewalker_spawn_chance", 0, 1}, {"tidewalker_cooldown_seconds", 0, 86400}, {"tidewalker_stalk_seconds", 2, 120},
+			{"tidewalker_strikes", 1, 20}, {"tidewalker_damage", 0, 40}, {"tidewalker_curse_chance", 0, 1}, {"tidewalker_drag_seconds", 1, 10},
+			{"tidewalker_air_drain", 0, 300}, {"tidewalker_speed", 0.2, 4},
+			{"gatebreaker_chance", 0, 1}, {"gatebreaker_cooldown_seconds", 0, 86400}, {"gatebreaker_hardness", 0, 100},
+			{"gatebreaker_smash_blocks", 1, 64}, {"gatebreaker_damage", 0, 60}, {"gatebreaker_speed", 0.2, 4}, {"gatebreaker_seconds", 30, 3600},
+			{"gatebreaker_health_per_player", 0, 5},
+			{"lockwarden_spawn_chance", 0, 1}, {"lockwarden_cooldown_seconds", 0, 86400}, {"lockwarden_takes", 1, 64}, {"lockwarden_damage", 0, 40},
+			{"lockwarden_maroon_chance", 0, 1}, {"lockwarden_maroon_distance", 16, 200}, {"lockwarden_seconds", 20, 1200},
+			{"threadbiter_spawn_chance", 0, 1}, {"threadbiter_cooldown_seconds", 0, 86400}, {"threadbiter_pack", 1, 8}, {"threadbiter_bite", 0, 60},
+			{"threadbiter_bites", 1, 20}, {"threadbiter_floor", 1, 600}, {"threadbiter_speed", 0.3, 3}, {"threadbiter_flee_seconds", 3, 120},
+			{"edgecrawler_spawn_chance", 0, 1}, {"edgecrawler_cooldown_seconds", 0, 86400}, {"edgecrawler_edge_range", 2, 16}, {"edgecrawler_drop", 3, 64},
+			{"edgecrawler_damage", 0, 40}, {"edgecrawler_throw", 0, 3}, {"edgecrawler_speed", 0.3, 3}, {"edgecrawler_seconds", 20, 600},
+			{"cragback_spawn_chance", 0, 1}, {"cragback_cooldown_seconds", 0, 86400}, {"cragback_wake_range", 2, 32}, {"cragback_damage", 0, 60},
+			{"cragback_rock_damage", 0, 40}, {"cragback_speed", 0.3, 3}, {"cragback_seconds", 30, 1200}, {"cragback_health_per_player", 0, 4},
+			{"curse_fresh_weight", 1, 20}, {"tribe_barter_standing_cost", 0, 100}, {"tribe_barter_curse_chance", 0, 1}, {"weaver_pity", 0, 1}, {"seam_thinned_fragment_chance", 0, 1}, {"seam_collapse_toll", 0, 1},
 			{"music_disc_listens_chance", 0, 1}, {"disc_fragment_elegy_count", 0, 9}, {"disc_fragment_abyss_broken", 0, 9},
 			{"disc_fragment_abyss_tangle_chance", 0, 1}, {"disc_fragment_abyss_ray_chance", 0, 1},
 			{"seam_fray_rays", 0, 8}, {"seam_fray_ray_speed", 0.5, 4}, {"seam_fray_ray_damage", 0, 40}, {"seam_fray_ray_poison", 0, 60},
 			{"seam_fray_ray_cooldown", 1, 120}, {"seam_fray_gloom", 0, 30}, {"seam_fray_gloom_every", 10, 3600}, {"seam_fray_unravel", 0, 1},
-			{"seam_briefing", 0, 100}, {"hud_boss_bar", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000},
+			{"starved_damage_scale", 0, 10}, {"starved_heal", 0, 0.2}, {"starved_heal_quench", 1, 4}, {"starved_socket_silk", 1, 64}, {"starved_socket_seconds", 5, 600}, {"starved_sockets", 1, 4}, {"starved_bind_seconds", 1, 120},
+			{"starved_bound_damage", 0, 10}, {"starved_unbound_damage", 0, 10}, {"starved_minion_seconds", 5, 600}, {"starved_minions", 0, 12},
+			{"starved_minions_max", 0, 40}, {"starved_rays", 0, 12},
+			{"starved_leave_seconds", 0, 600}, {"starved_arena_reach", 84, 256}, {"starved_arena_below", 16, 128}, {"starved_arena_above", 64, 320},
+			{"starved_rise_seconds", 2, 30}, {"starved_phase_one", 0, 1}, {"starved_phase_two", 0, 1}, {"starved_upheaval_damage", 0, 60},
+			{"starved_phase_isles", 0, 12}, {"starved_drink_at", 0, 1}, {"starved_drink_seconds", 3, 30}, {"starved_drink_pull", 0, 0.5},
+			{"starved_drink_slow", 0, 5}, {"starved_drink_radius", 8, 128}, {"starved_drink_nova", 4, 64}, {"starved_drink_damage", 0, 100},
+			{"seam_briefing", 0, 100}, {"seam_interiors", 0, 1}, {"seam_storeroom_chance", 0, 1}, {"hud_boss_bar", 0, 1}, {"arrival_compass", 0, 1}, {"hints", 0, 1}, {"frame_silk", 0, 64}, {"first_knot_distance", 200, 5000}, {"knot_mother_rest", 0, 100000}, {"knot_mother_leash", 4, 64}, {"knot_mother_threadline_weight", 0, 20}, {"knot_mother_threadline_damage", 0, 40},
+			{"knot_mother_threadline_sweep", 0.2, 1.5}, {"knot_mother_snare_weight", 0, 20}, {"knot_mother_snare_warning", 0.5, 5}, {"knot_mother_snare_seconds", 0.5, 10},
+			{"knot_mother_snare_time", 0, 120}, {"knot_mother_snare_damage", 0, 40}, {"knot_mother_anchors", 0, 8}, {"knot_mother_anchor_radius", 3, 15},
+			{"knot_mother_anchor_hits", 1, 20}, {"knot_mother_anchor_ward", 0, 0.9}, {"knot_mother_exposed_seconds", 0, 15}, {"knot_mother_exposed_damage", 1, 4},
 			{"elder_health_scale", 0.1, 20}, {"elder_health_per_player", 0, 5}, {"elder_damage_scale", 0, 20}, {"elder_damage_per_player", 0, 2},
 			{"elder_rest_per_player", 0, 0.5}, {"elder_rest_min", 0.1, 1}, {"elder_split_max", 1, 8}, {"elder_fighters_range", 8, 256},
 			{"elder_reach", 1, 5}, {"elder_brood_per_player", 0, 10}, {"elder_spell_range", 16, 256}, {"elder_snare_seconds", 0, 30},
-			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
-			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100}, {"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
+			{"matriarch_health", 1, 1024}, {"matriarch_requiem_beam_damage", 0, 60}, {"ferryman_health", 1, 1024}, {"weaver_health", 1, 1024}, {"knot_mother_health", 1, 1024}, {"starved_health", 1, 1024},
+			{"lurker_health", 1, 1024}, {"cave_lurker_health", 1, 1024}, {"sculk_lurker_health", 1, 1024}, {"magpie_health", 1, 1024}, {"wick_health", 1, 1024}, {"tidewalker_health", 1, 1024}, {"gatebreaker_health", 1, 1024}, {"lockwarden_health", 1, 1024}, {"threadbiter_health", 1, 1024}, {"edgecrawler_health", 1, 1024}, {"cragback_health", 1, 1024}, {"keeper_health", 1, 1024},
+			{"elder_snare_damage", 0, 100}, {"elder_bind_seconds", 0, 120}, {"matriarch_wake_seconds", 0, 120}, {"matriarch_calm_range", 8, 128},
+			{"matriarch_warn_range", 0, 64}, {"ferryman_wake_seconds", 0, 120}, {"weaver_wake_seconds", 0, 120}, {"weaver_calm_range", 8, 128},
+			{"weaver_warn_range", 0, 128}, {"knot_mother_wake_seconds", 0, 120}, {"knot_mother_calm_range", 8, 128}, {"starved_wake_seconds", 0, 120},
+			{"starved_calm_range", 8, 128}, {"starved_warn_range", 0, 64}, {"pale_reach_from", 200, 20000}, {"pale_anchor_spacing", 128, 4096},
+			{"pale_anchor_chance", 0, 1}, {"pale_anchor_build_seconds", 1, 600}, {"pale_fitting_drain", 0, 1}, {"pale_fitting_range", 8, 256},
+			{"pale_fitting_cost", 0, 64}, {"pale_hauler_health", 1, 1024}, {"pale_hauler_spawn_chance", 0, 1}, {"pale_hauler_max", 0, 8}, {"pale_hauler_damage", 0, 100},
+			{"pale_hauler_pull_seconds", 0.25, 10}, {"pale_hauler_pulls", 1, 64}, {"pale_squall_chance", 0, 1}, {"pale_squall_warning_seconds", 0, 30},
+			{"pale_squall_seconds", 1, 60}, {"pale_squall_push", 0, 0.5}, {"pale_squall_anchored", 0, 1}, {"pale_mason_health", 1, 1024}, {"pale_mason_chance", 0, 1}, {"pale_mason_after_seconds", 0, 3600},
+			{"pale_mason_wake_seconds", 0, 120}, {"pale_mason_strike_damage", 0, 60}, {"pale_mason_wall_seconds", 1, 60}, {"pale_mason_block_damage", 0, 60},
+			{"pale_mason_block_size", 1, 4}, {"pale_mason_gaze_damage", 0, 60}, {"pale_mason_door_pull", 0, 0.5}, {"pale_mason_door_damage", 0, 60}, {"pale_mason_chain_damage", 0, 60},
+			{"pale_mason_pillar_damage", 0, 60}, {"pale_mason_ring_damage", 0, 60}, {"pale_mason_spiral_pull", 0, 0.5}, {"pale_mason_burst_damage", 0, 60},
+			{"pale_door_seconds", 5, 600}, {"pale_door_range", 8, 256}, {"pale_home_quiet", 0, 1}, {"pale_lock_hostile_chance", 0, 1},
+			{"pale_lock_hostile_range", 4, 128}, {"pale_lock_wrath", 1, 4}, {"matriarch_hex_slow", 0, 0.9}, {"ferryman_weight_jump", 0, 0.9},
+			{"ferryman_gaol_hits", 1, 20}, {"ferryman_gaol_seconds", 0.5, 6}, {"ferryman_gaol_damage", 0, 100},
+			{"ferryman_undertow_pull", 0, 0.5}, {"ferryman_geyser_damage", 0, 60}, {"ferryman_oar_damage", 0, 60}, {"ferryman_bell_damage", 0, 60},
+			{"weaver_windup_speed", 0.5, 4}, {"weaver_lance_length", 0.5, 4},
+			{"weaver_warp_damage", 0, 60}, {"weaver_spindle_damage", 0, 60}, {"weaver_spindle_pull", 0, 0.5}, {"weaver_needle_damage", 0, 60},
 			{"elder_arena_size", 0.5, 12}, {"elder_arena_wall", 0, 1}, {"elder_arena_landmark", 0, 1},
 			{"elder_arena_breakable", 0, 1}, {"elder_arena_blast_resistance", 0, 1200}, {"elder_arena_collapse", 0, 1},
 			{"elder_arena_rubble_damage", 0, 40}, {"elder_arena_rubble_max", 0, 2000}, {"elder_arena_phases", 0, 1},
@@ -1434,10 +2230,15 @@ public final class Config {
 			{"elder_isle_radius", 1, 16}, {"elder_isle_boss_share", 0, 0.5}, {"elder_isle_daze_seconds", 0, 10}, {"elder_arena_fly_max", 50, 5000}, {"elder_arena_fly_range", 8, 256}, {"coop_fallen_seconds", 1, 3600}, {"coop_fallen_cooldown_minutes", 0, 1440},
 			{"offer_timeout_seconds", 0, 3600}, {"atone_night_active_seconds", 0, 600},
 			{"lurker_thefts", 1, 9}, {"lurker_claw_damage", 0, 100}, {"lurker_curse_chance", 0, 1}, {"lurker_curse_extreme_chance", 0, 1},
-			{"lurker_curses_max", 0, 9}, {"lurker_hunt_chance", 0, 1}, {"lurker_retaliate_chance", 0, 1}, {"lurker_strike_damage", 0, 100},
+			{"lurker_curses_max", 0, 9}, {"lurker_hunt_chance", 0, 1}, {"lurker_seam_hunt_chance", 0, 1}, {"lurker_retaliate_chance", 0, 1}, {"lurker_strike_damage", 0, 100},
 			{"lurker_strike_blows", 1, 20}, {"lurker_strike_speed", 0.5, 3}, {"lurker_strike_seconds", 5, 300}, {"lurker_swarm_chance", 0, 1}, {"lurker_swarm_lurkers", 0, 12},
-				{"lurker_swarm_hollowlings", 0, 24}, {"lurker_swarm_seconds", 5, 300}, {"lurker_swarm_bite", 0, 40}, {"keeper_reach_damage", 0, 40},
-				{"flee_curses", 0, 5}, {"flee_danger_seconds", 0, 120}, {"flee_returns", 0, 1},
+				{"lurker_swarm_hollowlings", 0, 24}, {"lurker_swarm_seconds", 5, 300}, {"lurker_swarm_bite", 0, 40},
+				{"hollowling_swarm_curse_chance", 0, 1}, {"hollowling_swarm_curses_max", 0, 9}, {"fragment_atone_share", 0.01, 1},
+				{"fragment_max_per_stack", 1, 64}, {"keeper_reach_damage", 0, 40},
+				{"cloth_share", 0.01, 1}, {"cloth_cooldown_minutes", 0, 10080}, {"cloth_extreme", 0, 1}, {"cloth_scars", 0, 1},
+				{"death_wound_minutes", 0, 1440}, {"death_wound_health", 0, 18}, {"death_wound_drain", 1, 5}, {"death_wound_bind_minutes", 0, 1440},
+				{"flee_curses", 0, 5}, {"flee_danger_seconds", 0, 120}, {"flee_elder_range", 0, 256}, {"flee_returns", 0, 1},
+				{"companion_sound_volume", 0, 1}, {"companion_ambient_seconds", 10, 1200}, {"companion_warn_seconds", 0, 600},
 				{"lurker_blocked_seconds", 1, 30}, {"lurker_bolt_damage", 0, 40}, {"lurker_bolt_seconds", 1, 60}, {"lurker_young", 0, 6},
 				{"lurker_young_seconds", 5, 120},
 				{"tribe_gift_minutes", 0, 240}, {"tribe_gift_cost", 1, 10}, {"atone_kill_area_shared", 0, 1}, {"atone_spawner_radius", 0, 64}, {"coop_burden_relief_per_day", 0, 100},
@@ -1445,7 +2246,20 @@ public final class Config {
 			{"tapestry_knot_fray", 0, 10}, {"tapestry_knot_strands", 0, 1}, {"tapestry_heart_echo", 0, 1}, {"weaving_seconds", 30, 3600},
 			{"weaving_ward", 1, 10000}, {"weaving_wave_seconds", 5, 600}, {"weaving_wave", 0, 40}, {"weaving_wave_per_player", 0, 20},
 			{"weaving_bite", 0, 1000}, {"weaving_damage", 0, 100}, {"new_thread_elder", 0, 5}, {"new_thread_atonement", 0, 5},
-			{"export_minutes", 1, 1440}};
+			{"export_minutes", 1, 1440}, {"boss_mace_damage", 0, 1},
+			{"relic_weight_common", 0, 1000}, {"relic_weight_uncommon", 0, 1000}, {"relic_weight_rare", 0, 1000}, {"relic_weight_epic", 0, 1000},
+			{"relic_great_weight_common", 0, 1000}, {"relic_great_weight_uncommon", 0, 1000}, {"relic_great_weight_rare", 0, 1000},
+			{"relic_great_weight_epic", 0, 1000}, {"kindled_lantern_spread", 0, 15}, {"kindled_lantern_light", 1, 15}, {"relic_pilgrims_sandal_speed", 0, 5}, {"relic_pilgrims_sandal_hunger", 1, 5},
+			{"relic_lodestone_chip_drain", 0, 1}, {"relic_lodestone_chip_collapse", 0, 10}, {"relic_thornward_bark_thorns", 0, 40},
+			{"relic_thornward_bark_melee", 0, 1}, {"relic_hollow_whistle_price", 0, 1}, {"relic_hollow_whistle_standing", 0, 1},
+			{"relic_last_stitch_health", 0, 20}, {"relic_last_stitch_max_health", 0, 10}, {"relic_hungers_fang_leech", 0, 1},
+			{"relic_hungers_fang_hunger", 1, 5}, {"relic_debtors_seal_atonement", 1, 10}, {"relic_debtors_seal_curses", 1, 5},
+			{"relic_debtors_seal_boss_curses", 1, 5}, {"relic_unbound_pinion_damage", 1, 5}, {"relic_unbound_pinion_wear", 1, 100},
+			{"relic_ashen_locket_fire", 0, 1}, {"relic_ashen_locket_cold", 1, 5}, {"relic_miners_candle_depth", -64, 320},
+			{"relic_miners_candle_cave_lurker", 1, 10}, {"relic_magpies_glint_chance", 0, 1}, {"relic_magpies_glint_magpie", 1, 10},
+			{"relic_anchor_rivet_fuel", 1, 5}, {"relic_anchor_rivet_drink", 1, 10}, {"relic_muffled_bell_sculk_lurker", 1, 10},
+			{"relic_veil_scale_fall", 0, 64}, {"relic_veil_scale_seconds", 0, 600}, {"relic_ferrymans_obol_curses", 0, 10},
+			{"relic_ferrymans_obol_drain", 1, 5}, {"relic_hollow_crown_regen", 0, 1}, {"relic_single_use", 0, 1}};
 
 	/** Brings a setting back within its bounds, if it has any. */
 	private static void bound(Setting st) {

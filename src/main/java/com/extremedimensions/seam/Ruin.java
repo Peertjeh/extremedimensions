@@ -97,6 +97,10 @@ public final class Ruin {
 		// never end up hanging over a fall
 		Set<Long> keep = new HashSet<>(), support = new HashSet<>();
 		for (Object[] a : p.after) {
+			if (Plan.minor(a)) {
+				// (a storeroom's barrel keeps nothing standing: if it falls, it falls)
+				continue;
+			}
 			BlockPos at = (BlockPos) a[0];
 			support.add(at.asLong());
 			support.add(at.below().asLong());

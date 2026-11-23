@@ -4,11 +4,19 @@ plugins {
 }
 
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
+	// Modrinth's maven, for the plugin APIs of JEI, Jade, WTHIT and JourneyMap alone (compile only: each brings itself
+	// when a player has it installed)
+	exclusiveContent {
+		forRepository {
+			maven {
+				name = "Modrinth"
+				url = "https://api.modrinth.com/maven"
+			}
+		}
+		filter {
+			includeGroup "maven.modrinth"
+		}
+	}
 }
 
 loom {
@@ -22,6 +30,45 @@ loom {
 	}
 }
 
+// JourneyMap keeps its plugin API in a jar inside its own: the outer jar is fetched only for that inner one to be taken
+// out, which alone goes on the client's compile classpath (nothing of JourneyMap is shipped or needed to run)
+configurations {
+	journeymapBundle {
+		transitive = false
+	}
+	// Xaero's Minimap's own jar holds its library (xaerolib) inside it, which some of its types come from
+	xaeroBundle {
+		transitive = false
+	}
+}
+interface ArchiveTools {
+	@javax.inject.Inject
+	ArchiveOperations getArchives()
+}
+def archiveTools = objects.newInstance(ArchiveTools)
+// (a name of its own: one the same as the configuration's would be taken for it in the dependencies block below)
+def journeymapJars = configurations.journeymapBundle
+def journeymapApi = tasks.register("journeymapApi", Sync) {
+	description = "Takes JourneyMap's plugin API out of its jar, for the client's map plugin to compile against"
+	from(journeymapJars.elements.map { jars -> jars.collect { archiveTools.archives.zipTree(it.asFile) } }) {
+		include "META-INF/jars/journeymap-api-*.jar"
+		eachFile { it.path = "journeymap-api.jar" }
+	}
+	includeEmptyDirs = false
+	into layout.buildDirectory.dir("journeymap-api")
+}
+
+def xaeroJars = configurations.xaeroBundle
+def xaeroLib = tasks.register("xaeroLib", Sync) {
+	description = "Takes Xaero's library out of Xaero's Minimap's jar, for the client's waypoints to compile against"
+	from(xaeroJars.elements.map { jars -> jars.collect { archiveTools.archives.zipTree(it.asFile) } }) {
+		include "META-INF/jars/xaerolib-*.jar"
+		eachFile { it.path = "xaerolib.jar" }
+	}
+	includeEmptyDirs = false
+	into layout.buildDirectory.dir("xaerolib")
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -29,6 +76,27 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// JEI (31.14.0.72 for 26.3, Modrinth version Zebwcvua): the client's plugin compiles against it; it is never
+	// shipped or needed (the plugin is only loaded by JEI itself, through the jei_mod_plugin entrypoint)
+	clientCompileOnly "maven.modrinth:jei:Zebwcvua"
+
+	// Jade (26.3.5 for 26.3, Modrinth version 71CTWqdE) and WTHIT (21.0.0, Modrinth version GZ97QWSj): the client's
+	// tooltip plugins compile against them; neither is shipped or needed (Jade loads its plugin through the jade
+	// entrypoint, WTHIT through waila_plugins.json)
+	clientCompileOnly "maven.modrinth:jade:71CTWqdE"
+	clientCompileOnly "maven.modrinth:wthit:GZ97QWSj"
+
+	// JourneyMap (26.3-6.0.10, Modrinth version 2zmj8ela), for its plugin API 2.0.0 (see journeymapApi above): the map
+	// plugin is only loaded by JourneyMap itself, through the journeymap entrypoint
+	journeymapBundle "maven.modrinth:journeymap:2zmj8ela"
+	clientCompileOnly files(layout.buildDirectory.file("journeymap-api/journeymap-api.jar")).builtBy(journeymapApi)
+
+	// Xaero's Minimap (26.6.2 for 26.3, Modrinth version MfxfgXaO), and the library inside it: the client's waypoints
+	// compile against them; neither is shipped or needed (they are handed over only where Xaero's Minimap is loaded)
+	xaeroBundle "maven.modrinth:xaeros-minimap:MfxfgXaO"
+	clientCompileOnly "maven.modrinth:xaeros-minimap:MfxfgXaO"
+	clientCompileOnly files(layout.buildDirectory.file("xaerolib/xaerolib.jar")).builtBy(xaeroLib)
 }
 
 processResources {
@@ -156,10 +224,25 @@ if (project.hasProperty("compat")) {
 		vmArg "-Dfabric.addMods=${compatMods}"
 	}
 	// (after everything is compiled against them, before the game starts)
+	def compatShaders = layout.buildDirectory.dir("compat-shaders").get().asFile
 	tasks.matching { it.name == "runClientGameTest" }.configureEach {
 		doFirst {
 			delete fileTree(sourceSets.client.java.destinationDirectory) { include "com/terraformersmc/**" }
 			delete fileTree(sourceSets.main.java.destinationDirectory) { include "eu/pb4/**" }
+			// The shader pack the job fetched (3.51.1), in the game folder once it has been cleared, selected for Iris
+			// but left off (the test turns it on at the end)
+			def pack = compatShaders.exists() ? compatShaders.listFiles()?.find { it.isFile() } : null
+			if (pack != null) {
+				def gameDir = layout.buildDirectory.dir("run/clientGameTest").get().asFile
+				copy {
+					from pack
+					into new File(gameDir, "shaderpacks")
+				}
+				def config = new File(gameDir, "config")
+				config.mkdirs()
+				new File(config, "iris.properties").text = "shaderPack=${pack.name}\nenableShaders=false\n"
+				println "Shader pack for the test: ${pack.name}"
+			}
 		}
 	}
 }

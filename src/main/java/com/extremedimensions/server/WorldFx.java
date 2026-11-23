@@ -171,6 +171,19 @@ public final class WorldFx {
 		p.level().playSound(null, p.getX(), p.getY(), p.getZ(), sound(id), category(id), vol, pitch);
 	}
 
+	/**
+	 * After a motion was set on an entity on the server (a shove, a pull, a drag): marks it to be synced, and when it is a
+	 * player, sends them the motion to take on, since their own client moves them and a motion set on the server alone
+	 * never reaches them (3.39.2). Use it after every {@code setDeltaMovement} meant to move a player.
+	 */
+	public static void moved(net.minecraft.world.entity.Entity e) {
+		e.needsSync = true;
+		if (e instanceof ServerPlayer p && ServerPlayNetworking.canSend(p, ModPackets.MotionPayload.TYPE)) {
+			net.minecraft.world.phys.Vec3 v = p.getDeltaMovement();
+			ServerPlayNetworking.send(p, new ModPackets.MotionPayload(v.x, v.y, v.z));
+		}
+	}
+
 	/** A sound only this player hears, on the volume slider Minecraft would put it on. */
 	public static void soundSelf(ServerPlayer p, String id, float vol, float pitch) {
 		p.connection.send(new ClientboundSoundPacket(sound(id), category(id), p.getX(), p.getY(), p.getZ(), vol, pitch,
@@ -197,7 +210,7 @@ public final class WorldFx {
 			return n.startsWith("lurker") || n.startsWith("hollowling") || n.startsWith("hoard") ? SoundSource.HOSTILE : n.startsWith("entity.lightning_bolt") ? SoundSource.WEATHER
 					: n.startsWith("event.raid") ? SoundSource.HOSTILE : SoundSource.AMBIENT;
 		}
-		if (n.startsWith("elder.") || n.startsWith("lurker") || n.startsWith("hollowling") || n.startsWith("keeper") || n.startsWith("hoard") || n.startsWith("entity.warden")
+		if (n.startsWith("elder.") || n.startsWith("lurker") || n.startsWith("cave_lurker") || n.startsWith("sculk_lurker") || n.startsWith("hollowling") || n.startsWith("keeper") || n.startsWith("hoard") || n.startsWith("entity.warden")
 				|| n.startsWith("entity.phantom") || n.startsWith("entity.vex")) {
 			return SoundSource.HOSTILE;
 		}
@@ -305,6 +318,22 @@ public final class WorldFx {
 		if (holder != null) {
 			for (String criterion : holder.value().criteria().keySet()) {
 				p.getAdvancements().award(holder, criterion);
+			}
+		}
+	}
+
+	/**
+	 * A blow lands with weight near (x, z): for everyone within {@code radius}, a short hard shake, the view jolting
+	 * down and the striker holding still for an instant (an impact frame), less the further away they are.
+	 */
+	public static void punch(ServerLevel level, net.minecraft.world.entity.Entity striker, double x, double z, double radius, float strength, int shakeTicks) {
+		for (ServerPlayer p : level.players()) {
+			double dx = p.getX() - x, dz = p.getZ() - z;
+			double d = Math.sqrt(dx * dx + dz * dz);
+			if (d < radius) {
+				float s = (float) (strength * (1 - d / radius * 0.7));
+				ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.SHAKE, 0, shakeTicks, s, ""));
+				ServerPlayNetworking.send(p, new ModPackets.BossFxPayload(ModPackets.BossFxPayload.PUNCH, 0, striker.getId(), s, ""));
 			}
 		}
 	}

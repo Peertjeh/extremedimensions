@@ -50,6 +50,9 @@ abstract class ElderFight {
 		if (f == null) {
 			f = FerrymanService.fight(e);
 		}
+		if (f == null) {
+			f = PaleMasonService.fight(e);
+		}
 		return f != null ? f : WeaverService.fight(e);
 	}
 
@@ -155,7 +158,7 @@ abstract class ElderFight {
 		beat.reset();
 		b.setAction(a);
 		// No name is called: the Elder gives the blow away by its voice, the sound of the blow, its body and its light
-		ElderTells.begin(b, a);
+		ElderTells.begin(b, a, tempo());
 		// The client plays the ultimate on a 200-tick timeline and the forming on a 140-tick one, whatever their length
 		b.setTempo(a == ElderBoss.ULTIMATE ? 200.0F / ElderUltimate.length() : a == ElderBoss.SPAWN ? 140.0F / ElderSpawn.length() : (float) tempo());
 	}
@@ -272,6 +275,8 @@ abstract class ElderFight {
 				q.sendSystemMessage(Component.translatable("gui.extremedimensions.elder.ultimate_warn", Math.max(0, Config.ELDER_ULTIMATE_RADIUS)), true);
 			}
 		}
+		// The ground starts to shake and crack under it (3.41)
+		ElderUpheaval.charge(b);
 	}
 
 	/** The ultimate breaks: its curse, a flash, and the bars lift. */
@@ -286,6 +291,8 @@ abstract class ElderFight {
 		}
 		doomed.clear();
 		ElderFx.shake(b, b.getX(), b.getZ(), Math.max(64, Config.ELDER_ULTIMATE_RADIUS), 1.6f, 40);
+		// ... and the whole arena is torn apart (3.41)
+		ElderUpheaval.erupt(b);
 	}
 
 	/** The ultimate is cut short (the Elder leaves): those it held take its curse all the same. */
@@ -319,6 +326,7 @@ abstract class ElderFight {
 	}
 
 	void closeUltimate(ElderBoss b) {
+		ElderUpheaval.close(b);
 		bar.setCreateWorldFog(false);
 		ElderFx.cinema(b, Math.max(64, Config.ELDER_ULTIMATE_RADIUS + 16), ModPackets.BossFxPayload.ULTIMATE_END, 0, 0, "");
 		end(b, 50);

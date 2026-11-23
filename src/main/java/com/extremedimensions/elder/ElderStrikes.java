@@ -51,6 +51,8 @@ public final class ElderStrikes {
 	public static final int SPEAR = 5;
 	/** Soul fire from the sky (the Ferryman's ultimate): soul fire where it lands. */
 	public static final int SOULFALL = 6;
+	/** A knot of the Knot Mother's Snare: whoever stands in it as it closes is held fast and loses Seam time. */
+	public static final int SNARE = 7;
 
 	private static final class Strike {
 		ServerLevel level;
@@ -103,6 +105,8 @@ public final class ElderStrikes {
 		float damage;
 		/** A great blow: through armour (see {@link ElderPower#great}). */
 		boolean pierce;
+		/** A thread, not a beam (the Knot Mother's Threadline): amber, no fire, no trench, a light knock, a narrow edge. */
+		boolean thread;
 		final Set<UUID> hit = new HashSet<>();
 	}
 
@@ -130,6 +134,7 @@ public final class ElderStrikes {
 		TETHERS.clear();
 		WAVES.clear();
 		BEAMS.clear();
+		THREADED.clear();
 		WEBS.clear();
 		HITS.clear();
 	}
@@ -270,6 +275,36 @@ public final class ElderStrikes {
 		b.ty = ty;
 	}
 
+	/**
+	 * A Threadline (the Knot Mother's): a taut thread from {@code (fx, fy, fz)} swept across an arc at height {@code ty}
+	 * (low over the floor), running on past its prey to the first block behind; jump it or step out of its lane.
+	 */
+	static void threadline(ElderBoss source, double fx, double fy, double fz, double a0, double a1, double r, double ty, int duration,
+			float damage) {
+		Beam b = make(source, fx, fy, fz, fx, fz, a0, a1, r, r, duration, damage, false);
+		b.aimed = true;
+		b.ty = ty;
+		b.thread = true;
+	}
+
+	/** Players a Threadline has caught (for tests: caught even when they could not be hurt). */
+	private static final Set<UUID> THREADED = new HashSet<>();
+
+	/** Whether a Threadline has caught this player since {@link #unthread} (for tests). */
+	public static boolean threaded(Entity p) {
+		return THREADED.contains(p.getUUID());
+	}
+
+	public static void unthread(Entity p) {
+		THREADED.remove(p.getUUID());
+	}
+
+	/** How many Threadlines this Elder is sweeping (for tests). */
+	public static int threadsOf(Entity boss) {
+		UUID id = boss.getUUID();
+		return (int) BEAMS.stream().filter(b -> b.thread && id.equals(b.source)).count();
+	}
+
 	private static Beam make(ElderBoss source, double fx, double fy, double fz, double cx, double cz, double a0, double a1, double r0, double r1,
 			int duration, float damage, boolean pierce) {
 		Beam b = new Beam();
@@ -395,6 +430,15 @@ public final class ElderStrikes {
 				WorldFx.soundIn(dim, "minecraft:entity.blaze.shoot", "hostile", s.x, s.y, s.z, 2f, 0.5f);
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius, 0.7, ElderTerrain.Mark.SOUL);
 			}
+			case SNARE -> {
+				// The Knot Mother's Snare closes: a rope cinched with a heavy twang and her bronze, the floor jolting under it
+				WorldFx.soundIn(dim, "extremedimensions:elder.knot_mother.close", "hostile", s.x, s.y + 1, s.z, 3f, 1f);
+				WorldFx.particleIn(s.level, "minecraft:end_rod", s.x, s.y + 0.3, s.z, s.radius * 0.5, 0.2, s.radius * 0.5, 0.0, 12);
+				WorldFx.particleIn(s.level, "minecraft:reverse_portal", s.x, s.y + 0.4, s.z, s.radius * 0.4, 0.3, s.radius * 0.4, 0.1, 24);
+				if (b != null) {
+					ElderFx.shake(b, s.x, s.z, 10, 0.4f, 10);
+				}
+			}
 			default -> {
 				WorldFx.soundIn(dim, "minecraft:entity.arrow.hit", "hostile", s.x, s.y, s.z, 2f, 0.5f);
 				ElderTerrain.mark(s.level, s.x, s.y, s.z, s.radius * 0.6, 0.3, ElderTerrain.Mark.SCORCH);
@@ -408,12 +452,15 @@ public final class ElderStrikes {
 				continue;
 			}
 			caught(s.source, p);
-			p.hurtServer(s.level, from(s.level, s.source), s.damage);
+			if (s.damage > 0) {
+				p.hurtServer(s.level, from(s.level, s.source), s.damage);
+			}
 			switch (s.kind) {
 				case LANTERN, SOULFALL -> p.setRemainingFireTicks(80);
 				case ROOTS -> WorldFx.effect(p, MobEffects.SLOWNESS, 3, 3);
 				case SLAM -> ElderFx.knock(p, s.x, s.z, 0.6, 0.95);
 				case SPEAR -> ElderFx.knock(p, s.x, s.z, 1.1, 0.7);
+				case SNARE -> WeaverService.snared(p);
 				default -> {
 				}
 			}
@@ -553,8 +600,17 @@ public final class ElderStrikes {
 			double ex = end[0], ey = end[1], ez = end[2];
 			String dim = b.level.dimension().identifier().toString();
 			int elder = AttackFx.of(boss);
-			AttackFx.line(b.level, elder, AttackFx.LINE_BEAM, b.fx, b.fy, b.fz, ex, ey + (ground ? 0.2 : 0), ez, 2);
-			if (ground) {
+			AttackFx.line(b.level, elder, b.thread ? AttackFx.LINE_THREAD_TAUT : AttackFx.LINE_BEAM, b.fx, b.fy, b.fz, ex, ey + (ground ? 0.2 : 0), ez, 2);
+			if (b.thread) {
+				// It scores the floor as it runs: sparks and shards off its end, and a slash of cracked light left behind
+				// (its sound is the crack of the sweep itself, heard as it begins)
+				if (b.age % 2 == 0) {
+					AttackFx.impact(b.level, elder, AttackFx.IMPACT_CUT, ex, ey, ez, 1.0);
+				}
+				if (b.age % 4 == 0) {
+					AttackFx.impact(b.level, elder, AttackFx.IMPACT_SCORCH, ex, ey, ez, 1.2);
+				}
+			} else if (ground) {
 				if (b.age % 3 == 0) {
 					AttackFx.impact(b.level, elder, AttackFx.IMPACT_SCORCH, ex, ey, ez, 1.4);
 					WorldFx.soundIn(dim, "minecraft:block.fire.extinguish", "hostile", ex, ey, ez, 1.2f, 0.6f);
@@ -580,16 +636,21 @@ public final class ElderStrikes {
 				if (!hittable(p) || b.hit.contains(p.getUUID())) {
 					continue;
 				}
-				AABB box = p.getBoundingBox().inflate(0.6);
+				AABB box = p.getBoundingBox().inflate(b.thread ? 0.15 : 0.6);
 				boolean struck = box.contains(o);
 				for (int j = 0; j < steps && !struck; j++) {
 					struck = box.clip(o, ends[j]).isPresent();
 				}
 				if (struck) {
 					b.hit.add(p.getUUID());
+					if (b.thread) {
+						THREADED.add(p.getUUID());
+					}
 					caught(b.source, p);
 					p.hurtServer(b.level, b.pierce ? ElderPower.great(b.level, boss) : from(b.level, b.source), b.damage);
-					p.setRemainingFireTicks(100);
+					if (!b.thread) {
+						p.setRemainingFireTicks(100);
+					}
 					// Thrown aside, away from the beam where it passed them
 					double[] c = closest(p.getX(), p.getY() + 0.9, p.getZ(), b.fx, b.fy, b.fz, ex, ey, ez);
 					double cx = c[0], cz = c[2];
@@ -597,7 +658,7 @@ public final class ElderStrikes {
 						cx = b.fx;
 						cz = b.fz;
 					}
-					ElderFx.knock(p, cx, cz, 0.7, 0.5);
+					ElderFx.knock(p, cx, cz, b.thread ? 0.4 : 0.7, b.thread ? 0.3 : 0.5);
 				}
 			}
 			b.lastA = a;

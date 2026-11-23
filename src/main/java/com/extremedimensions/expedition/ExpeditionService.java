@@ -29,6 +29,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Enemy;
@@ -63,11 +64,17 @@ public final class ExpeditionService {
 		String uid = p.getStringUUID();
 		// Working anchors of this type around the portal the player went through
 		d.linked.clear();
+		// (and the blocked ones, which feed nothing: the player is told of them once on the way, 3.55.0)
+		java.util.List<Anchor> passed = new java.util.ArrayList<>();
 		if (d.hasLast) {
 			double r2 = Config.LINK_RANGE * Config.LINK_RANGE;
 			for (Anchor a : DataStore.anchors().values()) {
-				if (dim.equals(a.type) && a.of(uid) > 0 && !a.blocked && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
-					d.linked.add(a.key());
+				if (dim.equals(a.type) && a.of(uid) > 0 && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
+					if (!a.blocked) {
+						d.linked.add(a.key());
+					} else if (a.of(uid) >= 1) {
+						passed.add(a);
+					}
 				}
 			}
 		}
@@ -85,11 +92,20 @@ public final class ExpeditionService {
 			com.extremedimensions.guide.Hints.meet(p, com.extremedimensions.guide.Hints.Hint.WOUND);
 			return;
 		}
+		for (Anchor a : passed) {
+			// A blocked anchor beside the portal keeps its charge out of the expedition, and leaks it meanwhile
+			p.sendSystemMessage(Component.translatable("gui.extremedimensions.entry.blocked", a.x, a.y, a.z, TimeLeft.clock(a.of(uid)))
+					.withStyle(ChatFormatting.RED));
+		}
 		d.arrivalX = p.getX();
+		d.arrivalY = p.getY();
 		d.arrivalZ = p.getZ();
 		d.hasRopeEnd = false;
 		// On the expedition from here (so a pact's stacks of Leaky Tank count as well)
 		d.inRun = true;
+		// What the anchors held before anything was cut at the wound (3.55.0): the timer's bar is measured against it, so
+		// what was cut shows as already gone, and the player is told what was taken
+		double before = total, leaked = 0, chained = 0;
 		int leaky = d.stacks(Penalty.LEAKY_TANK);
 		if (leaky > 0) {
 			// Leaky Tank: every expedition starts with a share of the stored charge gone
@@ -98,10 +114,12 @@ public final class ExpeditionService {
 				a.scale(uid, keep);
 			}
 			total = AnchorService.linkedCharge(p, d);
+			leaked = before - total;
 		}
 		// Held's Chain: no anchor holds more for the player than the chain allows (charge laid in before it was bound too)
 		if (RelicService.has(d, Relic.HELDS_CHAIN)) {
 			double cap = AnchorService.cap(d);
+			double was = total;
 			for (Anchor a : AnchorService.linked(d)) {
 				double own = a.own(uid);
 				if (own > cap) {
@@ -109,17 +127,25 @@ public final class ExpeditionService {
 				}
 			}
 			total = AnchorService.linkedCharge(p, d);
+			chained = was - total;
 		}
+		cut(p, leaked, chained);
 		d.inRun = true;
 		d.heldSpent = false;
 		d.heldTicks = 0;
+		// A new expedition, a new Last Stitch
+		d.stitchSpent = false;
 		d.runActive = 0;
 		d.ferrymanRolled = false;
+		d.masonRolled = false;
 		com.extremedimensions.pact.PactService.begin(p, d);
 		d.runTime = 0;
-		d.runMax = total;
+		d.runMax = before;
+		// What this expedition comes to is counted from here, for its record (see ExpeditionRecord)
+		d.runTally = ExpeditionRecord.begin(d, dim, Dims.OVERWORLD, total, d.tetherTier);
 		d.lastWarn = Integer.MAX_VALUE;
 		d.lastBeat = Integer.MAX_VALUE;
+		d.runWarned = 0;
 		boolean nether = Dims.NETHER.equals(dim);
 		WorldFx.fx(p, nether ? Fx.START_NETHER : Fx.START_END, 0);
 		Journal.unlock(p, d, nether ? JournalEntry.EMBER_DEEP : JournalEntry.PALE_VOID);
@@ -138,8 +164,25 @@ public final class ExpeditionService {
 		}
 	}
 
+	/**
+	 * What Leaky Tank and the Held's Chain took of the charge at the wound, said on the action bar (3.55.0: before, it
+	 * went without a word). Nothing is said for less than a second.
+	 */
+	private static void cut(ServerPlayer p, double leaked, double chained) {
+		boolean leak = leaked >= 1, chain = chained >= 1;
+		if (!leak && !chain) {
+			return;
+		}
+		Component line = leak && chain ? Component.translatable("gui.extremedimensions.entry.both", TimeLeft.clock(leaked), TimeLeft.clock(chained))
+				: leak ? Component.translatable("gui.extremedimensions.entry.leaky", TimeLeft.clock(leaked))
+				: Component.translatable("gui.extremedimensions.entry.chain", TimeLeft.clock(chained), TimeLeft.clock(AnchorService.cap(DataStore.get(p.getUUID()))));
+		p.sendSystemMessage(line.copy().withStyle(ChatFormatting.GOLD), true);
+	}
+
 	/** Safe return: the chain disappears entirely and the Tether comes back. */
 	private static void complete(ServerPlayer p, PlayerData d) {
+		// Its record (read before the expedition is over: the Held's Chain's hold, the pact), told once the levels are taken
+		ExpeditionRecord record = ExpeditionRecord.end(p, d, false, ExpeditionRecord.Outcome.RETURNED);
 		TetherService.clear(p, d, true);
 		if (d.heldTicks > 0) {
 			// Home while the Held's Chain still held them: made it
@@ -153,6 +196,10 @@ public final class ExpeditionService {
 		d.linked.clear();
 		// Only an expedition that was one counts and earns: stepping through and straight back is not
 		boolean real = d.runActive >= Math.max(0, Config.ATONE_RETURN_MIN_SECONDS);
+		if (!real && record != null) {
+			// (its line still comes, marked, so a spreadsheet can leave it out)
+			record.notes.add("a step through and back: not counted");
+		}
 		if (real) {
 			d.expeditions++;
 			// Unmapped: every safe return counts towards its deed
@@ -166,7 +213,11 @@ public final class ExpeditionService {
 			fee += Math.max(0, Config.RELIC_TITHE_BELL_LEVELS);
 		}
 		if (fee > 0 && p.experienceLevel > 0) {
-			p.giveExperienceLevels(-Math.min(fee, p.experienceLevel));
+			int taken = Math.min(fee, p.experienceLevel);
+			p.giveExperienceLevels(-taken);
+			if (record != null) {
+				record.levels = taken;
+			}
 		}
 		// The Toll panel of a severed world: every crossing home gives something back (a real one: a step through and
 		// straight back is no crossing)
@@ -192,6 +243,7 @@ public final class ExpeditionService {
 			Advancements.grant(p, Advancements.VETERAN);
 		}
 		DataStore.markDirty();
+		ExpeditionRecord.settle(p, d, record);
 	}
 
 	/**
@@ -199,6 +251,8 @@ public final class ExpeditionService {
 	 * pulls them home, whole. The Tether is spent.
 	 */
 	private static void unravel(ServerPlayer p, PlayerData d) {
+		// (what it cost is the Tether, and nothing more)
+		ExpeditionRecord.ended(p, d, false, ExpeditionRecord.Outcome.UNRAVELLED);
 		TetherService.clear(p, d, false);
 		d.heldTicks = 0;
 		d.tetherTier = 0;
@@ -222,13 +276,24 @@ public final class ExpeditionService {
 	/** Entered without a working anchor: the portal is dormant and sends the player back. */
 	/**
 	 * Why the wound stayed shut for this player: no anchor of that world beside the portal they came through, an anchor
-	 * whose light cannot reach it, none of their own time in one, no Tether bound, or a Tether bound to an anchor by
-	 * another portal.
+	 * whose light cannot reach it, none of their own time in one, no Tether bound, the anchor the Tether is bound to
+	 * here holding none of their time, or a Tether bound to an anchor by another portal.
 	 */
 	public static String dormant(ServerPlayer p, PlayerData d, String dim, double total) {
 		boolean near = false, open = false;
 		if (d.hasLast) {
 			double r2 = Config.LINK_RANGE * Config.LINK_RANGE;
+			// The anchor the Tether is bound to speaks first (3.55.0) when it stands beside this very portal: blocked, or
+			// holding none of the player's time. Another anchor here with time in it used to make it read "by another portal".
+			Anchor bound = d.tetherAnchor == null ? null : DataStore.anchors().get(d.tetherAnchor);
+			if (bound != null && dim.equals(bound.type) && bound.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
+				if (bound.blocked) {
+					return "blocked";
+				}
+				if (bound.of(p.getStringUUID()) <= 0) {
+					return "bound_empty";
+				}
+			}
 			for (Anchor a : DataStore.anchors().values()) {
 				if (dim.equals(a.type) && a.distSq(d.lastX, d.lastY, d.lastZ) <= r2) {
 					near = true;
@@ -291,12 +356,16 @@ public final class ExpeditionService {
 			// (the Toll panel of a mended world eases it too)
 			double world = WorldService.drainFactor(dim), relic = com.extremedimensions.relic.RelicService.drainFactor(d, dim);
 			double toll = Math.min(1, com.extremedimensions.tapestry.Tapestry.drain(dim));
+			double distance = seam ? 1.0 : TetherService.distanceFactor(p, d);
 			d.currentDrain = (world <= 0 ? 0 : d.drainMultiplier(Math.min(1, world) * Math.min(1, relic) * toll * com.extremedimensions.tetherite.Tetherite.drainEase(p)) * Math.max(1, world) * Math.max(1, relic))
-					* (seam ? 1.0 : TetherService.distanceFactor(p, d)) * com.extremedimensions.elder.FerrymanService.drainFactor(p)
-					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p);
+					* distance * com.extremedimensions.elder.FerrymanService.drainFactor(p)
+					* com.extremedimensions.binding.Homebound.drainFactor(p) * com.extremedimensions.events.WorldEvents.drainFactor(p)
+					* com.extremedimensions.reach.PaleReach.drainFactor(p) * com.extremedimensions.penalty.Wound.drainFactor(d);
 			double left = AnchorService.drainLinked(p, d, d.currentDrain / 20.0);
 			d.runTime += 1.0 / 20.0;
 			double far = seam ? 0 : TetherService.arrivalDistance(p, d);
+			// For its record: how far out, how much of the drain the distance made, and the drain itself
+			ExpeditionRecord.tick(d.runTally, far, distance, d.currentDrain);
 			if (far > d.furthest) {
 				d.furthest = far;
 				if (far >= Advancements.LONG_TETHER_BLOCKS) {
@@ -313,21 +382,19 @@ public final class ExpeditionService {
 				collapse(p, d);
 				changed = true;
 			} else {
-				int secs = (int) Math.ceil(left);
-				warn(p, d, secs);
+				// The bells, the beat of the last ten seconds and (3.55.0) the warnings in words; from the Seam there is no
+				// walking back to the portal
+				TimeLeft.warn(p, d, left, seam ? -1 : TimeLeft.walkBack(p, d), false);
 				if (left < Config.LEECH_SECONDS && d.tickCounter % 10 == 0) {
 					leech(p, left);
-				}
-				if (secs <= 10 && secs != d.lastBeat) {
-					d.lastBeat = secs;
-					WorldFx.sound(p, "minecraft:entity.warden.heartbeat", 1.3f, 1.0f + (10 - secs) * 0.04f);
 				}
 			}
 		} else if (d.collapsing) {
 			pull(p, d);
 		}
 		if (!((Dims.isBeyond(dim) || seam) && d.inRun)) {
-			d.currentDrain = d.drainMultiplier();
+			// (a Fresh Wound shows in it at home too: the drain the next expedition would start at)
+			d.currentDrain = d.drainMultiplier() * com.extremedimensions.penalty.Wound.drainFactor(d);
 		}
 		return changed;
 	}
@@ -373,17 +440,6 @@ public final class ExpeditionService {
 		return true;
 	}
 
-	private static void warn(ServerPlayer p, PlayerData d, int secs) {
-		for (int t : new int[] {60, 30, 10}) {
-			if (secs <= t && d.lastWarn > t) {
-				WorldFx.sound(p, "minecraft:block.bell.use", 0.7f, 0.6f);
-				WorldFx.particles(p, "minecraft:smoke", 1.0, 0.5, 0.02, 25);
-				d.lastWarn = secs;
-				return;
-			}
-		}
-	}
-
 	/** The Leeching: below {@link Config#LEECH_SECONDS} the Starved visibly drink souls from the player. */
 	private static void leech(ServerPlayer p, double left) {
 		double k = 1.0 - left / Config.LEECH_SECONDS;
@@ -409,17 +465,16 @@ public final class ExpeditionService {
 		d.foresightOwed = com.extremedimensions.binding.Charms.foresight(d);
 		TetherService.clear(p, d, false);
 		d.heldTicks = 0;
-		com.extremedimensions.pact.PactService.broken(p, d);
+		// (told once home, with the rest of what the Collapse cost)
+		com.extremedimensions.pact.PactService.brokenByDeath(d);
 		d.collapsing = true;
 		d.collapseOwed = true;
 		d.collapseRetry = -Config.COLLAPSE_PULL_TICKS;
 		d.collapses++;
-		PenaltyService.owe(d, false);
-		if (thrift) {
-			for (int i = 0; i < Config.ENCH_THRIFT_COLLAPSE; i++) {
-				PenaltyService.owe(d, false);
-			}
-		}
+		// Its record takes the curses owed now as its own, and is told once the player is home and has chosen them
+		ExpeditionRecord record = ExpeditionRecord.end(p, d, false, ExpeditionRecord.Outcome.COLLAPSED);
+		oweCollapse(d, thrift);
+		ExpeditionRecord.settle(p, d, record);
 		Journal.unlock(p, d, JournalEntry.STARVED);
 		Advancements.grant(p, Advancements.COLLAPSE);
 		WorldFx.fx(p, Fx.COLLAPSE, 0);
@@ -430,6 +485,36 @@ public final class ExpeditionService {
 		WorldFx.sound(p, "extremedimensions:collapse", 1.2f, 1.0f);
 		WorldFx.particles(p, "minecraft:sculk_soul", 1.0, 0.6, 0.05, 30);
 		DataStore.markDirty();
+	}
+
+	/**
+	 * The curses a death beyond the wound costs (public for tests): a death's (so a bound Debtor's Seal asks it more than
+	 * once), and on top of it what a bound Ferryman's Obol asks for the passage.
+	 */
+	public static void oweDeathBeyond(PlayerData d, boolean overworld, boolean boss) {
+		PenaltyService.oweDeath(d, overworld, boss);
+		for (int i = 0, n = RelicService.passage(d); i < n; i++) {
+			PenaltyService.owe(d, overworld);
+		}
+	}
+
+	/**
+	 * The curses a Collapse costs (public for tests): its own, as a death's beyond the wound (so a bound Debtor's Seal asks
+	 * it more than once, and a Ferryman's Obol its passage), and on top of it what a Tether with Thrift and a bound
+	 * Lodestone Chip take for the charge they eked out.
+	 */
+	public static void oweCollapse(PlayerData d, boolean thrift) {
+		oweDeathBeyond(d, false, false);
+		if (thrift) {
+			for (int i = 0; i < Config.ENCH_THRIFT_COLLAPSE; i++) {
+				PenaltyService.owe(d, false);
+			}
+		}
+		if (RelicService.has(d, Relic.LODESTONE_CHIP)) {
+			for (int i = 0; i < Config.RELIC_LODESTONE_CHIP_COLLAPSE; i++) {
+				PenaltyService.owe(d, false);
+			}
+		}
 	}
 
 	/** Runs every tick while collapsing: the pull, then the death (retried every second as a safety net). */
@@ -462,12 +547,19 @@ public final class ExpeditionService {
 		}
 		d.diedToday = true;
 		d.collapseOwed = false;
-		// Every death undoes part of the penance, wherever it happens
+		// Fallen in a boss fight: to a bound Debtor's Seal, the death's curses are a boss's
+		boolean boss = RelicService.has(d, Relic.DEBTORS_SEAL) && RelicService.bossNear(p);
+		// Every death undoes part of the penance, wherever it happens, and leaves a Fresh Wound (or opens it again)
 		int toll = PenaltyService.deathToll(d);
 		d.atonementLost += toll;
+		com.extremedimensions.penalty.Wound.open(d);
 		// A Collapse that ends in death beyond the wound leaves an echo there
 		if (d.collapsing && Dims.isBeyond(dim)) {
 			com.extremedimensions.events.Echoes.record(p, dim, toll);
+		}
+		if (d.collapsing && Dims.SEAM.equals(dim)) {
+			// The expedition collapsed while on a visit to the Seam: the visit ends with it (what it cost is the expedition's)
+			ExpeditionRecord.ended(p, d, true, ExpeditionRecord.Outcome.COLLAPSED);
 		}
 		// Death always costs the chain (and the Tether item)
 		if (d.tetherAnchor != null) {
@@ -477,7 +569,7 @@ public final class ExpeditionService {
 		}
 		if (Dims.OVERWORLD.equals(dim) && DataStore.overworldPenalties() && !d.collapsing) {
 			d.endedIn = Dims.OVERWORLD;
-			PenaltyService.owe(d, true);
+			PenaltyService.oweDeath(d, true, boss);
 			DataStore.markDirty();
 			return;
 		}
@@ -485,22 +577,40 @@ public final class ExpeditionService {
 			// A death in the Seam costs what its Collapse would: a curse of the set of the world the visit began from,
 			// and (on an expedition) the charge carried, as a death beyond would
 			if (d.inRun) {
-				com.extremedimensions.pact.PactService.broken(p, d);
+				// The expedition the visit was made from ends here too, and the charge it carried is its cost
+				ExpeditionRecord run = ExpeditionRecord.end(p, d, false, ExpeditionRecord.Outcome.DIED_IN_SEAM);
+				if (run != null) {
+					run.chargeLost = AnchorService.linkedCharge(p, d);
+				}
+				ExpeditionRecord.settle(p, d, run);
+				com.extremedimensions.pact.PactService.brokenByDeath(d);
 				for (Anchor a : AnchorService.linked(d)) {
 					a.clear(p.getStringUUID());
 				}
 			}
+			// The visit's record takes the death's curses, and the atonement it undid
+			ExpeditionRecord visit = ExpeditionRecord.end(p, d, true, ExpeditionRecord.Outcome.DIED);
+			if (visit != null) {
+				visit.atonement = toll;
+			}
 			d.inRun = false;
 			d.linked.clear();
 			d.endedIn = dim;
-			PenaltyService.owe(d, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties());
+			oweDeathBeyond(d, Dims.OVERWORLD.equals(d.homeDim) && DataStore.overworldPenalties(), boss);
+			ExpeditionRecord.settle(p, d, visit);
 			DataStore.markDirty();
 			return;
 		}
 		if (Dims.isBeyond(dim) && !d.collapsing && d.inRun) {
-			com.extremedimensions.pact.PactService.broken(p, d);
+			com.extremedimensions.pact.PactService.brokenByDeath(d);
 		}
 		if (Dims.isBeyond(dim) && !d.collapsing) {
+			// Its record takes the charge carried, the atonement undone and the death's curses
+			ExpeditionRecord record = d.inRun ? ExpeditionRecord.end(p, d, false, ExpeditionRecord.Outcome.DIED) : null;
+			if (record != null) {
+				record.chargeLost = AnchorService.linkedCharge(p, d);
+				record.atonement = toll;
+			}
 			// Only this player's time goes to zero; everyone else carries on
 			if (d.inRun) {
 				for (Anchor a : AnchorService.linked(d)) {
@@ -510,7 +620,8 @@ public final class ExpeditionService {
 			d.inRun = false;
 			d.linked.clear();
 			d.endedIn = dim;
-			PenaltyService.owe(d, false);
+			oweDeathBeyond(d, false, boss);
+			ExpeditionRecord.settle(p, d, record);
 			Journal.unlock(p, d, JournalEntry.ENDED);
 			Advancements.grant(p, Advancements.ENDED);
 			DataStore.markDirty();
@@ -530,6 +641,9 @@ public final class ExpeditionService {
 	public static void onRespawn(ServerPlayer p, PlayerData d) {
 		if (d.diedAway) {
 			// Died outside the wound's reach: an expedition left waiting there ends quietly, without reward or curse
+			if (d.inRun) {
+				ExpeditionRecord.ended(p, d, false, ExpeditionRecord.Outcome.DIED_ELSEWHERE);
+			}
 			d.diedAway = false;
 			d.collapsing = false;
 			d.collapseRetry = 0;
@@ -574,15 +688,45 @@ public final class ExpeditionService {
 			WorldFx.sound(p, "minecraft:block.beacon.deactivate", 1.0f, 0.8f);
 		}
 		d.endedIn = null;
-		if (d.atonementLost > 0) {
-			p.sendSystemMessage(Component.translatable("gui.extremedimensions.curses.atonement_lost",
-					Penalty.display(Math.round(Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS)) * 100)), d.atonementLost));
-			d.atonementLost = 0;
-		}
+		// Home: a Collapse's record takes the atonement its death undid, and is told once what it cost is chosen (its
+		// card lists that atonement, so the line below leaves it out)
+		boolean carded = ExpeditionRecord.cardAwaitsHome(d);
+		ExpeditionRecord.home(p, d);
+		afterDeath(p, d, carded);
 		if (!d.pendingOffer.isEmpty()) {
 			d.offerDelay = Config.OFFER_DELAY_TICKS;
 		}
 		WorldFx.particles(p, "minecraft:reverse_portal", 1.0, 0.6, 0.15, 60);
+	}
+
+	/**
+	 * What a death cost besides its curses, in one line at the respawn (3.55.0): the atonement it undid (unless a
+	 * Collapse's card will list it), the Fresh Wound, and a pact's reward lost. Each used to be a line of its own, one
+	 * of them sent while the player still lay dead.
+	 */
+	private static void afterDeath(ServerPlayer p, PlayerData d, boolean carded) {
+		MutableComponent line = Component.empty();
+		boolean any = false;
+		if (d.atonementLost > 0 && !carded) {
+			line.append(Component.translatable("gui.extremedimensions.curses.atonement_lost",
+					Penalty.display(Math.round(Math.max(0, Math.min(1, Config.ATONE_DEATH_LOSS)) * 100)), d.atonementLost).withStyle(ChatFormatting.GRAY));
+			any = true;
+		}
+		d.atonementLost = 0;
+		// What the Fresh Wound takes, and for how long
+		Component wound = com.extremedimensions.penalty.Wound.told(d);
+		if (wound != null) {
+			line.append(any ? " " : "").append(wound);
+			any = true;
+		}
+		if (d.pactBroke) {
+			d.pactBroke = false;
+			line.append(any ? " " : "").append(Component.translatable("gui.extremedimensions.pact.broken").withStyle(ChatFormatting.GOLD));
+			any = true;
+		}
+		if (any) {
+			p.sendSystemMessage(line);
+		}
 	}
 
 	/** A player killed a mob: a chance at a Tether Fragment beyond the wound, and lore for Endermen. */

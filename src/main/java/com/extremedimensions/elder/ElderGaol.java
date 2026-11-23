@@ -257,7 +257,7 @@ public final class ElderGaol {
 					double ny = Math.max(c.y, Math.min(p.getY(), top));
 					p.teleportTo(nx, ny, nz);
 					p.setDeltaMovement(0, Math.min(0, p.getDeltaMovement().y), 0);
-					p.needsSync = true;
+					com.extremedimensions.server.WorldFx.moved(p);
 				}
 			}
 		}
