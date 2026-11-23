@@ -84,7 +84,7 @@ final class Shot {
 						if (f.getType() == boolean.class && !java.lang.reflect.Modifier.isStatic(f.getModifiers())
 								&& (n.contains("hide") || n.contains("hidden"))) {
 							seen.append(c.getSimpleName()).append('.').append(f.getName()).append(' ');
-							if (n.equals("hidegui") || n.equals("hidehud") || n.equals("hidden")) {
+							if ((n.contains("hide") && (n.contains("gui") || n.contains("hud"))) || n.equals("hidden") || n.equals("hudhidden")) {
 								f.setAccessible(true);
 								hideField = f;
 								hideOwnerKind = i;
